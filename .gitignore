@@ -1,0 +1,33 @@
+_cache_img
+customer_service-0.1.0-py3-none-any.whl
+google_adk-.*.whl
+_tmp*
+
+# Caches and temporary files
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.py[cod]
+
+# Environments and Secrets
+.env
+.venv/
+.uv/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Pipeline Outputs (Videos, Screenshots, JSON results)
+artifacts/
+results/
+*.mp4
+*.webm
+*.png
+*.json
+!pyproject.toml
+!uv.lock
+
+# OS specific
+.DS_Store
