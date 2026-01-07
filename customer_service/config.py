@@ -41,7 +41,7 @@ class Config(BaseSettings):
         case_sensitive=True,
     )
     agent_settings: AgentModel = Field(default=AgentModel())
-    app_name: str = "customer_service_app"
+    app_name: str = "customer_service"
     CLOUD_PROJECT: str = Field(default="my_project")
     CLOUD_LOCATION: str = Field(default="us-central1")
     GENAI_USE_VERTEXAI: str = Field(default="1")
