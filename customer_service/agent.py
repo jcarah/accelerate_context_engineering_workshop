@@ -72,3 +72,7 @@ root_agent = Agent(
     before_agent_callback=before_agent,
     before_model_callback=rate_limit_callback,
 )
+
+from google.adk.apps.app import App
+
+app = App(root_agent=root_agent, name="app")
