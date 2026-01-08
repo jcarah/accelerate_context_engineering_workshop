@@ -186,7 +186,3 @@ celerybeat.pid
 my_env.tfvars
 .saved_chats
 .requirements.txt
-
-# Project specific ignores
-evaluation/
-schemas/

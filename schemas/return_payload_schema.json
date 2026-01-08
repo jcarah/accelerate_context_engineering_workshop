@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "json_payload_schema.json",
+  "title": "Dematic Chat return payload",
+  "description": "Defines the API contract for what is returned when calling Dematic Chat",
+  "type": "object",
+  "properties": {
+    "natural_language_response": {
+      "description": "The final response created by the app",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "The id associated with the current conversation",
+      "type": "string"
+    },
+    "explainability_for_customer": {
+      "description": "A list of items to show to the customer that explains why the app returned the answer it did",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "explainability_for_developer": {
+      "description": "A list of items to show to internal developers that provides additional information beyond the customer explainability items",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sql_query_output": {
+      "description": "JSON tabular data to be rendered as a table on the frontend",
+      "type": "array",
+      "items": {
+        "description": "Rows of the queried data are returned as dictionaries",
+        "type": "object"
+      }
+    },
+    "carbon_chart": {
+      "description": "A serialized carbon chart to be rendered on the frontend. See section below for details.",
+      "$ref": "carbon_chart_schema.json"
+    },
+    "profiling": {
+      "description": "performance metrics associated with this invocation",
+      "type": "object",
+      "properties": {
+        "total_response_time_s": {
+          "description": "Total response time in seconds",
+          "type": "integer"
+        },
+        "cost_of_invocation_usd": {
+          "description": "Cost to generate this response",
+          "type": "number"
+        }
+      }
+    },
+    "document_search": {
+      "description": "Results from document search agent queries against Fluid Topics",
+      "$ref": "document_search_schema.json"
+    }
+  }
+}
+
+

@@ -26,7 +26,7 @@ playground: dev
 ## Install AG-UI frontend dependencies
 ag-ui-install:
 	@echo "Installing AG-UI backend dependencies..."
-	pip install -r app/frontend/backend/requirements.txt
+	pip3 install -r app/frontend/backend/requirements.txt
 	@echo "Installing AG-UI frontend dependencies..."
 	cd app/frontend && npm install
 	@if [ ! -f app/frontend/.env.local ]; then \

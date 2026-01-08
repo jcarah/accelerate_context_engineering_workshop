@@ -1,0 +1,190 @@
+[
+    {
+        "name": "_get_id_token",
+        "span_id": 6047438120192027670,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965364369303588,
+        "end_time": 1762965364391915992,
+        "attributes": {
+            "audience": "https://ragengine-833546053256.us-central1.run.app/"
+        },
+        "parent_span_id": 1529265788816814254
+    },
+    {
+        "name": "query_rag_engine",
+        "span_id": 1529265788816814254,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965364369204862,
+        "end_time": 1762965366233874729,
+        "attributes": {
+            "question": "What is the maximum inventory quantity for any SKU?",
+            "dataset_id": "superior_uniform_eudora_ar",
+            "tenant": "superior_uniform",
+            "facility": "superioruniform_eudoraar",
+            "ragengine.api.url": "https://ragengine-833546053256.us-central1.run.app//get_all_details",
+            "ragengine.response.tables_count": 5,
+            "ragengine.response.sql_count": 3
+        },
+        "parent_span_id": 15308280451039130729
+    },
+    {
+        "name": "BigQuery.job.begin",
+        "span_id": 17223161271608098136,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965367006759777,
+        "end_time": 1762965368129296563,
+        "attributes": {
+            "db.system": "BigQuery",
+            "db.name": "scs-d-aiml-data-explorer-dev",
+            "job_id": "4423722b-1e1d-44bb-a0ae-232972883648",
+            "hasErrors": false,
+            "num_child_jobs": 0,
+            "path": "/projects/scs-d-aiml-data-explorer-dev/jobs"
+        },
+        "parent_span_id": 15308280451039130729
+    },
+    {
+        "name": "BigQuery.getQueryResults",
+        "span_id": 11011492937611416105,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965368129568339,
+        "end_time": 1762965368242785039,
+        "attributes": {
+            "db.system": "BigQuery",
+            "db.name": "scs-d-aiml-data-explorer-dev",
+            "path": "/projects/scs-d-aiml-data-explorer-dev/queries/4423722b-1e1d-44bb-a0ae-232972883648"
+        },
+        "parent_span_id": 15308280451039130729
+    },
+    {
+        "name": "agent_run [sql_generation_agent]",
+        "span_id": 15308280451039130729,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965364368687125,
+        "end_time": 1762965372401571038,
+        "attributes": {},
+        "parent_span_id": 7314994618220878981
+    },
+    {
+        "name": "invocation",
+        "span_id": 7314994618220878981,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965364368467296,
+        "end_time": 1762965372401629598,
+        "attributes": {},
+        "parent_span_id": 16987309873828166875
+    },
+    {
+        "name": "execute_tool call_sql_explorer_agent",
+        "span_id": 16987309873828166875,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965364368091393,
+        "end_time": 1762965372401830025,
+        "attributes": {
+            "gen_ai.system": "gcp.vertex.agent",
+            "gen_ai.operation.name": "execute_tool",
+            "gen_ai.tool.name": "call_sql_explorer_agent",
+            "gen_ai.tool.description": "Tool to call sql explorer (nl2sql) agent.\n\nArgs:\n    question (str): Clear and specific Natural language question created from user request\n\n    tool_context (ToolContext): Object to provide context on the tool invocation. Used to save the SQL explorer\n        agent output in the conversation state.\n\nReturns:\n    The output of the SQL Explorer Agent for the provided user question.",
+            "gen_ai.tool.call.id": "adk-6470eda9-3715-417c-a0b4-5f20c9754d57",
+            "gcp.vertex.agent.tool_call_args": "{\"question\": \"What is the maximum inventory quantity for any SKU?\"}",
+            "gcp.vertex.agent.event_id": "968a8b23-2291-4d89-8b1b-a88e2a3f8122",
+            "gcp.vertex.agent.tool_response": "{\"result\": \"The maximum inventory quantity for any SKU is 55,470.\"}",
+            "gcp.vertex.agent.llm_request": "{}",
+            "gcp.vertex.agent.llm_response": "{}"
+        },
+        "parent_span_id": 11361939495431209765
+    },
+    {
+        "name": "call_llm",
+        "span_id": 12732858265928723561,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965369303911738,
+        "end_time": 1762965372410368388,
+        "attributes": {
+            "gen_ai.system": "gcp.vertex.agent",
+            "gen_ai.request.model": "gemini-2.5-flash-lite",
+            "gcp.vertex.agent.invocation_id": "e-f232bef1-e81a-4301-851a-459b92419925",
+            "gcp.vertex.agent.session_id": "decec1d5-3aa1-4bef-a423-3c0c59370d9e",
+            "gcp.vertex.agent.event_id": "598d94a2-0b25-4a45-83a0-ecc5dcbab2f2",
+            "gcp.vertex.agent.llm_request": "{\"model\": \"gemini-2.5-flash-lite\", \"config\": {\"http_options\": {\"headers\": {\"x-goog-api-client\": \"google-adk/1.14.1 gl-python/3.12.9\", \"user-agent\": \"google-adk/1.14.1 gl-python/3.12.9\"}}, \"system_instruction\": \"\\nYou are a **Data Interpreter & Validation Specialist**. \u00f0 Your critical function is to act as a final quality check after a\\nSQL query has been executed. You must meticulously analyze the data returned (`sql_execution_result`) and determine if it\\nlogically and accurately answers the user's `question`.\\n\\n\\nYour goal is to translate the raw data into a friendly, helpful, and non-technical response for the end-user, or to flag when the data doesn't make sense.\\n\\n# **1. Input Analysis**\\n\\nYou will receive the following inputs to guide your analysis:\\n* `question` (The specific, refined question the SQL query was intended to answer):\\nWhat is the maximum inventory quantity for any SKU?\\n\\n* `sql_execution_result` (The data returned from BigQuery. This will typically be a list of dictionaries (representing rows in a table)).\\n[{\\\"max_inventory_quantity\\\":55470.0}]\\n\\n---\\n\\n# **2. Core Task: Validation and Interpretation**\\n\\nFollow this thought process to generate your response:\\n\\n1.  **Grasp the User's Goal:** First, read the `question` carefully.\\n\\n2.  **Inspect the Result's Structure & Content:**\\n    * **Is it a list of dictionaries?** This is the standard success case.\\n    * **Is the list empty (`[]`)?** This isn't an error by default, but could mean problems in the executed query.\\n    * **Examine the column names (the keys) in the dictionaries.**\\n\\n3.  **Validate the Result Against the Question:** This is your main task.\\n\\n    * **Scenario A: The Data Looks Correct.** If the `sql_execution_result` contains data, and its column names and values align with the `question`,\\n    the validation is successful.\\n        * **Action:** Proceed to synthesize a natural language summary of the findings.\\n\\n    * **Scenario B: The Data is Mismatched (Validation Error).** If the the data do not answer the `question`, you have found a validation error.\\n        * **Action:** Generate a specific `error` message explaining the mismatch.\\n\\n    * **Scenario C: The Result is Empty (`[]`).** Is an empty result a plausible answer?\\n        * If **yes**, treat it as a successful query and explain that no results were found.\\n\\n        * If **no**, treat this as a **validation error** and report that the expected data was not found.\\n\\n---\\n\\n# **3. Output Format**\\n\\nYou **must** return a JSON dictionary with exactly two keys: `error` and `nl_response`, where:\\n\\n* `error`: A string containing an error message if a validation error occurred.\\n* `nl_response`: A string containing the natural language summary of the data.\\n\\n\\n\\nYou are an agent. Your internal name is \\\"sql_validation_agent\\\".\", \"response_mime_type\": \"application/json\", \"labels\": {\"adk_agent_name\": \"sql_validation_agent\"}, \"thinking_config\": {\"include_thoughts\": false, \"thinking_budget\": 0}}, \"contents\": [{\"parts\": [{\"text\": \"What is the maximum inventory quantity for any SKU?\"}], \"role\": \"user\"}]}",
+            "gcp.vertex.agent.llm_response": "{\"content\":{\"parts\":[{\"text\":\"{\\\"error\\\": null, \\\"nl_response\\\": \\\"The maximum inventory quantity for any SKU is 55,470.\\\"}\"}],\"role\":\"model\"},\"finish_reason\":\"STOP\",\"usage_metadata\":{\"candidates_token_count\":28,\"candidates_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":28}],\"prompt_token_count\":640,\"prompt_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":640}],\"total_token_count\":668,\"traffic_type\":\"ON_DEMAND\"}}",
+            "gen_ai.usage.input_tokens": 640,
+            "gen_ai.usage.output_tokens": 28,
+            "gen_ai.response.finish_reasons": [
+                "stop"
+            ]
+        },
+        "parent_span_id": 9639380470629127553
+    },
+    {
+        "name": "agent_run [sql_validation_agent]",
+        "span_id": 9639380470629127553,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965369303190889,
+        "end_time": 1762965372416787377,
+        "attributes": {},
+        "parent_span_id": 15308280451039130729
+    },
+    {
+        "name": "call_llm",
+        "span_id": 11361939495431209765,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965353358860033,
+        "end_time": 1762965372449082862,
+        "attributes": {
+            "gen_ai.system": "gcp.vertex.agent",
+            "gen_ai.request.model": "gemini-2.5-flash",
+            "gcp.vertex.agent.invocation_id": "e-ae16ac9c-7bba-4966-b968-f79a1038fb64",
+            "gcp.vertex.agent.session_id": "session_e59f92fe-a616-4e40-9ba7-88b67b8bb46a",
+            "gcp.vertex.agent.event_id": "5f788804-8855-4d4a-898d-ed72cdc3992b",
+            "gcp.vertex.agent.llm_request": "{\"model\": \"gemini-2.5-flash\", \"config\": {\"http_options\": {\"headers\": {\"x-goog-api-client\": \"google-adk/1.14.1 gl-python/3.12.9\", \"user-agent\": \"google-adk/1.14.1 gl-python/3.12.9\"}}, \"system_instruction\": \"\\nYou are \\\"Dematic Chat,\\\" a warehouse operations specialist assistant designed to help explore and visualize warehouse data from BigQuery. Your main goal is to understand user questions about warehouse operations and use tools to provide answers.\\n \\nYou understand warehouse terminology and operations: inventory management, order fulfillment, equipment performance, labor efficiency, receiving, storage, picking, packing, shipping, and returns. You can interpret questions about SKUs, throughput, cycle counts, OTIF performance, slotting, and operational metrics.\\n \\nWhen a user starts a conversation with a greeting, respond courteously and introduce yourself. For example, if the user says \\\"hello,\\\" you can say \\\"Hello! I am Dematic Chat, your warehouse operations assistant. I can help you explore warehouse data and create visualizations. How can I help you today?\\\"\\n \\n**Available Data Sources & Metadata:**\\n* Your primary approach is to use the `call_sql_explorer_agent`.\\n* Your secondary approach is to use the `call_visualization_agent`.\\n \\n**Specialized Sub-Agents (Tools):**\\n1.  `call_sql_explorer_agent`:\\n    * **Purpose:** Executes queries specifically against Google BigQuery datasets to answer warehouse operations questions.\\n    * **Input from You:** A clear, specific natural language question about warehouse data that needs to be answered from BigQuery. This question will be translated into SQL for BigQuery by the `call_sql_explorer_agent`.\\n \\n2.  `call_visualization_agent`:\\n    * **Purpose:** Creates visualizations from warehouse data. **This tool can only generate 'bar chart' and 'line chart'.**\\n    * **Input from You:** A clear, specific natural language question that:\\n        - **MUST include the actual data values to be plotted** (e.g., \\\"Create a bar chart with the following data: Product A has 150 units, Product B has 200 units, Product C has 175 units\\\")\\n        - Specifies what should be represented\\n        - Includes the chart type if the user requested one, otherwise the agent will choose\\n    * **CRITICAL:** The visualization agent cannot access the database. You MUST provide all data values explicitly in your question to the tool.\\n \\n**Core Workflow & Decision Making:**\\n \\n1.  **Analyze User Question:**\\n    * Carefully analyze the user's input to understand what warehouse data they are seeking.\\n    * Interpret warehouse business language into data requirements.\\n \\n2.  **Tool Invocation for Data Retrieval and Visualization:**\\n    * **Your primary rule is to ALWAYS use `call_sql_explorer_agent` to get data from the database.** Do not rely on your own knowledge.\\n    * **CRITICAL: NEVER make up, hallucinate, or generate fake data.** If a user asks for information, you do not know the answer. Your only job is to call the `call_sql_explorer_agent` to find out.\\n\\n    * **For any request that requires a chart or visualization:**\\n        1.  **Check for available data first.** Before calling any tools, you must determine if you have the necessary data points.\\n            *   Review the user's current message and the **last 3 turns** of the conversation history.\\n            *   Look for **concrete, relevant and usable data values** suitable for plotting. It does not matter if this data was provided by the user or if it was the result of a successful tool call.\\n        2.  **Decide the next step:**\\n            *   If you find usable data points in the recent context (last 3 turns), you can call `call_visualization_agent` directly. **You MUST include all the specific data values in your question to the visualization agent**.\\n            *   If you cannot find any usable data points, you MUST call `call_sql_explorer_agent` first to retrieve the data, and THEN call `call_visualization_agent` with all the retrieved data values explicitly included in your question.\\n\\n    * **Do not try to be smart and guess the data.**\\n\\n3.  **Synthesize and Respond:**\\n    * **CRITICAL: You MUST ALWAYS provide a natural language response. Never end your turn without generating text for the user.**\\n    * After the tool call is complete, it returns a response.\\n    * If the response from the tool contains data or results, present them in a clear natural language format.\\n    * Focus on providing the information in a user-friendly way - use lists, numbers, and clear explanations.\\n    * Do NOT include any JSON objects, code blocks, or technical formatting in your response.\\n    * Your response should be conversational and easy to understand.\\n \\n**Critical Rules & Constraints:**\\n \\n* **Mandatory `call_sql_explorer_agent` for Data:** If the user's question requires warehouse operational information from the data (e.g., \\\"What is the current inventory level?\\\", \\\"Show me OTIF performance\\\", \\\"List orders picked today\\\"), you must use `call_sql_explorer_agent`.\\n* **NEVER Proactively Chart:** You MUST NOT use the `call_visualization_agent` unless the user has explicitly asked for a \\\"chart\\\", \\\"plot\\\", \\\"graph\\\", \\\"diagram\\\" or similar terms. If the user only asks for data, only provide the data in text format. Do not create a chart unless asked.\\n* **NEVER Hallucinate Data:** You must NEVER make up, invent, or hallucinate data values. All data must come from `call_sql_explorer_agent`. If you do not have the data in front of you, you must call the tool to get it.\\n* **Handling Unsupported Chart Types**: If a user asks for a specific chart type other than a 'bar chart' or 'line chart', you must respond by saying, \\\"I can only create bar charts and line charts. Would one of those work for you?\\\" Do not call any tools. Do not mention this limitation unless the user asks for a chart you cannot create.\\n* **MANDATORY Two-Step Process for Visualizations:** Unless usable data points are already available in the user's request or within the last 3 conversation turns, you MUST first call `call_sql_explorer_agent` to get the data, and THEN call `call_visualization_agent` with that data. NO EXCEPTIONS.\\n* **ALWAYS Include Data Values for Visualization:** When calling `call_visualization_agent`, you MUST explicitly include all data values (labels, numbers, categories) in your question. The visualization agent has no access to the database or conversation history. Passing vague references like \\\"the data we just retrieved\\\" will fail.\\n* **Direct Schema/Metadata Answers (Limited):** You may only answer directly using your schema/metadata knowledge if the question is *strictly* about the data structure itself (e.g., \\\"What tables are available?\\\", \\\"What are the columns in the orders table?\\\"). If there's any ambiguity, or if the question implies needing actual warehouse data values, default to using `call_sql_explorer_agent`.\\n* **NEVER Generate SQL Code:** Your role is to formulate natural language questions for the `call_sql_explorer_agent`. It is the BigQuery agent's responsibility to generate and execute SQL.\\n* **Contextual Awareness:** You have project and dataset ID details within the session context. DO NOT ask the user for this information.\\n* **Handling Vague queries:** If the user's intent is too broad or vague (e.g., \\\"tell me about the warehouse\\\"), prompt for a more specific warehouse operations question before calling a tool. You can provide examples of questions they can ask, like \\\"For example, you can ask me to 'show OTIF performance for last month', 'what's the current inventory count', or 'create a bar chart of picks per hour by zone'.\\\"\\n* **Summarize All Tool Results:** If a tool is called and returns a valid result (even if that result is \\\"no data found\\\" or an error from the tool), summarize this outcome in your final response.\\n* **Focus on Tool Usage:** Your primary value is in correctly identifying the need for warehouse data retrieval or visualization, understanding warehouse operations requests, and formulating precise inputs for the tools.\\n\\n\\nYou are an agent. Your internal name is \\\"dematic_chat_root_agent_turn\\\".\", \"temperature\": 0.0, \"safety_settings\": [{\"category\": \"HARM_CATEGORY_HARASSMENT\", \"threshold\": \"BLOCK_LOW_AND_ABOVE\"}, {\"category\": \"HARM_CATEGORY_HATE_SPEECH\", \"threshold\": \"BLOCK_LOW_AND_ABOVE\"}, {\"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\", \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"}, {\"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\", \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"}], \"tools\": [{\"function_declarations\": [{\"description\": \"\\n    Tool to call sql explorer (nl2sql) agent.\\n\\n    Args:\\n        question (str): Clear and specific Natural language question created from user request\\n\\n        tool_context (ToolContext): Object to provide context on the tool invocation. Used to save the SQL explorer\\n            agent output in the conversation state.\\n\\n    Returns:\\n        The output of the SQL Explorer Agent for the provided user question.\\n    \", \"name\": \"call_sql_explorer_agent\", \"parameters\": {\"properties\": {\"question\": {\"type\": \"STRING\"}}, \"required\": [\"question\"], \"type\": \"OBJECT\"}, \"response\": {\"type\": \"STRING\"}}, {\"description\": \"\\n    Tool to call visualization agent.\\n\\n    Args:\\n        question (str): Clear and specific Natural language question created from user request\\n\\n        tool_context (ToolContext): Object to provide context on the tool invocation. Used to save the visualization\\n            agent output in the conversation state.\\n\\n    Returns:\\n        The output of the Visualization Agent for the provided user question.\\n    \", \"name\": \"call_visualization_agent\", \"parameters\": {\"properties\": {\"question\": {\"type\": \"STRING\"}}, \"required\": [\"question\"], \"type\": \"OBJECT\"}, \"response\": {\"type\": \"STRING\"}}]}], \"labels\": {\"adk_agent_name\": \"dematic_chat_root_agent_turn\"}, \"thinking_config\": {\"include_thoughts\": false, \"thinking_budget\": 0}}, \"contents\": [{\"parts\": [{\"text\": \"What's the maximum inventory quantity for any SKU?\"}], \"role\": \"user\"}]}",
+            "gcp.vertex.agent.llm_response": "{\"content\":{\"parts\":[{\"function_call\":{\"args\":{\"question\":\"What is the maximum inventory quantity for any SKU?\"},\"name\":\"call_sql_explorer_agent\"}}],\"role\":\"model\"},\"finish_reason\":\"STOP\",\"usage_metadata\":{\"cache_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":1656}],\"cached_content_token_count\":1656,\"candidates_token_count\":18,\"candidates_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":18}],\"prompt_token_count\":1966,\"prompt_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":1966}],\"total_token_count\":1984,\"traffic_type\":\"ON_DEMAND\"}}",
+            "gen_ai.usage.input_tokens": 1966,
+            "gen_ai.usage.output_tokens": 18,
+            "gen_ai.response.finish_reasons": [
+                "stop"
+            ]
+        },
+        "parent_span_id": 11030740779353778201
+    },
+    {
+        "name": "call_llm",
+        "span_id": 6332127378033716527,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965372450556332,
+        "end_time": 1762965380650464489,
+        "attributes": {
+            "gen_ai.system": "gcp.vertex.agent",
+            "gen_ai.request.model": "gemini-2.5-flash",
+            "gcp.vertex.agent.invocation_id": "e-ae16ac9c-7bba-4966-b968-f79a1038fb64",
+            "gcp.vertex.agent.session_id": "session_e59f92fe-a616-4e40-9ba7-88b67b8bb46a",
+            "gcp.vertex.agent.event_id": "8195c66c-1fa7-4cf3-92c7-e454b14a46a2",
+            "gcp.vertex.agent.llm_request": "{\"model\": \"gemini-2.5-flash\", \"config\": {\"http_options\": {\"headers\": {\"x-goog-api-client\": \"google-adk/1.14.1 gl-python/3.12.9\", \"user-agent\": \"google-adk/1.14.1 gl-python/3.12.9\"}}, \"system_instruction\": \"\\nYou are \\\"Dematic Chat,\\\" a warehouse operations specialist assistant designed to help explore and visualize warehouse data from BigQuery. Your main goal is to understand user questions about warehouse operations and use tools to provide answers.\\n \\nYou understand warehouse terminology and operations: inventory management, order fulfillment, equipment performance, labor efficiency, receiving, storage, picking, packing, shipping, and returns. You can interpret questions about SKUs, throughput, cycle counts, OTIF performance, slotting, and operational metrics.\\n \\nWhen a user starts a conversation with a greeting, respond courteously and introduce yourself. For example, if the user says \\\"hello,\\\" you can say \\\"Hello! I am Dematic Chat, your warehouse operations assistant. I can help you explore warehouse data and create visualizations. How can I help you today?\\\"\\n \\n**Available Data Sources & Metadata:**\\n* Your primary approach is to use the `call_sql_explorer_agent`.\\n* Your secondary approach is to use the `call_visualization_agent`.\\n \\n**Specialized Sub-Agents (Tools):**\\n1.  `call_sql_explorer_agent`:\\n    * **Purpose:** Executes queries specifically against Google BigQuery datasets to answer warehouse operations questions.\\n    * **Input from You:** A clear, specific natural language question about warehouse data that needs to be answered from BigQuery. This question will be translated into SQL for BigQuery by the `call_sql_explorer_agent`.\\n \\n2.  `call_visualization_agent`:\\n    * **Purpose:** Creates visualizations from warehouse data. **This tool can only generate 'bar chart' and 'line chart'.**\\n    * **Input from You:** A clear, specific natural language question that:\\n        - **MUST include the actual data values to be plotted** (e.g., \\\"Create a bar chart with the following data: Product A has 150 units, Product B has 200 units, Product C has 175 units\\\")\\n        - Specifies what should be represented\\n        - Includes the chart type if the user requested one, otherwise the agent will choose\\n    * **CRITICAL:** The visualization agent cannot access the database. You MUST provide all data values explicitly in your question to the tool.\\n \\n**Core Workflow & Decision Making:**\\n \\n1.  **Analyze User Question:**\\n    * Carefully analyze the user's input to understand what warehouse data they are seeking.\\n    * Interpret warehouse business language into data requirements.\\n \\n2.  **Tool Invocation for Data Retrieval and Visualization:**\\n    * **Your primary rule is to ALWAYS use `call_sql_explorer_agent` to get data from the database.** Do not rely on your own knowledge.\\n    * **CRITICAL: NEVER make up, hallucinate, or generate fake data.** If a user asks for information, you do not know the answer. Your only job is to call the `call_sql_explorer_agent` to find out.\\n\\n    * **For any request that requires a chart or visualization:**\\n        1.  **Check for available data first.** Before calling any tools, you must determine if you have the necessary data points.\\n            *   Review the user's current message and the **last 3 turns** of the conversation history.\\n            *   Look for **concrete, relevant and usable data values** suitable for plotting. It does not matter if this data was provided by the user or if it was the result of a successful tool call.\\n        2.  **Decide the next step:**\\n            *   If you find usable data points in the recent context (last 3 turns), you can call `call_visualization_agent` directly. **You MUST include all the specific data values in your question to the visualization agent**.\\n            *   If you cannot find any usable data points, you MUST call `call_sql_explorer_agent` first to retrieve the data, and THEN call `call_visualization_agent` with all the retrieved data values explicitly included in your question.\\n\\n    * **Do not try to be smart and guess the data.**\\n\\n3.  **Synthesize and Respond:**\\n    * **CRITICAL: You MUST ALWAYS provide a natural language response. Never end your turn without generating text for the user.**\\n    * After the tool call is complete, it returns a response.\\n    * If the response from the tool contains data or results, present them in a clear natural language format.\\n    * Focus on providing the information in a user-friendly way - use lists, numbers, and clear explanations.\\n    * Do NOT include any JSON objects, code blocks, or technical formatting in your response.\\n    * Your response should be conversational and easy to understand.\\n \\n**Critical Rules & Constraints:**\\n \\n* **Mandatory `call_sql_explorer_agent` for Data:** If the user's question requires warehouse operational information from the data (e.g., \\\"What is the current inventory level?\\\", \\\"Show me OTIF performance\\\", \\\"List orders picked today\\\"), you must use `call_sql_explorer_agent`.\\n* **NEVER Proactively Chart:** You MUST NOT use the `call_visualization_agent` unless the user has explicitly asked for a \\\"chart\\\", \\\"plot\\\", \\\"graph\\\", \\\"diagram\\\" or similar terms. If the user only asks for data, only provide the data in text format. Do not create a chart unless asked.\\n* **NEVER Hallucinate Data:** You must NEVER make up, invent, or hallucinate data values. All data must come from `call_sql_explorer_agent`. If you do not have the data in front of you, you must call the tool to get it.\\n* **Handling Unsupported Chart Types**: If a user asks for a specific chart type other than a 'bar chart' or 'line chart', you must respond by saying, \\\"I can only create bar charts and line charts. Would one of those work for you?\\\" Do not call any tools. Do not mention this limitation unless the user asks for a chart you cannot create.\\n* **MANDATORY Two-Step Process for Visualizations:** Unless usable data points are already available in the user's request or within the last 3 conversation turns, you MUST first call `call_sql_explorer_agent` to get the data, and THEN call `call_visualization_agent` with that data. NO EXCEPTIONS.\\n* **ALWAYS Include Data Values for Visualization:** When calling `call_visualization_agent`, you MUST explicitly include all data values (labels, numbers, categories) in your question. The visualization agent has no access to the database or conversation history. Passing vague references like \\\"the data we just retrieved\\\" will fail.\\n* **Direct Schema/Metadata Answers (Limited):** You may only answer directly using your schema/metadata knowledge if the question is *strictly* about the data structure itself (e.g., \\\"What tables are available?\\\", \\\"What are the columns in the orders table?\\\"). If there's any ambiguity, or if the question implies needing actual warehouse data values, default to using `call_sql_explorer_agent`.\\n* **NEVER Generate SQL Code:** Your role is to formulate natural language questions for the `call_sql_explorer_agent`. It is the BigQuery agent's responsibility to generate and execute SQL.\\n* **Contextual Awareness:** You have project and dataset ID details within the session context. DO NOT ask the user for this information.\\n* **Handling Vague queries:** If the user's intent is too broad or vague (e.g., \\\"tell me about the warehouse\\\"), prompt for a more specific warehouse operations question before calling a tool. You can provide examples of questions they can ask, like \\\"For example, you can ask me to 'show OTIF performance for last month', 'what's the current inventory count', or 'create a bar chart of picks per hour by zone'.\\\"\\n* **Summarize All Tool Results:** If a tool is called and returns a valid result (even if that result is \\\"no data found\\\" or an error from the tool), summarize this outcome in your final response.\\n* **Focus on Tool Usage:** Your primary value is in correctly identifying the need for warehouse data retrieval or visualization, understanding warehouse operations requests, and formulating precise inputs for the tools.\\n\\n\\nYou are an agent. Your internal name is \\\"dematic_chat_root_agent_turn\\\".\", \"temperature\": 0.0, \"safety_settings\": [{\"category\": \"HARM_CATEGORY_HARASSMENT\", \"threshold\": \"BLOCK_LOW_AND_ABOVE\"}, {\"category\": \"HARM_CATEGORY_HATE_SPEECH\", \"threshold\": \"BLOCK_LOW_AND_ABOVE\"}, {\"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\", \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"}, {\"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\", \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"}], \"tools\": [{\"function_declarations\": [{\"description\": \"\\n    Tool to call sql explorer (nl2sql) agent.\\n\\n    Args:\\n        question (str): Clear and specific Natural language question created from user request\\n\\n        tool_context (ToolContext): Object to provide context on the tool invocation. Used to save the SQL explorer\\n            agent output in the conversation state.\\n\\n    Returns:\\n        The output of the SQL Explorer Agent for the provided user question.\\n    \", \"name\": \"call_sql_explorer_agent\", \"parameters\": {\"properties\": {\"question\": {\"type\": \"STRING\"}}, \"required\": [\"question\"], \"type\": \"OBJECT\"}, \"response\": {\"type\": \"STRING\"}}, {\"description\": \"\\n    Tool to call visualization agent.\\n\\n    Args:\\n        question (str): Clear and specific Natural language question created from user request\\n\\n        tool_context (ToolContext): Object to provide context on the tool invocation. Used to save the visualization\\n            agent output in the conversation state.\\n\\n    Returns:\\n        The output of the Visualization Agent for the provided user question.\\n    \", \"name\": \"call_visualization_agent\", \"parameters\": {\"properties\": {\"question\": {\"type\": \"STRING\"}}, \"required\": [\"question\"], \"type\": \"OBJECT\"}, \"response\": {\"type\": \"STRING\"}}]}], \"labels\": {\"adk_agent_name\": \"dematic_chat_root_agent_turn\"}, \"thinking_config\": {\"include_thoughts\": false, \"thinking_budget\": 0}}, \"contents\": [{\"parts\": [{\"text\": \"What's the maximum inventory quantity for any SKU?\"}], \"role\": \"user\"}, {\"parts\": [{\"function_call\": {\"args\": {\"question\": \"What is the maximum inventory quantity for any SKU?\"}, \"name\": \"call_sql_explorer_agent\"}}], \"role\": \"model\"}, {\"parts\": [{\"function_response\": {\"name\": \"call_sql_explorer_agent\", \"response\": {\"result\": \"The maximum inventory quantity for any SKU is 55,470.\"}}}], \"role\": \"user\"}]}",
+            "gcp.vertex.agent.llm_response": "{\"content\":{\"parts\":[{\"text\":\"The maximum inventory quantity for any SKU is 55,470.\\n\"}],\"role\":\"model\"},\"finish_reason\":\"STOP\",\"usage_metadata\":{\"cache_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":1641}],\"cached_content_token_count\":1641,\"candidates_token_count\":17,\"candidates_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":17}],\"prompt_token_count\":2008,\"prompt_tokens_details\":[{\"modality\":\"TEXT\",\"token_count\":2008}],\"total_token_count\":2025,\"traffic_type\":\"ON_DEMAND\"}}",
+            "gen_ai.usage.input_tokens": 2008,
+            "gen_ai.usage.output_tokens": 17,
+            "gen_ai.response.finish_reasons": [
+                "stop"
+            ]
+        },
+        "parent_span_id": 11030740779353778201
+    },
+    {
+        "name": "agent_run [dematic_chat_root_agent_turn]",
+        "span_id": 11030740779353778201,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965353357604962,
+        "end_time": 1762965380667695208,
+        "attributes": {},
+        "parent_span_id": 12976129300303190843
+    },
+    {
+        "name": "invocation",
+        "span_id": 12976129300303190843,
+        "trace_id": 25133741494358289416544677066258772777,
+        "start_time": 1762965353334433284,
+        "end_time": 1762965380667771696,
+        "attributes": {},
+        "parent_span_id": null
+    }
+]

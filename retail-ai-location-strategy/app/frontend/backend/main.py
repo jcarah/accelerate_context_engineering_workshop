@@ -43,9 +43,13 @@ project_root = app_dir.parent  # retail-ai-location-strategy/
 sys.path.insert(0, str(project_root))
 
 # Load environment variables from app/.env
-env_path = app_dir / ".env"
+env_path = project_root / ".env"
+print(env_path)
 if env_path.exists():
     load_dotenv(env_path)
+    print("Loaded")
+else:
+    print("Error loading env")
 
 # Import AG-UI middleware (CopilotKit official package)
 from ag_ui_adk import ADKAgent, add_adk_fastapi_endpoint

@@ -1,0 +1,270 @@
+{
+    "metric_prefix": "",
+    "metrics":{
+    "end_to_end_success": {
+        "description": "Deterministic metric: End-to-end execution success from RAG->SQL->BQ. Binary pass/fail.",
+        "rubric": "1 (Success): All stages completed successfully. 0 (Failure): One or more stages failed.",
+        "threshold": 1.0,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"]
+    },
+    "sql_execution_success": {
+        "description": "Deterministic metric: BigQuery SQL execution success. Binary pass/fail.",
+        "rubric": "1 (Success): SQL query executed without errors. 0 (Failure): SQL query failed to execute.",
+        "threshold": 1.0,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"]
+    },
+    "rag_retrieval_success": {
+        "description": "Deterministic metric: RAG retrieval success. Binary pass/fail.",
+        "rubric": "1 (Success): RAG successfully retrieved tables, columns, or examples. 0 (Failure): RAG failed to retrieve any relevant context.",
+        "threshold": 1.0,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"]
+    },
+    "sql_generation_success": {
+        "description": "Deterministic metric: SQL generation success. Binary pass/fail.",
+        "rubric": "1 (Success): SQL query was generated. 0 (Failure): No SQL query was generated.",
+        "threshold": 1.0,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"]
+    },
+    "response_generation_success": {
+        "description": "Deterministic metric: Final NL response generation success. Binary pass/fail.",
+        "rubric": "1 (Success): A natural language response was generated. 0 (Failure): No final response was generated.",
+        "threshold": 1.0,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"]
+    },
+    "token_usage": {
+        "description": "Informational metric: Track token usage and estimated cost.",
+        "rubric": "Tracks total tokens, prompt tokens, completion tokens, and estimated cost in USD.",
+        "threshold": null,
+        "range": "N/A",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"]
+    },
+    "rag_groundedness": {
+        "description": "A metric that answers the question 'Is the generated SQL using the context?'",
+        "rubric": "1 (Grounded): The SQL query exclusively uses tables and columns from the provided context. 0 (Not Grounded): The SQL query uses tables or columns not listed in the context.",
+        "threshold": 0.6,
+        "range": "[0, 1]",
+        "metric_type": "llm",
+        "agents": ["sql_explorer"],
+        "template": "You are an expert in SQL. Your task is to evaluate if a generated SQL query is grounded in the provided context. The context includes:\n- Relevant tables\n- Relevant columns\n- Similar prompt/SQL query pairs.\n\nAssign a score from 0 to 1, where 1 is fully grounded and 0 is not grounded at all. You can use values in between.\n\n### Criteria:\n- The SQL query must only use tables and columns present in the 'Context'.\n- The SQL query should be similar to the SQL queries retrieved and displayed in the 'Context'.\n\n### Rating Rubric:\n1: The SQL query exclusively uses tables, columns from the provided context, and the generated SQL is very similar to the provided queries in the context.\n0: The SQL query uses tables or columns not listed in the context, and it differs completely to the provided examples,\n\nProvide a step-by-step explanation for your score.\n\n# User Inputs and AI-generated Response\n## User Inputs\n### User Prompt\n{prompt}\n\n### Context\n{context}\n\n## AI-generated Response\n### SQL Query\n{response}",
+        "dataset_mapping": {
+            "prompt": {"source_column": "user_inputs"},
+            "context": {
+                "template": "Relevant Tables: {sql_explorer_rag_relevant_tables} Relevant Columns: {sql_explorer_rag_relevant_columns} Similar Question/Answers: {sql_explorer_rag_example_queries}",
+                "source_columns": ["sql_explorer:rag_relevant_tables", "sql_explorer:rag_relevant_columns", "sql_explorer:rag_example_queries"]
+            },
+            "response": {"source_column": "sql_explorer:generated_sql"}
+        }
+    },
+    "correctness": {
+        "description": "Assess if the answer is factually correct and directly addresses the user's question, free of major inaccuracies or omissions.",
+        "rubric": "1: The answer is completely incorrect or irrelevant.\n2: The answer is partially correct but contains significant inaccuracies or omissions.\n3: The answer is mostly correct but has minor inaccuracies or could be more complete.\n4: The answer is factually correct and directly answers the user's question.",
+        "threshold": 3.0,
+        "range": "[1, 4]",
+        "metric_type": "llm",
+        "agents": ["data_explorer_agent"],
+        "template": "You are a professional writing evaluator. Your job is to score writing responses for correctness. Assess if the response directly and effectively answers the user's question. Assign a score from 0 to 1, where 1 is completely correct and 0 is completely incorrect. ### Criteria: - The response must be relevant to the user's prompt and directly address the core question. ### Rating Rubric: 1 (Completely Correct): The response is entirely relevant and provides clear, direct information. 0 (Completely Incorrect): The response is completely irrelevant. ### Evaluation Steps: 1. Assess the relevance of the response to the instruction. 2. Score based on the rubric. Provide a step-by-step explanation for your score. # User Inputs and AI-generated Response ## User Inputs ### Prompt {prompt} ## AI-generated Response {response}",
+        "dataset_mapping": {
+            "prompt": {"source_column": "user_inputs"},
+            "response": {"source_column": "natural_language_response"}
+        }
+    },
+    "response_completeness": {
+        "description": "Evaluate if the answer provides a comprehensive response to the user's query, addressing all sub-parts and implicit questions.",
+        "rubric": "1: The answer is incomplete and misses the main point of the question.\n2: The answer addresses some, but not all, parts of the question.\n3: The answer addresses all the main parts of the question but could be more detailed.\n4: The answer is fully comprehensive and addresses all explicit and implicit aspects of the question.",
+        "threshold": 3.0,
+        "range": "[1, 4]",
+        "metric_type": "llm",
+        "agents": ["data_explorer_agent"],
+        "template": "You are a professional writing evaluator. Your job is to score writing responses for correctness. Assess if the response directly and effectively answers the user's question. Assign a score from 0 to 1, where 1 is completely correct and 0 is completely incorrect. ### Criteria: - The response must be relevant to the user's prompt and directly address the core question. ### Rating Rubric: 1 (Completely Correct): The response is entirely relevant and provides clear, direct information. 0 (Completely Incorrect): The response is completely irrelevant. ### Evaluation Steps: 1. Assess the relevance of the response to the instruction. 2. Score based on the rubric. Provide a step-by-step explanation for your score. # User Inputs and AI-generated Response ## User Inputs ### Prompt {prompt} ## AI-generated Response {response}",
+        "dataset_mapping": {
+            "prompt": {"source_column": "user_inputs"},
+            "response": {"source_column": "natural_language_response"}
+        }
+    },
+    "response_conciseness": {
+        "description": "Assess if the answer is concise and to the point, avoiding unnecessary jargon or verbosity.",
+        "rubric": "1: The answer is overly verbose and contains a lot of irrelevant information.\n2: The answer is somewhat verbose but generally understandable.\n3: The answer is mostly concise but could be slightly more direct.\n4: The answer is clear, concise, and directly to the point.",
+        "threshold": 3.0,
+        "range": "[1, 4]",
+        "metric_type": "llm",
+        "agents": ["data_explorer_agent"],
+        "template": "You are a professional writing evaluator. Your job is to score writing responses for correctness. Assess if the response directly and effectively answers the user's question. Assign a score from 0 to 1, where 1 is completely correct and 0 is completely incorrect. ### Criteria: - The response must be relevant to the user's prompt and directly address the core question. ### Rating Rubric: 1 (Completely Correct): The response is entirely relevant and provides clear, direct information. 0 (Completely Incorrect): The response is completely irrelevant. ### Evaluation Steps: 1. Assess the relevance of the response to the instruction. 2. Score based on the rubric. Provide a step-by-step explanation for your score. # User Inputs and AI-generated Response ## User Inputs ### Prompt {prompt} ## AI-generated Response {response}",
+        "dataset_mapping": {
+            "prompt": {"source_column": "user_inputs"},
+            "response": {"source_column": "natural_language_response"}
+        }
+    },
+    "format_understandability": {
+        "description": "A metric that answers the question 'Is the response well-formatted and easy to understand?'",
+        "rubric": "1 (Excellent): Exceptionally clear, well-formatted, and easy to understand. 0 (Very Poor): Incomprehensible or completely unformatted.",
+        "threshold": 0.6,
+        "range": "[0, 1]",
+        "metric_type": "llm",
+        "agents": ["data_explorer_agent"],
+        "template": "You are a communication expert. Evaluate the format and understandability of the given natural language response. The response should be clear, well-structured, and easy for a non-technical user to understand. Assign a score from 0 to 1, where 1 is excellent and 0 is very poor. ### Criteria: - Clarity and conciseness. - Logical structure and formatting (e.g., use of lists, tables). - Ease of understanding for a general audience.\n- 'There is no clear SKU naming, but the quantity is x.' is prefered than 'sku:null, quantity:x'.\n\n### Rating Rubric:\n1 (Excellent): Exceptionally clear, well-formatted, and easy to understand.\n0 (Very Poor): Incomprehensible or completely unformatted.\n\n### Evaluation Steps:\n1. Assess the clarity, structure, and readability of the response.\n2. Score based on the rubric.\n\nProvide a step-by-step explanation for your score.\n\n# AI-generated Response\n## AI-generated Response\n{response}",
+        "dataset_mapping": {
+            "response": {"source_column": "natural_language_response"}
+        }
+    },
+    "data_completeness": {
+        "description": "A metric that answers the question 'Is the agent returning data to the user, or is it empty?'",
+        "rubric": "1 (Complete): The agent returned data. 0 (Incomplete): The agent returns 'no data exists' or tables with null values.",
+        "threshold": 0.5,
+        "range": "[0, 1]",
+        "metric_type": "llm",
+        "agents": ["data_explorer_agent"],
+        "template": "You are a data completeness evaluator. Your task is to determine if the agent's response contains data or indicates that no data is available. Assign a score of 1 if the response contains data, and 0 if it indicates that no data exists or returns empty/null values.\n\n### Criteria:\n- A score of 1 (Complete) should be given if the response includes any data, even if it's a single value.\n- A score of 0 (Incomplete) should be given if the response explicitly states 'no data exists', 'no results found', or returns an empty table or null values.\n\n### Evaluation Steps:\n1. Analyze the AI-generated response.\n2. Determine if the response contains any data or if it indicates a lack of data.\n3. Assign a score of 1 for data presence or 0 for data absence.\n\nProvide a step-by-step explanation for your score.\n\n# AI-generated Response\n## AI-generated Response\n{response}",
+        "dataset_mapping": {
+            "response": {"source_column": "natural_language_response"}
+        }
+    },
+    "rag_table_recall": {
+        "description": "A metric that answers the question 'Did the RAG system retrieve all the relevant tables?'",
+        "rubric": "Recall is the ratio of relevant tables retrieved to the total number of relevant tables.",
+        "threshold": 0.6,
+        "range": "[0, 1]",
+        "metric_type": "llm",
+        "agents": ["sql_explorer"],
+        "template": "You are a SQL expert. Your task is to calculate the recall of tables retrieved by a RAG system compared to a reference SQL query. Recall is the ratio of relevant tables retrieved to the total number of relevant tables. Assign a score from 0 to 1. ### Criteria: - Identify all unique tables in the 'Reference SQL'. - Count how many of these tables are present in the 'Retrieved Tables'. ### Rating Rubric: - Score = (Number of matching tables) / (Total number of tables in Reference SQL) ### Evaluation Steps: 1. Extract all table names from the 'Reference SQL'. 2. Extract all table names from the 'Retrieved Tables'. 3. Calculate the recall score. Provide a step-by-step explanation for your score. # User Inputs and AI-generated Response ## User Inputs ### Reference SQL {reference} ## AI-generated Response ### Retrieved Tables {response}",
+        "dataset_mapping": {
+            "reference": {"source_column": "sql_explorer:reference_sql"},
+            "response": {"source_column": "sql_explorer:rag_relevant_tables"}
+        }
+    },
+    "rag_column_recall": {
+        "description": "A metric that answers the question 'Did the RAG system retrieve all the relevant columns?'",
+        "rubric": "Recall is the ratio of relevant columns retrieved to the total number of relevant columns.",
+        "threshold": 0.6,
+        "range": "[0, 1]",
+        "metric_type": "llm",
+        "agents": ["sql_explorer"],
+        "template": "You are a SQL expert. Your task is to calculate the recall of columns retrieved by a RAG system compared to a reference SQL query. Recall is the ratio of relevant columns retrieved to the total number of relevant columns. Assign a score from 0 to 1. ### Criteria: - Identify all unique columns in the 'Reference SQL'. - Count how many of these columns are present in the 'Retrieved Columns'. ### Rating Rubric: - Score = (Number of matching columns) / (Total number of columns in Reference SQL) ### Evaluation Steps: 1. Extract all column names from the 'Reference SQL'. 2. Extract all column names from the 'Retrieved Columns'. 3. Calculate the recall score. Provide a step-by-step explanation for your score. # User Inputs and AI-generated Response ## User Inputs ### Reference SQL {reference} ## AI-generated Response ### Retrieved Columns {response}",
+        "dataset_mapping": {
+            "reference": {"source_column": "sql_explorer:reference_sql"},
+            "response": {"source_column": "sql_explorer:rag_relevant_columns"}
+        }
+    },
+    "sql_syntax_similarity": {
+        "description": "A metric that measures the syntactical similarity between the generated and reference SQL queries.",
+        "rubric": "1 (Identical): The generated SQL is identical or near-identical to the reference. 0 (Different): The SQL queries are completely different.",
+        "threshold": 0.8,
+        "range": "[0, 1]",
+        "metric_type": "llm",
+        "agents": ["sql_explorer"],
+        "template": "You are a SQL expert. Compare a generated SQL query with a reference SQL query and evaluate their syntactical similarity. Assign a score from 0 to 1, where 1 is identical and 0 is completely different. ### Criteria: - Syntactic similarity between the generated and reference SQL. ### Rating Rubric: 1: The generated SQL is identical or near-identical to the reference. 0: The SQL queries are completely different. Provide a step-by-step explanation for your score. # User Inputs and AI-generated Response ## User Inputs ### Reference SQL {reference} ## AI-generated Response ### Generated SQL {response}",
+        "dataset_mapping": {
+            "reference": {"source_column": "sql_explorer:reference_sql"},
+            "response": {"source_column": "sql_explorer:generated_sql"}
+        }
+    },
+    "bq_response_similarity": {
+        "description": "Assess if the BigQuery response from the agent-generated SQL is semantically similar to the BigQuery response from the reference SQL.",
+        "rubric": "1: The agent's BigQuery response is completely different from the reference response and does not answer the question.\n2: The agent's BigQuery response is partially similar but contains significant discrepancies.\n3: The agent's BigQuery response is mostly similar to the reference response with minor differences.\n4: The agent's BigQuery response is semantically identical or very close to the reference response.",
+        "threshold": 3.0,
+        "range": "[1, 4]",
+        "metric_type": "llm",
+        "agents": ["sql_explorer"],
+        "template": "You are a data analysis expert. Compare a generated BigQuery response with a reference BigQuery response and evaluate their similarity. Assign a score from 0 to 1, where 1 is identical and 0 is completely different. ### Criteria: - Equivalence of the BigQuery raw responses.\n- The raw response might be in JSON format, work with that.\n\n### Rating Rubric:\n1: The generated BQ response is identical to the reference.\n0: The BQ responses are completely different.\n\nProvide a step-by-step explanation for your score.\n\n# User Inputs and AI-generated Response\n## User Inputs\n### Reference BQ Response\n{reference}\n\n## AI-generated Response\n### Generated BQ Response\n{prediction}",
+        "dataset_mapping": {
+            "question": {
+                "source_column": "user_inputs"
+            },
+            "prediction": {
+                "source_column": "sql_explorer:sql_execution_result"
+            },
+            "reference": {
+                "source_column": "sql_explorer:reference_bq_raw_response"
+            }
+        }
+    },
+    "sql_similarity": {
+        "description": "Evaluate if the agent-generated SQL is semantically similar to the reference SQL.",
+        "rubric": "1: The generated SQL is completely incorrect and fails to capture the intent of the question.\n2: The generated SQL has some correct elements but contains significant errors or misses key logic.\n3: The generated SQL is mostly correct and captures the main intent, but has minor errors or could be optimized.\n4: The generated SQL is semantically equivalent to the reference SQL and correctly answers the question.",
+        "threshold": 3.0,
+        "range": "[1, 4]",
+        "metric_type": "llm",
+        "agents": ["sql_explorer"],
+        "template": "You are a SQL expert. Compare a generated SQL query with a reference SQL query and evaluate their syntactical similarity. Assign a score from 0 to 1, where 1 is identical and 0 is completely different. ### Criteria: - Syntactic similarity between the generated and reference SQL. ### Rating Rubric: 1: The generated SQL is identical or near-identical to the reference. 0: The SQL queries are completely different. Provide a step-by-step explanation for your score. # User Inputs and AI-generated Response ## User Inputs ### Reference SQL {reference} ## AI-generated Response ### Generated SQL {prediction}",
+        "dataset_mapping": {
+            "question": {
+                "source_column": "user_inputs"
+            },
+            "prediction": {
+                "source_column": "sql_explorer:generated_sql"
+            },
+            "reference": {
+                "source_column": "sql_explorer:reference_sql"
+            }
+        }
+    },
+    "deterministic_accuracy": {
+        "description": "Primary executive metric: Composite deterministic evaluation combining SQL correctness and NL groundedness. Measures both (1) whether agent SQL results match reference SQL results (data correctness) and (2) whether NL response is grounded in agent's SQL output (internal consistency). Both components must pass for overall success.",
+        "rubric": "Binary metric: 1.0 if SQL result exact match passes AND NL SQL output groundedness >= 0.8, 0.0 otherwise. Provides single executive metric while preserving sub-scores for debugging.",
+        "threshold": 1.0,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"],
+        "template": "N/A - This is a deterministic metric",
+        "dataset_mapping": {
+            "question": {
+                "source_column": "user_inputs"
+            },
+            "prediction": {
+                "source_column": "sql_explorer:sql_execution_result"
+            },
+            "reference": {
+                "source_column": "sql_explorer:reference_bq_raw_response"
+            }
+        }
+    },
+    "sql_result_exact_match": {
+        "description": "Deterministic evaluation of whether the agent's SQL execution results exactly match the reference SQL execution results. This provides objective pass/fail measurement by directly comparing the data returned by both queries.",
+        "rubric": "Binary metric: 1.0 if the agent's SQL results are identical to the reference SQL results (row count and data), 0.0 otherwise. Row order is ignored for comparison.",
+        "threshold": 1.0,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"],
+        "template": "N/A - This is a deterministic metric",
+        "dataset_mapping": {
+            "question": {
+                "source_column": "user_inputs"
+            },
+            "prediction": {
+                "source_column": "sql_explorer:sql_execution_result"
+            },
+            "reference": {
+                "source_column": "sql_explorer:reference_bq_raw_response"
+            }
+        }
+    },
+    "nl_sql_output_groundedness": {
+        "description": "Deterministic evaluation of whether the agent's natural language response is grounded in its own SQL execution results. This ensures internal consistency: the NL response should contain key information from the SQL output, not hallucinated data.",
+        "rubric": "Binary metric: 1.0 if >= 80% of key values from SQL output are found in the NL response (adaptive threshold: 50% for result sets > 100 values), 0.0 otherwise.",
+        "threshold": 0.8,
+        "range": "[0, 1]",
+        "metric_type": "deterministic",
+        "agents": ["sql_explorer"],
+        "accuracy_threshold": 0.8,
+        "template": "N/A - This is a deterministic metric",
+        "dataset_mapping": {
+            "prediction": {
+                "source_column": "sql_explorer:sql_execution_result"
+            },
+            "response": {
+                "source_column": "nl_final_response_text"
+            }
+        }
+    }
+}
+}

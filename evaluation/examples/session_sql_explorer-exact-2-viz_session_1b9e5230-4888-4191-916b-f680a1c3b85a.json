@@ -1,0 +1,553 @@
+{
+    "id": "session_1b9e5230-4888-4191-916b-f680a1c3b85a",
+    "appName": "data_explorer_agent",
+    "userId": "eval_user",
+    "state": {
+        "dataset_id": "superior_uniform_eudora_ar",
+        "sql_explorer:generated_sql": "SELECT operator_name, COUNT(DISTINCT pick_task_code) AS activePickOrders FROM `gold_pick` WHERE DATE(event_timestamp_utc) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) AND event_timestamp_utc > '1970-01-01' GROUP BY operator_name ORDER BY COUNT(DISTINCT pick_task_code) DESC LIMIT 5",
+        "sql_explorer:sql_execution_result": "[{\"operator_name\":\"eud202337\",\"activePickOrders\":33326},{\"operator_name\":\"EUD202308\",\"activePickOrders\":29814},{\"operator_name\":\"009230\",\"activePickOrders\":28815},{\"operator_name\":\"RE5TQITRX\",\"activePickOrders\":27659},{\"operator_name\":\"EUD202360\",\"activePickOrders\":24451}]",
+        "sql_explorer:rag_relevant_tables": [
+            {
+                "rank": 1,
+                "table_name": "gold_sort",
+                "table_description": "Full Table Name: gold_sort | Table Description: Consumption ready, deduplicated data for optimized consumption | Table Columns List: intended_physical_destination_code, __raw_message_ingestion_time, tenant_id, facility_id, source_system, source_system_version, batch_uid, message_uid, event_type, dispatch_request_date_time_local, dispatch_request_timestamp_utc, dispatch_assignment_date_time_local, dispatch_assignment_timestamp_utc, disposition_date_time_local, disposition_timestamp_utc, scanner_code, equipment_code, tracking_code, barcode_scanned, secondary_barcode_scanned, intended_destination_code, intended_destination_type, actual_logical_destination_code, actual_physical_destination_code, dispatch_assignment_status_code, disposition_status_code, disposition_bit_status_code, subsystem_code, qc_ind, third_party_tenant_name, recirculation_count, recirculation_reason, order_code, wave_code, induction_lane_code, terminal_code, operator_code, disposition_status_category_code, dispatch_success_count, dispatch_error_count, dispatch_total_count, disposition_success_count, disposition_error_count, recirculation_destination_ind, record_timestamp_offset, __message_hash, __row_hash, timezone_offset_from_utc, __silver_insert_timestamp, disposition_total_count, etl_create_timestamp",
+                "vector_distance": 0.45342890739588404,
+                "sematic_score": 0.004900000058114529,
+                "partition_column": "disposition_timestamp_utc",
+                "partition_column_type": "TIMESTAMP",
+                "partition_required": true
+            },
+            {
+                "rank": 2,
+                "table_name": "gold_pick_activity",
+                "table_description": "Full Table Name: gold_pick_activity | Table Description: Parsed and standardized Pick Activity event data | Table Columns List: tenant_id, etl_create_timestamp, __silver_insert_timestamp, area_code, group_name, area_name, technology_vendor, work_type_style, work_type_code, __raw_message_ingestion_time, timezone_offset_from_utc, handling_unit_usage_type, operator_code, event_timestamp_utc, event_date_time_local, event_code, third_party_tenant_name, merge_zone_end_timestamp_utc, merge_zone_end_date_time_local, merge_zone_start_timestamp_utc, merge_zone_start_date_time_local, handling_unit_train_code, apportioned_merge_zone_duration_seconds, primary_merge_zone_code, induction_method, handling_unit_type, workflow_code, operation_mode, sku_code, cart_code, cart_key, handling_unit_key, handling_unit_code, technology_code, workstation_code, group_code, induction_zone_code, zone_code, operator_name, source_system_version, source_system, facility_id",
+                "vector_distance": 0.4515333501547076,
+                "sematic_score": 0.004000000189989805,
+                "partition_column": "event_timestamp_utc",
+                "partition_column_type": "TIMESTAMP",
+                "partition_required": false
+            },
+            {
+                "rank": 3,
+                "table_name": "gold_pick_task",
+                "table_description": "Full Table Name: gold_pick_task | Table Description: Parsed and standardized Pick Order/Task event data | Table Columns List: fulfillment_handling_type, tenant_id, facility_id, source_system, source_system_version, batch_uid, message_uid, event_type, pick_task_code, pick_task_type, pick_task_category, wave_code, facility_order_code, put_wall_ind, location_code, zone_code, group_code, tenant_name, event_code, event_date_time_local, event_timestamp_utc, operator_name, date_time_offset, operator_code, total_line_count, total_quantity_count, vas_requirement_ind, urgency, packing_requirement, latest_staging_date_time_local, latest_staging_timestamp_utc, order_channel, fulfillment_order_code, client, timezone_offset_from_utc, __raw_message_ingestion_time, area_name, group_name, area_code, __silver_insert_timestamp, etl_create_timestamp",
+                "vector_distance": 0.45245469143542044,
+                "sematic_score": 0.0038999998942017555,
+                "partition_column": "event_timestamp_utc",
+                "partition_column_type": "TIMESTAMP",
+                "partition_required": true
+            },
+            {
+                "rank": 4,
+                "table_name": "gold_pick",
+                "table_description": "Full Table Name: gold_pick | Table Description: Consumption ready, deduplicated pick event data, along with pick order data, augmented with dimensional data for optimized consumption.The Gold_Pick table is specifically designed to manage order-related data for products that have been requested by customers. It tracks the quantities of products that have been ordered, the packing status of each order, and the shipping details, providing a comprehensive view of the order fulfillment process. | Table Columns List: facility_code, etl_create_timestamp, remaining_qty, workflow_code, confirmation_code, __silver_insert_timestamp, __raw_message_ingestion_time, amcap_qualification_indicator, preferred_fulfillment_handling_type, base_uom, supplier_code, hazard_classification, velocity_classification, preferred_handling_unit_type, item_shelf_life_in_days, max_units_per_pick, palletizing_mode, height, width, length, total_volume, total_weight, item_upc, item_sku, item_name, item_code, workstation_terminal_code, operator_name, technology_vendor, technology_code, activity_type_code, confirmation_reason_code, handling_unit_train_code, source_handling_unit_type, destination_handling_unit_type, work_type_style, work_type_code, batch_pick_code, destination_handling_unit_code, source_handling_unit_code, task_line_complete_ind, induction_zone_code, workstation_code, subgroup_name, group_name, area_name, facility_name, subgroup_code, group_code, area_code, subsystem_code, fulfillment_order_code, event_code, source_inventory_location_code, source_handling_unit_location_code, cart_code, cart_key, location_code, operator_code, facility_order_line_code, pick_task_total_qty_expected, pick_task_line_count_expected, pick_task_order_channel, pick_task_latest_staging_timestamp_utc, pick_task_latest_staging_date_time_local, pick_task_packing_requirement, pick_task_priority, pick_task_value_added_service, pick_task_fulfillment_handling_type, pick_task_category, pick_task_type, put_wall_flg, date_time_offset, tenant_name, sku_product_code, destination_handling_unit_key, client_code, event_timestamp_utc, event_date_time_local, facility_order_code, pick_task_line_code, pick_task_code, source_system, facility_id, tenant_id, new_container_qty, requested_qty, shorted_qty, skipped_qty, UOM, picked_qty, zone_code",
+                "vector_distance": 0.46103208685086683,
+                "sematic_score": 0.000699999975040555,
+                "partition_column": "event_timestamp_utc",
+                "partition_column_type": "TIMESTAMP",
+                "partition_required": true
+            },
+            {
+                "rank": 5,
+                "table_name": "gold_sku_features_inference",
+                "table_description": "Full Table Name: gold_sku_features_inference | Table Description: sku demand inference datastream | Table Columns List: t_plus_2_order_line_demand, t_plus_1_demand_reveal_time, long_term_historical_data_span, short_term_historical_data_span, long_term_zero_order_line_demand_intermittency, short_term_zero_order_line_demand_intermittency, long_term_non_zero_order_line_demand, short_term_non_zero_order_line_demand, long_term_daily_order_line_demand, short_term_daily_order_line_demand, confidence_order_line_demand, long_term_zero_quantity_demand_intermittency, short_term_zero_quantity_demand_intermittency, long_term_non_zero_quantity_demand, short_term_non_zero_quantity_demand, long_term_daily_quantity_demand, short_term_daily_quantity_demand, known_quantity_demand, confidence_quantity_demand, t_plus_5_order_line_demand, t_plus_4_order_line_demand, t_plus_3_order_line_demand, t_plus_1_order_line_demand_UCL, t_plus_1_order_line_demand_LCL, t_plus_1_order_line_demand, t_plus_5_quantity_demand, t_plus_4_quantity_demand, t_plus_3_quantity_demand, t_plus_2_quantity_demand, t_plus_1_quantity_demand_UCL, t_plus_1_quantity_demand_LCL, t_plus_1_quantity_demand, sku, inference_datetime, instigator_id, inference_id",
+                "vector_distance": 0.46230869376569944,
+                "sematic_score": 9.999999747378752e-05,
+                "partition_column": "inference_datetime",
+                "partition_column_type": "TIMESTAMP",
+                "partition_required": false
+            }
+        ],
+        "sql_explorer:rag_relevant_columns": [
+            {
+                "rank": 1,
+                "column_name": "operator_name",
+                "table_name": "gold_pick",
+                "column_description": "Column Name: operator_name | Column Data Type: STRING | Column Description: The person (or operator, user, worker, etc.) who performed the work. | Table Name: gold_pick",
+                "vector_distance": 0.4691121086051086,
+                "sematic_score": 0.0502999983727932
+            },
+            {
+                "rank": 2,
+                "column_name": "operator_code",
+                "table_name": "gold_pick",
+                "column_description": "Column Name: operator_code | Column Data Type: STRING | Column Description: Unique key of the person who performed the work. Mandatory for LMA | Table Name: gold_pick",
+                "vector_distance": 0.4689639214025946,
+                "sematic_score": 0.031199999153614044
+            },
+            {
+                "rank": 3,
+                "column_name": "total_volume",
+                "table_name": "gold_pick",
+                "column_description": "Column Name: total_volume | Column Data Type: NUMERIC | Column Description: Total volume | Table Name: gold_pick",
+                "vector_distance": 0.4663827181211805,
+                "sematic_score": 0.02930000051856041
+            },
+            {
+                "rank": 4,
+                "column_name": "operator_code",
+                "table_name": "gold_pick_task",
+                "column_description": "Column Name: operator_code | Column Data Type: STRING | Column Description: Unique key of the person who performed the work. | Table Name: gold_pick_task",
+                "vector_distance": 0.4671676259148509,
+                "sematic_score": 0.0284000001847744
+            },
+            {
+                "rank": 5,
+                "column_name": "operator_name",
+                "table_name": "gold_pick_task",
+                "column_description": "Column Name: operator_name | Column Data Type: STRING | Column Description: Identifies the user who performed the action or event.\u00a0 This should indicate the operator who performed the pack out at the put wall and/or the pack station (if applicable) | Table Name: gold_pick_task",
+                "vector_distance": 0.4658075566751172,
+                "sematic_score": 0.02410000003874302
+            },
+            {
+                "rank": 6,
+                "column_name": "operator_code",
+                "table_name": "gold_pick_activity",
+                "column_description": "Column Name: operator_code | Column Data Type: STRING | Column Description: Unique key of the person who performed the work.\u00a0Mandatory for Person to Goods;\u00a0 | Table Name: gold_pick_activity",
+                "vector_distance": 0.4682637172478502,
+                "sematic_score": 0.02319999970495701
+            },
+            {
+                "rank": 7,
+                "column_name": "priority_code",
+                "table_name": "gold_facility_order",
+                "column_description": "Column Name: priority_code | Column Data Type: INT64 | Column Description: None | Table Name: gold_facility_order",
+                "vector_distance": 0.47030201737856725,
+                "sematic_score": 0.01720000058412552
+            },
+            {
+                "rank": 8,
+                "column_name": "order_type",
+                "table_name": "gold_wms_customer_order",
+                "column_description": "Column Name: order_type | Column Data Type: STRING | Column Description: The type of order | Table Name: gold_wms_customer_order",
+                "vector_distance": 0.47075398906232746,
+                "sematic_score": 0.016300000250339508
+            },
+            {
+                "rank": 9,
+                "column_name": "order_code",
+                "table_name": "gold_sort",
+                "column_description": "Column Name: order_code | Column Data Type: STRING | Column Description: The order that is associated with the sorted item | Table Name: gold_sort",
+                "vector_distance": 0.4659140795641247,
+                "sematic_score": 0.015300000086426735
+            },
+            {
+                "rank": 10,
+                "column_name": "carrier_code",
+                "table_name": "gold_wms_customer_order",
+                "column_description": "Column Name: carrier_code | Column Data Type: STRING | Column Description: The id code of the carrier | Table Name: gold_wms_customer_order",
+                "vector_distance": 0.46833287490247166,
+                "sematic_score": 0.014299999922513962
+            }
+        ],
+        "sql_explorer:rag_example_queries": [
+            {
+                "rank": 1,
+                "question": "Who are the top 5 best operators in last year based on the number of orders?",
+                "sql_query": "select  operator_name, COUNT(DISTINCT pick_task_code) AS activePickOrders FROM `gold_pick` where  date(event_timestamp_utc) >= DATE_SUB (CURRENT_DATE(),INTERVAL 1 year) group by operator_name order by COUNT(DISTINCT pick_task_code) desc limit 5;",
+                "vector_distance": 0.6652242887215897,
+                "sematic_score": 0.1437000036239624
+            },
+            {
+                "rank": 2,
+                "question": "Who are the top five operators names and what is their daily average rate of picks in last 90 days?",
+                "sql_query": "select  operator_name , round(count(*)/90) as operator_count FROM `gold_pick` where date(event_timestamp_utc) >=  date_sub(current_date(), INTERVAL 90 day) and  date(event_timestamp_utc) <  current_date() group by operator_name order by round(count(*)/90) desc limit 5;",
+                "vector_distance": 0.5964024011606414,
+                "sematic_score": 0.11550000309944153
+            },
+            {
+                "rank": 3,
+                "question": "How many operators have been working in last 1 month?",
+                "sql_query": "select count(distinct operator_name) as operator_count FROM `gold_pick` where date(event_timestamp_utc) >=  date_sub(current_date(), INTERVAL 1 month) and  date(event_timestamp_utc) <  current_date() ;",
+                "vector_distance": 0.5574699313774262,
+                "sematic_score": 0.051100000739097595
+            }
+        ],
+        "sql_explorer:status": "success",
+        "root:skip_llm": true,
+        "nl_final_response_text": "Here is a bar chart showing the top 5 operators based on the number of orders in the last year:\n\n*   eud202337: 33,326 orders\n*   EUD202308: 29,814 orders\n*   009230: 28,815 orders\n*   RE5TQITRX: 27,659 orders\n*   EUD202360: 24,451 orders"
+    },
+    "events": [
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "Who are the top 5 best operators in last year based on the number of orders? Plot the data in a bar chart."
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-e6adead4-3ad3-45a2-b7a3-f8ae2bf44e58",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "4ab77cae-04b0-4f10-a954-dc5d4b1ce01d",
+            "timestamp": 1762965370.90837
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "functionCall": {
+                            "id": "adk-4ccedc2b-0c76-4304-86c0-024d57c6ddb3",
+                            "args": {
+                                "question": "Who are the top 5 best operators in last year based on the number of orders?"
+                            },
+                            "name": "call_sql_explorer_agent"
+                        }
+                    }
+                ],
+                "role": "model"
+            },
+            "invocationId": "e-e6adead4-3ad3-45a2-b7a3-f8ae2bf44e58",
+            "author": "dematic_chat_root_agent_turn",
+            "actions": {
+                "stateDelta": {
+                    "temp:harmful_query_check_complete": true
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "cda87027-7f18-4221-9444-a0a064b07091",
+            "timestamp": 1762965370.920885
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "functionResponse": {
+                            "id": "adk-4ccedc2b-0c76-4304-86c0-024d57c6ddb3",
+                            "name": "call_sql_explorer_agent",
+                            "response": {
+                                "result": "The top 5 operators in the last year based on the number of orders are: eud202337 with 33,326 orders, EUD202308 with 29,814 orders, 009230 with 28,815 orders, RE5TQITRX with 27,659 orders, and EUD202360 with 24,451 orders."
+                            }
+                        }
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-e6adead4-3ad3-45a2-b7a3-f8ae2bf44e58",
+            "author": "dematic_chat_root_agent_turn",
+            "actions": {
+                "stateDelta": {
+                    "sql_explorer:generated_sql": "SELECT operator_name, COUNT(DISTINCT pick_task_code) AS activePickOrders FROM `gold_pick` WHERE DATE(event_timestamp_utc) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) AND event_timestamp_utc > '1970-01-01' GROUP BY operator_name ORDER BY COUNT(DISTINCT pick_task_code) DESC LIMIT 5",
+                    "sql_explorer:sql_execution_result": "[{\"operator_name\":\"eud202337\",\"activePickOrders\":33326},{\"operator_name\":\"EUD202308\",\"activePickOrders\":29814},{\"operator_name\":\"009230\",\"activePickOrders\":28815},{\"operator_name\":\"RE5TQITRX\",\"activePickOrders\":27659},{\"operator_name\":\"EUD202360\",\"activePickOrders\":24451}]",
+                    "sql_explorer:rag_relevant_tables": [
+                        {
+                            "rank": 1,
+                            "table_name": "gold_sort",
+                            "table_description": "Full Table Name: gold_sort | Table Description: Consumption ready, deduplicated data for optimized consumption | Table Columns List: intended_physical_destination_code, __raw_message_ingestion_time, tenant_id, facility_id, source_system, source_system_version, batch_uid, message_uid, event_type, dispatch_request_date_time_local, dispatch_request_timestamp_utc, dispatch_assignment_date_time_local, dispatch_assignment_timestamp_utc, disposition_date_time_local, disposition_timestamp_utc, scanner_code, equipment_code, tracking_code, barcode_scanned, secondary_barcode_scanned, intended_destination_code, intended_destination_type, actual_logical_destination_code, actual_physical_destination_code, dispatch_assignment_status_code, disposition_status_code, disposition_bit_status_code, subsystem_code, qc_ind, third_party_tenant_name, recirculation_count, recirculation_reason, order_code, wave_code, induction_lane_code, terminal_code, operator_code, disposition_status_category_code, dispatch_success_count, dispatch_error_count, dispatch_total_count, disposition_success_count, disposition_error_count, recirculation_destination_ind, record_timestamp_offset, __message_hash, __row_hash, timezone_offset_from_utc, __silver_insert_timestamp, disposition_total_count, etl_create_timestamp",
+                            "vector_distance": 0.45342890739588404,
+                            "sematic_score": 0.004900000058114529,
+                            "partition_column": "disposition_timestamp_utc",
+                            "partition_column_type": "TIMESTAMP",
+                            "partition_required": true
+                        },
+                        {
+                            "rank": 2,
+                            "table_name": "gold_pick_activity",
+                            "table_description": "Full Table Name: gold_pick_activity | Table Description: Parsed and standardized Pick Activity event data | Table Columns List: tenant_id, etl_create_timestamp, __silver_insert_timestamp, area_code, group_name, area_name, technology_vendor, work_type_style, work_type_code, __raw_message_ingestion_time, timezone_offset_from_utc, handling_unit_usage_type, operator_code, event_timestamp_utc, event_date_time_local, event_code, third_party_tenant_name, merge_zone_end_timestamp_utc, merge_zone_end_date_time_local, merge_zone_start_timestamp_utc, merge_zone_start_date_time_local, handling_unit_train_code, apportioned_merge_zone_duration_seconds, primary_merge_zone_code, induction_method, handling_unit_type, workflow_code, operation_mode, sku_code, cart_code, cart_key, handling_unit_key, handling_unit_code, technology_code, workstation_code, group_code, induction_zone_code, zone_code, operator_name, source_system_version, source_system, facility_id",
+                            "vector_distance": 0.4515333501547076,
+                            "sematic_score": 0.004000000189989805,
+                            "partition_column": "event_timestamp_utc",
+                            "partition_column_type": "TIMESTAMP",
+                            "partition_required": false
+                        },
+                        {
+                            "rank": 3,
+                            "table_name": "gold_pick_task",
+                            "table_description": "Full Table Name: gold_pick_task | Table Description: Parsed and standardized Pick Order/Task event data | Table Columns List: fulfillment_handling_type, tenant_id, facility_id, source_system, source_system_version, batch_uid, message_uid, event_type, pick_task_code, pick_task_type, pick_task_category, wave_code, facility_order_code, put_wall_ind, location_code, zone_code, group_code, tenant_name, event_code, event_date_time_local, event_timestamp_utc, operator_name, date_time_offset, operator_code, total_line_count, total_quantity_count, vas_requirement_ind, urgency, packing_requirement, latest_staging_date_time_local, latest_staging_timestamp_utc, order_channel, fulfillment_order_code, client, timezone_offset_from_utc, __raw_message_ingestion_time, area_name, group_name, area_code, __silver_insert_timestamp, etl_create_timestamp",
+                            "vector_distance": 0.45245469143542044,
+                            "sematic_score": 0.0038999998942017555,
+                            "partition_column": "event_timestamp_utc",
+                            "partition_column_type": "TIMESTAMP",
+                            "partition_required": true
+                        },
+                        {
+                            "rank": 4,
+                            "table_name": "gold_pick",
+                            "table_description": "Full Table Name: gold_pick | Table Description: Consumption ready, deduplicated pick event data, along with pick order data, augmented with dimensional data for optimized consumption.The Gold_Pick table is specifically designed to manage order-related data for products that have been requested by customers. It tracks the quantities of products that have been ordered, the packing status of each order, and the shipping details, providing a comprehensive view of the order fulfillment process. | Table Columns List: facility_code, etl_create_timestamp, remaining_qty, workflow_code, confirmation_code, __silver_insert_timestamp, __raw_message_ingestion_time, amcap_qualification_indicator, preferred_fulfillment_handling_type, base_uom, supplier_code, hazard_classification, velocity_classification, preferred_handling_unit_type, item_shelf_life_in_days, max_units_per_pick, palletizing_mode, height, width, length, total_volume, total_weight, item_upc, item_sku, item_name, item_code, workstation_terminal_code, operator_name, technology_vendor, technology_code, activity_type_code, confirmation_reason_code, handling_unit_train_code, source_handling_unit_type, destination_handling_unit_type, work_type_style, work_type_code, batch_pick_code, destination_handling_unit_code, source_handling_unit_code, task_line_complete_ind, induction_zone_code, workstation_code, subgroup_name, group_name, area_name, facility_name, subgroup_code, group_code, area_code, subsystem_code, fulfillment_order_code, event_code, source_inventory_location_code, source_handling_unit_location_code, cart_code, cart_key, location_code, operator_code, facility_order_line_code, pick_task_total_qty_expected, pick_task_line_count_expected, pick_task_order_channel, pick_task_latest_staging_timestamp_utc, pick_task_latest_staging_date_time_local, pick_task_packing_requirement, pick_task_priority, pick_task_value_added_service, pick_task_fulfillment_handling_type, pick_task_category, pick_task_type, put_wall_flg, date_time_offset, tenant_name, sku_product_code, destination_handling_unit_key, client_code, event_timestamp_utc, event_date_time_local, facility_order_code, pick_task_line_code, pick_task_code, source_system, facility_id, tenant_id, new_container_qty, requested_qty, shorted_qty, skipped_qty, UOM, picked_qty, zone_code",
+                            "vector_distance": 0.46103208685086683,
+                            "sematic_score": 0.000699999975040555,
+                            "partition_column": "event_timestamp_utc",
+                            "partition_column_type": "TIMESTAMP",
+                            "partition_required": true
+                        },
+                        {
+                            "rank": 5,
+                            "table_name": "gold_sku_features_inference",
+                            "table_description": "Full Table Name: gold_sku_features_inference | Table Description: sku demand inference datastream | Table Columns List: t_plus_2_order_line_demand, t_plus_1_demand_reveal_time, long_term_historical_data_span, short_term_historical_data_span, long_term_zero_order_line_demand_intermittency, short_term_zero_order_line_demand_intermittency, long_term_non_zero_order_line_demand, short_term_non_zero_order_line_demand, long_term_daily_order_line_demand, short_term_daily_order_line_demand, confidence_order_line_demand, long_term_zero_quantity_demand_intermittency, short_term_zero_quantity_demand_intermittency, long_term_non_zero_quantity_demand, short_term_non_zero_quantity_demand, long_term_daily_quantity_demand, short_term_daily_quantity_demand, known_quantity_demand, confidence_quantity_demand, t_plus_5_order_line_demand, t_plus_4_order_line_demand, t_plus_3_order_line_demand, t_plus_1_order_line_demand_UCL, t_plus_1_order_line_demand_LCL, t_plus_1_order_line_demand, t_plus_5_quantity_demand, t_plus_4_quantity_demand, t_plus_3_quantity_demand, t_plus_2_quantity_demand, t_plus_1_quantity_demand_UCL, t_plus_1_quantity_demand_LCL, t_plus_1_quantity_demand, sku, inference_datetime, instigator_id, inference_id",
+                            "vector_distance": 0.46230869376569944,
+                            "sematic_score": 9.999999747378752e-05,
+                            "partition_column": "inference_datetime",
+                            "partition_column_type": "TIMESTAMP",
+                            "partition_required": false
+                        }
+                    ],
+                    "sql_explorer:rag_relevant_columns": [
+                        {
+                            "rank": 1,
+                            "column_name": "operator_name",
+                            "table_name": "gold_pick",
+                            "column_description": "Column Name: operator_name | Column Data Type: STRING | Column Description: The person (or operator, user, worker, etc.) who performed the work. | Table Name: gold_pick",
+                            "vector_distance": 0.4691121086051086,
+                            "sematic_score": 0.0502999983727932
+                        },
+                        {
+                            "rank": 2,
+                            "column_name": "operator_code",
+                            "table_name": "gold_pick",
+                            "column_description": "Column Name: operator_code | Column Data Type: STRING | Column Description: Unique key of the person who performed the work. Mandatory for LMA | Table Name: gold_pick",
+                            "vector_distance": 0.4689639214025946,
+                            "sematic_score": 0.031199999153614044
+                        },
+                        {
+                            "rank": 3,
+                            "column_name": "total_volume",
+                            "table_name": "gold_pick",
+                            "column_description": "Column Name: total_volume | Column Data Type: NUMERIC | Column Description: Total volume | Table Name: gold_pick",
+                            "vector_distance": 0.4663827181211805,
+                            "sematic_score": 0.02930000051856041
+                        },
+                        {
+                            "rank": 4,
+                            "column_name": "operator_code",
+                            "table_name": "gold_pick_task",
+                            "column_description": "Column Name: operator_code | Column Data Type: STRING | Column Description: Unique key of the person who performed the work. | Table Name: gold_pick_task",
+                            "vector_distance": 0.4671676259148509,
+                            "sematic_score": 0.0284000001847744
+                        },
+                        {
+                            "rank": 5,
+                            "column_name": "operator_name",
+                            "table_name": "gold_pick_task",
+                            "column_description": "Column Name: operator_name | Column Data Type: STRING | Column Description: Identifies the user who performed the action or event.\u00a0 This should indicate the operator who performed the pack out at the put wall and/or the pack station (if applicable) | Table Name: gold_pick_task",
+                            "vector_distance": 0.4658075566751172,
+                            "sematic_score": 0.02410000003874302
+                        },
+                        {
+                            "rank": 6,
+                            "column_name": "operator_code",
+                            "table_name": "gold_pick_activity",
+                            "column_description": "Column Name: operator_code | Column Data Type: STRING | Column Description: Unique key of the person who performed the work.\u00a0Mandatory for Person to Goods;\u00a0 | Table Name: gold_pick_activity",
+                            "vector_distance": 0.4682637172478502,
+                            "sematic_score": 0.02319999970495701
+                        },
+                        {
+                            "rank": 7,
+                            "column_name": "priority_code",
+                            "table_name": "gold_facility_order",
+                            "column_description": "Column Name: priority_code | Column Data Type: INT64 | Column Description: None | Table Name: gold_facility_order",
+                            "vector_distance": 0.47030201737856725,
+                            "sematic_score": 0.01720000058412552
+                        },
+                        {
+                            "rank": 8,
+                            "column_name": "order_type",
+                            "table_name": "gold_wms_customer_order",
+                            "column_description": "Column Name: order_type | Column Data Type: STRING | Column Description: The type of order | Table Name: gold_wms_customer_order",
+                            "vector_distance": 0.47075398906232746,
+                            "sematic_score": 0.016300000250339508
+                        },
+                        {
+                            "rank": 9,
+                            "column_name": "order_code",
+                            "table_name": "gold_sort",
+                            "column_description": "Column Name: order_code | Column Data Type: STRING | Column Description: The order that is associated with the sorted item | Table Name: gold_sort",
+                            "vector_distance": 0.4659140795641247,
+                            "sematic_score": 0.015300000086426735
+                        },
+                        {
+                            "rank": 10,
+                            "column_name": "carrier_code",
+                            "table_name": "gold_wms_customer_order",
+                            "column_description": "Column Name: carrier_code | Column Data Type: STRING | Column Description: The id code of the carrier | Table Name: gold_wms_customer_order",
+                            "vector_distance": 0.46833287490247166,
+                            "sematic_score": 0.014299999922513962
+                        }
+                    ],
+                    "sql_explorer:rag_example_queries": [
+                        {
+                            "rank": 1,
+                            "question": "Who are the top 5 best operators in last year based on the number of orders?",
+                            "sql_query": "select  operator_name, COUNT(DISTINCT pick_task_code) AS activePickOrders FROM `gold_pick` where  date(event_timestamp_utc) >= DATE_SUB (CURRENT_DATE(),INTERVAL 1 year) group by operator_name order by COUNT(DISTINCT pick_task_code) desc limit 5;",
+                            "vector_distance": 0.6652242887215897,
+                            "sematic_score": 0.1437000036239624
+                        },
+                        {
+                            "rank": 2,
+                            "question": "Who are the top five operators names and what is their daily average rate of picks in last 90 days?",
+                            "sql_query": "select  operator_name , round(count(*)/90) as operator_count FROM `gold_pick` where date(event_timestamp_utc) >=  date_sub(current_date(), INTERVAL 90 day) and  date(event_timestamp_utc) <  current_date() group by operator_name order by round(count(*)/90) desc limit 5;",
+                            "vector_distance": 0.5964024011606414,
+                            "sematic_score": 0.11550000309944153
+                        },
+                        {
+                            "rank": 3,
+                            "question": "How many operators have been working in last 1 month?",
+                            "sql_query": "select count(distinct operator_name) as operator_count FROM `gold_pick` where date(event_timestamp_utc) >=  date_sub(current_date(), INTERVAL 1 month) and  date(event_timestamp_utc) <  current_date() ;",
+                            "vector_distance": 0.5574699313774262,
+                            "sematic_score": 0.051100000739097595
+                        }
+                    ],
+                    "sql_explorer:status": "success",
+                    "temp:sql_execution_result": "[{\"operator_name\":\"eud202337\",\"activePickOrders\":33326},{\"operator_name\":\"EUD202308\",\"activePickOrders\":29814},{\"operator_name\":\"009230\",\"activePickOrders\":28815},{\"operator_name\":\"RE5TQITRX\",\"activePickOrders\":27659},{\"operator_name\":\"EUD202360\",\"activePickOrders\":24451}]",
+                    "temp:generated_sql": "SELECT operator_name, COUNT(DISTINCT pick_task_code) AS activePickOrders FROM `gold_pick` WHERE DATE(event_timestamp_utc) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) AND event_timestamp_utc > '1970-01-01' GROUP BY operator_name ORDER BY COUNT(DISTINCT pick_task_code) DESC LIMIT 5",
+                    "root:skip_llm": true
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "df6e6744-a7fa-4ccc-9150-c0b553bff20c",
+            "timestamp": 1762965387.111127
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "functionCall": {
+                            "id": "adk-eb93fa32-5fdd-4573-af31-2376f581f3c3",
+                            "args": {
+                                "question": "Create a bar chart with the following data: eud202337 with 33,326 orders, EUD202308 with 29,814 orders, 009230 with 28,815 orders, RE5TQITRX with 27,659 orders, and EUD202360 with 24,451 orders."
+                            },
+                            "name": "call_visualization_agent"
+                        }
+                    }
+                ],
+                "role": "model"
+            },
+            "invocationId": "e-e6adead4-3ad3-45a2-b7a3-f8ae2bf44e58",
+            "author": "dematic_chat_root_agent_turn",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "ae8a0fcd-9a99-4d57-a0ca-cafab4a484a6",
+            "timestamp": 1762965387.136144
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "functionResponse": {
+                            "id": "adk-eb93fa32-5fdd-4573-af31-2376f581f3c3",
+                            "name": "call_visualization_agent",
+                            "response": {
+                                "result": "Visualization created successfully: bar_chart"
+                            }
+                        }
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-e6adead4-3ad3-45a2-b7a3-f8ae2bf44e58",
+            "author": "dematic_chat_root_agent_turn",
+            "actions": {
+                "stateDelta": {
+                    "temp:visualization_status": "success",
+                    "temp:visualization_chart_type": "bar_chart",
+                    "temp:visualization_chart_json": {
+                        "data": [
+                            {
+                                "Order ID": "eud202337",
+                                "Orders": 33326
+                            },
+                            {
+                                "Order ID": "EUD202308",
+                                "Orders": 29814
+                            },
+                            {
+                                "Order ID": "009230",
+                                "Orders": 28815
+                            },
+                            {
+                                "Order ID": "RE5TQITRX",
+                                "Orders": 27659
+                            },
+                            {
+                                "Order ID": "EUD202360",
+                                "Orders": 24451
+                            }
+                        ],
+                        "options": {
+                            "title": "Orders by Order ID",
+                            "axes": {
+                                "left": {
+                                    "mapsTo": "Orders",
+                                    "title": "Number of Orders"
+                                },
+                                "bottom": {
+                                    "mapsTo": "Order ID",
+                                    "title": "Order ID",
+                                    "scaleType": "labels"
+                                }
+                            }
+                        }
+                    }
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "eb9add2f-f9f6-41f3-8a98-d62d8dac9b33",
+            "timestamp": 1762965392.301256
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "Here is a bar chart showing the top 5 operators based on the number of orders in the last year:\n\n*   eud202337: 33,326 orders\n*   EUD202308: 29,814 orders\n*   009230: 28,815 orders\n*   RE5TQITRX: 27,659 orders\n*   EUD202360: 24,451 orders"
+                    }
+                ],
+                "role": "model"
+            },
+            "invocationId": "e-e6adead4-3ad3-45a2-b7a3-f8ae2bf44e58",
+            "author": "dematic_chat_root_agent_turn",
+            "actions": {
+                "stateDelta": {
+                    "nl_final_response_text": "Here is a bar chart showing the top 5 operators based on the number of orders in the last year:\n\n*   eud202337: 33,326 orders\n*   EUD202308: 29,814 orders\n*   009230: 28,815 orders\n*   RE5TQITRX: 27,659 orders\n*   EUD202360: 24,451 orders"
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "c0dc4a94-bef6-4c00-88cc-fcbd67320834",
+            "timestamp": 1762965392.314395
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "{\"natural_language_response\": \"Here is a bar chart showing the top 5 operators based on the number of orders in the last year:\\n\\n*   eud202337: 33,326 orders\\n*   EUD202308: 29,814 orders\\n*   009230: 28,815 orders\\n*   RE5TQITRX: 27,659 orders\\n*   EUD202360: 24,451 orders\", \"session_id\": \"session_1b9e5230-4888-4191-916b-f680a1c3b85a\", \"explainability_for_customer\": [], \"explainability_for_developer\": [\"Generated SQL: SELECT operator_name, COUNT(DISTINCT pick_task_code) AS activePickOrders FROM `gold_pick` WHERE DATE(event_timestamp_utc) >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR) AND event_timestamp_utc > '1970-01-01' GROUP BY operator_name ORDER BY COUNT(DISTINCT pick_task_code) DESC LIMIT 5\"], \"sql_query_output\": [{\"operator_name\": \"eud202337\", \"activePickOrders\": 33326}, {\"operator_name\": \"EUD202308\", \"activePickOrders\": 29814}, {\"operator_name\": \"009230\", \"activePickOrders\": 28815}, {\"operator_name\": \"RE5TQITRX\", \"activePickOrders\": 27659}, {\"operator_name\": \"EUD202360\", \"activePickOrders\": 24451}], \"carbon_chart\": {\"chart_type\": \"bar_chart\", \"data\": [{\"Order ID\": \"eud202337\", \"Orders\": 33326}, {\"Order ID\": \"EUD202308\", \"Orders\": 29814}, {\"Order ID\": \"009230\", \"Orders\": 28815}, {\"Order ID\": \"RE5TQITRX\", \"Orders\": 27659}, {\"Order ID\": \"EUD202360\", \"Orders\": 24451}], \"options\": {\"title\": \"Orders by Order ID\", \"axes\": {\"left\": {\"mapsTo\": \"Orders\", \"title\": \"Number of Orders\"}, \"bottom\": {\"mapsTo\": \"Order ID\", \"title\": \"Order ID\", \"scaleType\": \"labels\"}}}}, \"profiling\": {}}"
+                    }
+                ],
+                "role": "model"
+            },
+            "invocationId": "e-e6adead4-3ad3-45a2-b7a3-f8ae2bf44e58",
+            "author": "dematic_chat_root_agent_turn",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "e0761aa8-37ad-4cb9-9b91-c38c680f22a9",
+            "timestamp": 1762965394.582685
+        }
+    ],
+    "lastUpdateTime": 1762965394.0
+}

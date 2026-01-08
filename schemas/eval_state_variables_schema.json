@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Required Evaluation State Variables by Agent",
+  "description": "Defines the required state variable keys that must be extracted for evaluating specific agents. Each property corresponds to an agent ID, and its value is an array of the state variable keys needed for its evaluation.",
+  "type": "object",
+  "properties": {
+    "sql_explorer": {
+      "description": "A list of required state variables for evaluating the 'sql_explorer' agent.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "sql_explorer:generated_sql",
+        "sql_explorer:sql_execution_result",
+        "sql_explorer:rag_relevant_tables",
+        "sql_explorer:rag_relevant_columns",
+        "sql_explorer:rag_example_queries"
+      ]
+    },
+    "visualization": {
+      "description": "A list of required state variables for evaluating the 'visualization' agent. Currently empty.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false
+}

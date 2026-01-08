@@ -1,0 +1,27 @@
+{
+    "golden_questions": [
+        {
+            "id": "q1",
+            "user_inputs": [
+                ""
+            ],
+            "agents_evaluated": [
+                "agentx"
+            ],
+            "metadata": {
+                "label1": "",
+                "label2": "",
+                "label3": ""
+            },
+            "reference_data": {
+                "reference1": "",
+                "reference_trajectory": [
+                    "dematic_chat_root_agent_turn",
+                    "sql_generation_agent",
+                    "sql_validation_agent"
+                ]
+            },
+            "updated_datetime": "2025-10-23"
+        }
+    ]
+    }

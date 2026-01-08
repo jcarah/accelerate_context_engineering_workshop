@@ -1,0 +1,175 @@
+import argparse
+import json
+import os
+import sys
+import asyncio
+import pandas as pd
+
+import re
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from data_explorer_agent.utils.agent_run_utils import (
+    get_session_state,
+    get_session_trace,
+    analyze_trace_and_extract_spans,
+    get_latency_from_spans,
+    get_agent_trajectory,
+    get_state_variable,
+    get_final_payload_field,
+    get_gcloud_token,
+)
+
+async def process_interaction(row, token, payload_keys, state_variables_schema, results_dir=None, skip_traces=False):
+    question_id = row['question_id']
+    session_id = row['session_id']
+    base_url = row['base_url']
+    user_id = row['ADK_USER_ID']
+    row['missing_information'] = json.dumps({"boolean": False}) # Default to False
+
+    try:
+        status_ = json.loads(row["status"].replace("'",'"'))
+        if status_.get("boolean") == "failed":
+            raise ValueError("Interaction failed in the previous step, run the script again or remove the failed rows in the interaction CSV.")
+
+        final_session_state = await asyncio.to_thread(get_session_state, base_url, user_id, session_id, token)
+        
+        if skip_traces:
+            print(f"Skipping trace retrieval for session {session_id} (--skip-traces flag enabled)")
+            session_trace = None
+        else:
+            try:
+                session_trace = await asyncio.to_thread(get_session_trace, base_url, session_id, token)
+            except RuntimeError as e:
+                print(f"Warning: {e}")
+                session_trace = None
+
+        if results_dir:
+            if not os.path.exists(results_dir):
+                os.makedirs(results_dir)
+
+            question_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', question_id)
+            output_file_json = os.path.join(results_dir, f"session_{question_filename}_{session_id}.json")
+            output_file_trace_json = os.path.join(results_dir, f"trace_{question_filename}_{session_id}.json")
+
+            def write_output_files():
+                with open(output_file_json, 'w') as f:
+                    json.dump(final_session_state, f, indent=4)
+
+                with open(output_file_trace_json, 'w') as f:
+                    json.dump(session_trace, f, indent=4)
+
+            await asyncio.to_thread(write_output_files)
+
+        if not session_trace:
+            print(f"Warning: Failed to retrieve session trace for session {session_id}. Proceeding without trace data.")
+            row['latency_data'] = None
+            row['trace_summary'] = None
+            row['session_trace'] = None
+            row['missing_information'] = json.dumps({"boolean": True, "details": "Missing session trace, hence, also latency_data, trace_summary."})
+        else:
+            analyzed_trace = analyze_trace_and_extract_spans(session_trace)
+            row['latency_data'] = json.dumps(get_latency_from_spans(analyzed_trace))
+            row['trace_summary'] = json.dumps(get_agent_trajectory(analyzed_trace))
+            row['session_trace'] = json.dumps(session_trace)
+
+        extracted_data = {}
+        if 'agents_evaluated' in row and row['agents_evaluated']:
+            try:
+                agents_evaluated = json.loads(row['agents_evaluated'])
+                for agent in agents_evaluated:
+                    for key in state_variables_schema.get("properties", {}).get(agent, {}).get("default", []):
+                        extracted_data[key] = get_state_variable(final_session_state, key)
+            except (json.JSONDecodeError, TypeError):
+                print(f"Warning: Could not parse agents_evaluated for session {session_id}")
+        
+        for key in payload_keys:
+            value = get_final_payload_field(final_session_state, key)
+            if key in ['carbon_chart'] and isinstance(value, (dict, list)):
+                extracted_data[key] = json.dumps(value)
+            else:
+                extracted_data[key] = value
+        
+        row['final_session_state'] = json.dumps(final_session_state)
+        row['extracted_data'] = json.dumps(extracted_data)
+        
+        return row
+
+    except Exception as e:
+        print(f"Error processing session {session_id}: {e}")
+        row['final_session_state'] = None
+        row['session_trace'] = None
+        row['latency_data'] = None
+        row['extracted_data'] = None
+        row['trace_summary'] = None
+        row['missing_information'] = json.dumps({"boolean": True, "details": f"Error processing session and/or trace. Error: {e}"})
+        return row
+
+async def main():
+    parser = argparse.ArgumentParser(description="Process agent interactions to extract trace and state data.")
+    parser.add_argument("--input-csv", required=True, help="Path to the input CSV file with interaction results.")
+    parser.add_argument("--results_dir", type=str, default="evaluation/results", help="Directory to save the intermediate results.")
+    parser.add_argument("--output-csv", help="Exact path to the output CSV file with enriched data.")
+    parser.add_argument("--skip-traces", action="store_true", help="Skip trace retrieval entirely (recommended for ADK 1.15 when trace endpoints are unavailable).")
+    args = parser.parse_args()
+
+    df = pd.read_csv(args.input_csv)
+    token = get_gcloud_token()
+
+    schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "return_payload_schema.json")
+    with open(schema_path) as f:
+        schema = json.load(f)
+    payload_keys = list(schema.get("properties", {}).keys())
+
+    state_variables_schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "eval_state_variables_schema.json")
+    with open(state_variables_schema_path) as f:
+        state_variables_schema = json.load(f)
+
+    if args.skip_traces:
+        print("--- Trace retrieval disabled via --skip-traces flag ---")
+        print("Evaluation will proceed using session state only. Latency metrics will not be available.")
+
+    tasks = [process_interaction(row, token, payload_keys, state_variables_schema, args.results_dir, args.skip_traces) for _, row in df.iterrows()]
+    results = await asyncio.gather(*tasks)
+
+    enriched_df = pd.DataFrame(results)
+    
+    # 1. Get all rows with missing info
+    
+    missing_data_df = enriched_df.copy()
+    missing_data_df['boolean']=missing_data_df['missing_information'].apply(lambda x: json.loads(x).get('boolean'))
+    missing_data_df = missing_data_df[missing_data_df["boolean"] == True]
+    total_missing = len(missing_data_df)
+
+    # 2. Identify rows where ONLY trace data is missing
+    trace_only_missing_mask = (
+        missing_data_df['latency_data'].isnull() &
+        missing_data_df['trace_summary'].isnull() &
+        missing_data_df['session_trace'].isnull() &
+        missing_data_df['final_session_state'].notnull() &
+        missing_data_df['extracted_data'].notnull()
+    )
+    trace_missing_df = missing_data_df[trace_only_missing_mask]
+    trace_missing_count = len(trace_missing_df)
+
+    # 3. Identify rows where other/more data is missing
+    other_missing_df = missing_data_df[~trace_only_missing_mask]
+    other_missing_count = len(other_missing_df)
+
+    # 4. Print summary
+    print("\n--- Summary of Unsuccessful Interactions ---")
+    print(f"Total rows with missing data: {total_missing}/{len(enriched_df)}")
+
+    if trace_missing_count > 0:
+        print(f"\nRows with missing trace data only: {trace_missing_count}")
+        print("Session IDs:", ", ".join(trace_missing_df['session_id'].astype(str).tolist()))
+
+    if other_missing_count > 0:
+        print(f"\nRows with other critical missing data: {other_missing_count}")
+        print("Session IDs:", ", ".join(other_missing_df['session_id'].astype(str).tolist()))
+
+    output_csv = args.output_csv or os.path.join(args.results_dir, f"processed_{os.path.basename(args.input_csv)}")
+    enriched_df.to_csv(output_csv, index=False)
+    print(f"Enriched data saved to {output_csv}")
+
+if __name__ == "__main__":
+    asyncio.run(main())

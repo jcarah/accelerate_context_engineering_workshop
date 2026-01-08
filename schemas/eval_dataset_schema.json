@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Golden Questions Evaluation Dataset",
+  "description": "Schema for the golden questions evaluation dataset.",
+  "type": "object",
+  "properties": {
+    "golden_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the question."
+          },
+          "user_inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of user inputs for a multi-turn conversation.",
+            "examples": [
+              ["What are the top 3 busiest locations in the last 6 months?"],
+              ["Show me the current throughput trend for line A.", "Now, filter that for the last 7 days and show it as a line chart."]
+            ]
+          },
+          "agents_evaluated": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of agents to be evaluated with this question.",
+            "examples": [
+              ["sql_explorer"],
+              ["sql_explorer", "visualization"]
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "description": "A flexible key-value store for metadata.",
+            "additionalProperties": true,
+            "properties": {
+              "tenant": {
+                "type": "string"
+              }
+            },
+            "required": ["tenant"],
+            "examples": [
+              {
+                "tenant": "superior_uniform",
+                "tier": "exact",
+                "complexity": "level_1"
+              }
+            ]
+          },
+          "reference_data": {
+            "type": "object",
+            "description": "A flexible key-value store for reference data used in evaluation.",
+            "additionalProperties": true,
+            "examples": [
+              {
+                "reference_sql": "SELECT ...",
+                "reference_chart_type": "bar_chart",
+                "reference_trajectory": ["dematic_chat_root_agent_turn", "sql_generation_agent"]
+              }
+            ]
+          },
+          "updated_datetime": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "required": ["id", "user_inputs", "agents_evaluated", "metadata", "updated_datetime"]
+      }
+    }
+  },
+  "required": ["golden_questions"]
+}

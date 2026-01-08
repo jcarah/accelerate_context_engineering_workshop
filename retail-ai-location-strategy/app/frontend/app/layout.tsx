@@ -24,6 +24,7 @@ export default function RootLayout({
         <CopilotKit
           runtimeUrl="/api/copilotkit"
           agent="retail_location_strategy"
+          publicLicenseKey="ck_pub_a3d3b42b77551303fb563d477e1085db"
         >
           {children}
         </CopilotKit>

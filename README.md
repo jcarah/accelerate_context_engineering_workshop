@@ -2,10 +2,13 @@
 
 **Status:** Implementation Guide  
 **Focus:** Context Engineering & Quantitative Evaluation  
+**Target Audience:** Technical GTM Practitioners
+
+---
 
 ## 1. Overview
 
-This workshop guide is designed for technical GTM practitioners to master the transition from **Prompt Engineering** (stateless, token-heavy) to **Context Engineering** (stateful, architectural optimization).
+This workshop guide is designed for technical experts to master the transition from **Prompt Engineering** (stateless, token-heavy) to **Context Engineering** (stateful, architectural optimization).
 
 ### The Objective
 By the end of this workshop, you will learn to:
@@ -13,268 +16,161 @@ By the end of this workshop, you will learn to:
 2.  **Measure performance** across Quality, Cost, and Latency axes using a formal evaluation framework.
 
 ### The Execution Framework: "The Hill Climb"
-We will take an unoptimized **"Monolithic"** agent and dismantle it. We will establish evaluation baselines and then apply architectural patterns to climb the hill toward a production-ready system.
+We will achieve this through a "hill climbing" exercise. We will start with a functional but unoptimized "Base Camp" agent. We will establish evaluation baselines and then iteratively apply context engineering principles to climb toward a production-ready system, measuring the delta at every step.
 
 ---
 
-## 2. The Context Engineering Toolkit
+## 2. The Agent: Retail AI Location Strategy
 
-We are moving away from the "One Prompt to Rule Them All" mindset. We will apply the following five pillars to our agent:
+For this workshop, we will use the **Retail AI Location Strategy** agent. This is a sophisticated multi-agent pipeline that acts as an autonomous business analyst.
 
-### 1. Offload (Externalizing State)
-*   **Definition:** Moving high-token state (raw data, logs, manifests) out of the KV-cache and into a durable Sandbox environment.
-*   **Pattern:** Instead of tools returning massive JSON blobs to the chat history, they save data to `artifacts/` and return a file path.
+**Use Case:** A user wants to open a physical store (e.g., "A coffee shop in Bangalore"). The agent must research the market, find competitors via Google Maps, run a saturation analysis using Python, and generate a strategic report.
 
-### 2. Reduce (High-Signal Transformation)
-*   **Definition:** Shrinking the token footprint without losing the "state of mind."
-*   **Pattern:**
-    *   **NL2Py (Code Act):** Instead of the LLM reading a CSV to find a row, it writes Python code to query the file.
-    *   **Summarization:** Compressing interaction logs into semantic summaries.
+### Architecture
 
-### 3. Retrieve (Just-in-Time Access)
-*   **Definition:** Pulling data into context only when needed.
-*   **Pattern:** Using Vector Search or glob patterns to fetch specific knowledge rather than pre-loading the window with "just-in-case" instructions.
+![alt text](retail-ai-location-strategy/assets/images/agent-tools.png)
 
-### 4. Isolate (Context Partitioning)
-*   **Definition:** Splitting logic into specialized sub-agents to create a "Layered Action Space."
-*   **Pattern:** The **"Agent-as-a-Tool"** pattern. A "Manager" delegates a 50-turn task to a "Worker," receiving only the final structured result.
+*   **Code Location:** `retail-ai-location-strategy/`
+*   **Documentation:** See `retail-ai-location-strategy/README.md` and `retail-ai-location-strategy/DEVELOPER_GUIDE.md` for deep dives into the tools, schemas, and config.
 
-### 5. Cache (Prefix Optimization)
-*   **Definition:** Freezing static prompt sections (System Instructions, Tool Schemas) to minimize Latency (TTFT) and Cost.
-*   **Pattern:** Structuring prompts to ensure the static prefix is "Cache-Stable."
+### Prerequisites
+*   Python 3.10+
+*   Node.js & npm (for the Frontend)
+*   Google Cloud Project with Vertex AI enabled (.env file set)
+
+### Installation & Running
+
+1.  **Navigate to the agent directory:**
+    ```bash
+    cd retail-ai-location-strategy
+    ```
+
+2.  **Install the AG-UI Application:**
+    This command installs the Python backend, the React frontend, and sets up the environment.
+    ```bash
+    make ag-ui-install
+    ```
+
+3.  **Run the Application:**
+    ```bash
+    make ag-ui
+    ```
+    *   This will launch the UI at `http://localhost:3000`.
+
+4.  **Troubleshooting:**
+    If you encounter issues, please refer to the `DEVELOPER_GUIDE.md` inside the agent folder.
+---
+
+## 3. The Context Engineering Toolkit
+
+We are moving away from the "One Prompt to Rule Them All" mindset. We will apply the following five pillars to maximize the Signal-to-Noise Ratio. This section outlines the Context Engineering, and how we could possibly translate it to a milestone for the workshop (NEEDS WORK).
+
+#### The Baseline
+*   **Theory:** Establish the "Noise Floor." Measure the unoptimized agent's cost, latency, and quality. Identify "Prompt Bloat" and "Attention Diffusion."
+*   **Possible Workshop Scenario:** Run the current Retail Strategy Agent. Observe the high token count when the `CompetitorMappingAgent` finds many locations. Observe the latency during the sequential hand-offs.
 
 ---
 
-## 3. Implementation Roadmap (The Hill Climb)
+### Pillar 1: Offload (Externalizing State)
+The act of moving ephemeral, high-token, or "heavy" state (e.g., raw HTML, massive JSON logs) out of the KV-cache and into a durable environment (Sandbox File System or ADK Artifacts).
+*   **Justification:** Reduces "Attention Diffusion" by keeping working memory focused on logic, not raw data.
 
-This repository is structured to follow the refactoring phases of the workshop.
-
-### Milestone 0: The "Naive" Monolith (Baseline)
-*   **State:** A single `Agent` object.
-*   **The Problem:** All instructions, routing logic, and tool definitions are stuffed into one massive system prompt. Tool outputs (raw data) are dumped directly into conversation history.
-*   **Evaluation Baseline:** High Time-To-First-Token (TTFT), High Cost per turn, and "Attention Diffusion" (hallucinations due to context saturation).
-
-### Milestone 1: Reversible Compaction & Offloading
-*   **Goal:** Stop "KV-cache bleed." You don't need to remember everything; you just need to know where it is.
-*   **Tasks:**
-    *   Refactor "Read" tools to write to the Sandbox (File System) instead of returning text.
-    *   Implement **Code Execution** tools to allow the agent to query data via Python instead of reading it.
-    *   **Validation:** Verify that `input_token_count` drops significantly while `groundedness` scores remain stable or improve.
-
-### Milestone 2: Functional Isolation (Multi-Agent)
-*   **Goal:** Share context by communicating, don't communicate by sharing context.
-*   **Tasks:**
-    *   Split the Monolith into a **Manager Agent** (Triage) and specialized **Worker Agents**.
-    *   Pass state via **Artifacts** (File Paths) rather than Chat History.
-    *   **Validation:** Verify `tool_use_quality`. Workers should have 0% hallucination on tools they do not possess.
-
-### Milestone 3: Production Optimization
-*   **Goal:** Hit the "Hot Cache" target (TTFT < 500ms).
-*   **Tasks:**
-    *   Apply `ContextCacheConfig` to freeze core persona and tool definitions.
-    *   Audit prompt structure to separate **Static** content from **Dynamic** user turns.
+#### Workshop Milestone (The Retail Scenario):
+*   **Current State:** The `CompetitorMappingAgent` queries the Google Maps API and dumps a massive JSON blob of 20+ locations directly into the chat history.
+*   **The Fix:** Refactor the tool to **save the data to a file** (e.g., `competitors.json`) in the Sandbox and return only a file path and a brief summary (e.g., *"Found 25 competitors, saved to disk"*).
 
 ---
 
+### Pillar 2: Reduce (High-Signal Transformation)
+The process of shrinking the token footprint without losing the "state of mind."
+*   **NL2Py (Code Act):** Writing code to query/process data in the sandbox rather than feeding raw data into the context.
+*   **Semantic Summarization:** Using schema-driven condensation for long histories.
+*   **Optimization Note:** This also applies to **Output Tokens**. We aim to optimize single-token attribute names in JSON and concise explanations to reduce latency.
+
+#### Workshop Milestone (The Retail Scenario):
+*   **Current State:** The `GapAnalysisAgent` attempts to read the raw JSON text from the prompt to calculate saturation indices. This is expensive and prone to hallucination ("Lost in the Middle").
+*   **The Fix:** Implement **Code Execution (Pandas)**. Instruct the agent to write Python code to load the `competitors.json` file and calculate the metrics deterministically.
+*   **Bonus Optimization:** Optimize **Output Tokens** by ensuring the agent uses concise JSON keys and minimal verbose explanations during tool use.
+
+---
+
+### Pillar 3: Retrieve (Just-in-Time Access)
+Utilizing environment-aware tools or Vector search to pull data into the context window only at the moment of need.
+
+#### Workshop Milestone (The Retail Scenario):
+*   **Current State:** The `MarketResearchAgent` might dump pages of search results about general demographics.
+*   **The Fix:** Ensure the `StrategyAdvisorAgent` only retrieves specific insights (Semantic Summaries) from the research logs, rather than re-reading the raw search output.
+
+---
+
+### Pillar 4: Isolate (Context Partitioning)
+Splitting logic into specialized sub-agents to create a "Layered Action Space." This prevents Context Confusion.
+*   **ADK Pattern:** The "Agent-as-a-Tool" pattern (e.g., A "Researcher" agent returning only structured JSON to a "Writer" agent).
+*   **Extended Isolation:** Note that separating **Guardrail Services** (e.g., Model Armor) and **Tool Discovery** (e.g., RAG-based tool selection) are also critical forms of isolation.
+
+#### Workshop Milestone (The Retail Scenario):
+*   **Current State:** Ensure the **Guardrails** and **Tooling** are distinct.
+*   **The Fix:** Validate the separation between the `GapAnalysisAgent` (The Coder) and the `StrategyAdvisorAgent` (The Writer). The Writer should never see the raw Python code or error logs, only the final derived insights.
+
+---
+
+### Pillar 5: Cache (Prefix Optimization)
+Freezing static portions of the prompt (System Instructions, Tool Schemas, Few-Shot examples) via KV-Cache.
+*   **Goal:** Drastic reduction in **TTFT (Time-to-First-Token)** and per-turn API costs.
+
+#### Workshop Milestone (The Retail Scenario):
+*   **Current State:** Every turn re-processes the massive Pydantic schema used for the final report.
+*   **The Fix:** Apply `ContextCacheConfig` to the `StrategyAdvisorAgent`. Structure the prompt to ensure the heavy schema definition is in the "Static" prefix, while user variables (Location Name) are in the "Dynamic" suffix.
+
+---
 ## 4. Evaluation Framework
 
-We measure our progress using a strict "Red Team / Blue Team" approach.
+We will measure our progress using a multi-axial approach.
 
-### 4.1 Quality Axis
-*   **Adaptive Rubrics:** We use a "Judge Agent" to generate rubrics specific to each test case.
-*   **Custom Metric - Groundedness:**
-    *   *Formula:* Does the agent's final answer cite a file path or specific data point present in the source?
-    *   *Target:* >95% Alignment with Ground Truth.
+| Axis | Metric | Methodology | Goal |
+| :--- | :--- | :--- | :--- |
+| **Quality** | Adaptive Rubrics | Use Vertex AI Evaluation Service to generate rubrics specific to the prompt. | High Alignment with Human Raters |
+| **Performance** | TTFT | Delta between request start and first token event. | Milestone 0 (>5s) $\rightarrow$ Milestone 3 (<500ms) |
+| **Performance** | E2E Latency | Total time for the full chain (Sequencing optimization). | Reduce total wait time |
+| **Cost** | Token Efficiency | Ratio of `cached_content_token_count` vs Fresh tokens. | 75% Cost Reduction |
+| **Cost** | Output Density | Optimization of JSON keys and verbose explanations. | Reduce unnecessary output tokens |
 
-### 4.2 Performance Axis (Latency)
-*   **Metric:** TTFT (Time to First Token).
-*   **Target:** Milestone 0 (>5s) $\rightarrow$ Milestone 3 (<500ms).
+Here is the isolated **Evaluation Framework** section for your README.
 
-### 4.3 Cost Axis (Token Density)
-*   **Metric:** `cached_content_token_count`.
-*   **Target:** 75% input token discount via prefix optimization.
+A three-step evaluation pipeline is located in the `evaluation/` directory (read the README within the folder for more details). This pipeline still needs to be adapted.
 
----
+### Overview of Scripts
 
-# (Internal) Workshop Builder's Guide
-## 1. Gemini's Recommendation
+We use three core scripts to interact with, measure, and analyze the agent.
 
-> When asked which agent could help us better demostrate the Contex Engineering Hill Climb.
+#### Step 1: Interaction (`01_agent_interaction.py`)
+This script orchestrates the "Golden Dataset" run against the running agent.
+*   **Function:** Connects to the ADK Agent via `agent_run_utils`, creates sessions, and records the conversation trace.
+*   **Required Changes:**
+    *   **Routes:** Validate that `agent_run_utils` points to the correct ADK application routes (e.g., `POST /agent/sessions`, `POST /agent/invoke`).
+    *   **State Extraction:** We must modify the schema used by the script (`schemas/eval_state_variables_schema.json`) to capture Retail-specific state variables from the response, such as `market_research_path` or `gap_analysis_result`, rather than the default SQL variables (we also need to modify the agent to appropiately store those variables within the state so that we can retrieve them later on).
 
-For the **"Hill Climb"** exercise, I recommend using the **Retail AI Location Strategy** agent.
+#### Step 2: Metrics Calculation (`02_agent_run_eval.py`)
+This script processes the raw interaction logs to compute specific scores.
+*   **Deterministic Metrics:** We need to validate the script correctly calculates metrics from **traces**, too:
+    *   `trace` 
+    *   `latency`
+    *   `etc` (see calculate_token_usage on deterministic_metrics.py, for example) > many of the metrics in deterministic_metrics can be ifnored, it's just to measure the success on running each subagent of the sql explorer original use case (it's the only script that may be hardcoded)
+*   **LLM-as-a-Judge:** We use Vertex AI Eval service to evaluate qualitative aspects. You will find a sample metric definition in `evaluation/metrics/.json` files.
 
-**Why?**
-Context Engineering is best demonstrated when the model is overwhelmed by *information* rather than just *instructions*.
-*   **Customer Service** agents often fail due to logic conflicts, which Gemini 1.5 handles surprisingly well in a monolith.
-*   **Retail Strategy** agents deal with *data* (demographics, foot traffic, competitor lists).
-    *   **The Problem (Milestone 0):** A naive agent tries to read a 500-row CSV of location data in the context window. It hallucinates stats and costs a fortune.
-    *   **The Solution (Milestone 1-2):** This is the perfect canvas to demonstrate **Offload** (saving the CSV to the sandbox), **Reduce** (using Python/Pandas to query it instead of reading it), and **Isolate** (separating the "Data Analyst" from the "Strategy Writer").
+**Example Metric: Data Groundedness**
+To verify Milestone 1 (Offloading), we use a metric that checks if the agent actually used the file system.
+```json
+{
+  "metric_name": "data_groundedness",
+  "metric_type": "llm",
+  "template": "You are a Data Auditor. Review the Agent's execution trace. \n1. Did the agent generate a Python script? \n2. Did the Python script load 'competitors.json' from the sandbox? \nRate 1 (No, Hallucinated) or 5 (Yes, Grounded).",
+  "dataset_mapping": {
+    "trace_log": "session_trace"
+  }
+}
+```
 
----
-## 2. Gemini's "Master Plan" for building the repository
-
-> When given the **objective** of reverse-engineering the existing `retail-ai-location-strategy` ADK sample to simulate a "Hill Climb" (as we need to break the clean sample to create a "Milestone 0" that performs poorly, then guide the audience to fix it).
-
-## Phase 1: The Setup (Data & Tooling)
-
-The current sample likely uses small mock data. To make Context Engineering necessary, we need **Context Rot**. We must generate a dataset large enough that it *hurts* the model if pasted directly into the prompt.
-
-**Step 1.1: Generate "Heavy" Mock Data**
-Create a file named `location_database_large.csv`.
-*   **Content:** 500 rows of retail location data.
-*   **Columns:** `location_id`, `address`, `avg_foot_traffic`, `rent_per_sqft`, `competitor_density_score`, `demographic_segment`, `historical_sales_q1`, `historical_sales_q2`, etc.
-*   **Why:** If the agent reads this raw text (approx. 30k tokens), it will "diffuse" attention. We *want* the Monolith to fail at finding specific rows in this haystack.
-
-**Step 1.2: Fork the Tools**
-We need two versions of the tools in the repo:
-1.  `tools_naive.py`: Returns raw data strings (for Milestone 0).
-2.  `tools_optimized.py`: Saves to artifacts and returns file paths (for Milestone 1+).
-
----
-
-## Phase 2: Constructing "Milestone 0" (The Monolith)
-
-This is the starting point for the audience. We need to create a "Villain" agent that is functionally correct but architecturally flawed.
-
-**Step 2.1: The "Kitchen Sink" Prompt**
-Create `agents/monolith/prompts.py`.
-*   **Action:** Take the system instructions from the *Analyst* agent and the *Strategist* agent in the original sample and merge them into one massive string.
-*   **Add Noise:** Add a "Global Policy" section with 2,000 tokens of generic corporate filler (e.g., "Always be polite," "Format dates as ISO," "Ensure compliance with Section 4.2...").
-*   **Outcome:** A 4,000+ token system prompt that confuses the model about its primary role.
-
-**Step 2.2: The "Data Dump" Tools**
-In `agents/monolith/agent.py`, configure the agent to use `tools_naive.py`.
-*   **Crucial Modification:**
-    *   *Original Tool:* `get_location_data(id)` -> returns a specific row.
-    *   *Naive Tool:* `get_all_location_data()` -> returns the **entire** string content of `location_database_large.csv` directly into the chat history.
-*   **The Trap:** When the user asks "Analyze Location 402," the Monolith will call `get_all_location_data`, ingest 30k tokens, and likely hallucinate the specific numbers for Location 402 due to "Lost in the Middle" issues.
-
----
-
-## Phase 3: Constructing "Milestone 1" (Data Optimization)
-
-This is the solution code for the first exercise (The "Reduce" & "Offload" pillars).
-
-**Step 3.1: The "Offloader" Tool**
-Update the tool definition for the audience solution branch.
-*   **Code Change:**
-    ```python
-    # tools_optimized.py
-    def get_location_data_file():
-        """Returns the file path to the location database."""
-        # Instead of returning text, we ensure the file is in the sandbox
-        return "/sandbox/location_database_large.csv"
-    ```
-
-**Step 3.2: Enable Code Execution (Pandas)**
-*   **Configuration:** The audience will enable the `CodeExecutionTool` (standard in ADK/Gemini).
-*   **The Shift:** Instead of reading the CSV, the agent writes:
-    ```python
-    import pandas as pd
-    df = pd.read_csv('/sandbox/location_database_large.csv')
-    print(df[df['location_id'] == 402])
-    ```
-*   **Evaluation Win:** 30k tokens (Monolith) $\to$ ~200 tokens (Python Code + Result).
-
----
-
-## Phase 4: Constructing "Milestone 2" (Architecture Optimization)
-
-This is the solution code for the second exercise (The "Isolate" pillar).
-
-**Step 4.1: Split the Prompts**
-Create `agents/sub_agents/`.
-*   `analyst_agent.py`: Instructions focused *only* on Python coding and data querying.
-*   `strategist_agent.py`: Instructions focused *only* on reading the Analyst's report (markdown artifact) and writing the final business memo.
-
-**Step 4.2: The Orchestrator (Triage)**
-Create a simple router logic.
-*   **Logic:**
-    1.  User Query -> Triage Agent.
-    2.  Triage -> Calls `Analyst`.
-    3.  `Analyst` -> Generates `report.md` -> Returns path.
-    4.  Triage -> Calls `Strategist` (passing `report.md` path).
-    5.  `Strategist` -> Reads file -> Returns final answer.
-
----
-
-## Phase 5: The Evaluation Layer (Proving the Climb)
-
-To demonstrate the "Hill Climb" effectively, we need a mix of **Deterministic Metrics** (from ADK logs/traces) to prove efficiency and **Model-Based Metrics** (from Vertex AI Evaluation Service) to prove quality.
-
-### 5.1 The "Golden" Dataset
-Create `evaluation/datasets/questions.json`.
-*   *Question:* "What is the rent per sqft for location 123?"
-*   *Ground Truth:* Extract the exact number from the CSV (e.g., "$45.20").
-
-### 5.2 Quality Metrics (Vertex AI Evaluation Service)
-*Goal: Prove that the Monolith hallucinates data, while the Context-Engineered agent is factually accurate.*
-
-We will define a **`EvalTask`** that runs against your test dataset (`questions.json`).
-
-*   **Metric A: `numerical_accuracy` (The "Hallucination Killer")**
-    *   *Type:* Deterministic (Custom Function).
-    *   *Why:* The Monolith will try to "read" the 30k token CSV and answer "What is the rent at location 402?" It will likely hallucinate or get the row wrong due to "Lost in the Middle." The Optimized agent (using Pandas/Code Execution) will get it right 100% of the time.
-    *   *Implementation:* The script captures the agent's output and compares any numerical values associated with entities against the ground truth CSV row.
-    *   *Prediction:* Monolith (~40% Fail) vs Optimized (100% Pass).
-
-*   **Metric B: `instruction_adherence` (The "Manager" Check)**
-    *   *Type:* Model-Based (GenAI-Auto-Rater).
-    *   *Why:* In the Monolith (Milestone 0), the prompt is polluted with conflict. The agent might answer briefly when asked for a "detailed memo."
-    *   *Rubric:* "Did the response follow the formatting constraints? (e.g., Use Markdown headers, include a 'Risks' section). Rate 1-5."
-
-*   **Metric C: `tool_call_efficiency` (The "Flail" Check)**
-    *   *Type:* Computed from Traces.
-    *   *Why:* Monoliths often hallucinate tool parameters (e.g., trying to pass a whole paragraph into a `search` tool).
-    *   *Formula:* `Successful Tool Calls / Total Tool Calls`.
-
-### 5.3 Performance Metrics (ADK Session Data)
-*Goal: Prove that "Less Context = Faster Speed."*
-
-*   **Metric A: `time_to_first_token` (TTFT)**
-    *   *For Milestone 3 (Cache):* Measure time from "User hits Enter" to "First word appears."
-    *   *The Climb:* Monolith (>4s) vs Cached (<500ms).
-
-*   **Metric B: `e2e_latency` (Reasoning Speed)**
-    *   *Definition:* Total time to complete the request.
-    *   *Note:* Code Execution (Milestone 1) might actually take *longer* initially than a simple text guess, but it is *correct*. We frame this as "Time to Correct Answer."
-
-### 5.4 Cost & Efficiency Metrics (ADK Session Data)
-*Goal: The "Financial" Justification.*
-
-*   **Metric A: `context_utilization_ratio` (The "Signal-to-Noise" Ratio)**
-    *   *Definition:* `Input Tokens / Output Tokens`.
-    *   *The Climb:* Massive reduction. Monolith pays for 30,000 input tokens per turn. Optimized pays for ~500. This demonstrates the **"Offload"** pillar.
-
-*   **Metric B: `cached_content_token_count`**
-    *   *Definition:* The number of tokens flagged as `cached` in the usage metadata.
-    *   *The Climb:* 0 tokens (Milestone 0-2) vs ~90% of System Prompt (Milestone 3).
-
----
-
-## Phase 6: Visualization (The Scorecard)
-
-For the workshop, we will generate this simple table at the end of each notebook execution to visualize the "Hill Climb":
-
-| Metric | Milestone 0 (Monolith) | Milestone 1 (Offload) | Milestone 2 (Multi-Agent) | Milestone 3 (Cache) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Accuracy (Eval Service)** | 🔴 42% (Hallucinated) | 🟢 **100% (Code Exec)** | 🟢 100% | 🟢 100% |
-| **Input Cost (Tokens)** | 🔴 32,500 | 🟢 **450** | 🟡 800 (Overhead) | 🟢 800 (Discounted) |
-| **TTFT (Latency)** | 🔴 4.2s | 🟡 3.8s | 🟡 4.0s | 🟢 **0.4s** |
-| **Tool Errors** | 🔴 High | 🟢 Zero | 🟢 Zero | 🟢 Zero |
-
----
-
-## Summary of Repo Prep Tasks
-
-1.  **Generate Data:** `location_database_large.csv` (500 rows).
-2.  **Break Code (Monolith):**
-    *   Merge prompts.
-    *   Make tools return raw text dumps.
-3.  **Prepare Solutions (Optimized):**
-    *   Separate prompts.
-    *   Tools return file paths.
-    *   Enable Code Execution.
-4.  **Build Eval Scripts:**
-    *   Write `verify_csv_data` function (Python) for Vertex EvalTask.
-    *   Write `measure_usage` wrapper to calculate token costs and latency via `time.time()`.
+#### Step 3: Analysis & Storage (`03_analyze_eval_results.py`)
+This script generates a final report and pushes data to BigQuery.
+*   **Needed Adaptation:** The script is currently configured for another agent. We need to modify the BigQuery table, dataset, and the prompt for the eval summarizer.
