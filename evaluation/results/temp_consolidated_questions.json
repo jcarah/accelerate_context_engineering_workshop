@@ -1,5 +1,5 @@
 {
-    "golden_questions": [
+    "questions": [
         {
             "id": "q1",
             "user_inputs": [
@@ -14,7 +14,7 @@
                 "location": "Bangalore"
             },
             "reference_data": {
-                "reference_state_variables":{
+                "reference_state_variables": {
                     "business_type": "specialty coffee shop",
                     "target_location": "Indiranagar, Bangalore"
                 },

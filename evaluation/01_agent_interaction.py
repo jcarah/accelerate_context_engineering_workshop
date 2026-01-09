@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
+""".
 Run and Process Agent Interactions for Evaluation (Step 1).
 
 This script orchestrates the first phase of the evaluation pipeline. It has two main responsibilities:
@@ -130,6 +130,12 @@ def main():
         help="The base URL of the agent service.",
     )
     parser.add_argument(
+        "--app-name",
+        type=str,
+        required=True,
+        help="The name of the application/agent.",
+    )
+    parser.add_argument(
         "--questions-file",
         type=Path,
         nargs="+",
@@ -159,6 +165,12 @@ def main():
         action="append",
         dest="metadata_filters",
         help="Filter questions by metadata (e.g., 'complexity:level1'). Can be used multiple times.",
+    )
+    parser.add_argument(
+        "--state-variable",
+        action="append",
+        dest="state_variables",
+        help="Inject state variables during session creation (e.g., 'key:value'). Can be used multiple times.",
     )
     parser.add_argument(
         "--runs",
@@ -192,7 +204,8 @@ def main():
     print(f"Consolidated questions saved to '{temp_questions_path}'")
 
     # Define output CSV path
-    interaction_csv_path = args.results_dir / "interaction_consolidated.csv"
+    interaction_csv_path = args.results_dir / "interaction_format_golden_data.csv"
+    #"interaction_consolidated.csv"
 
     # --- Step 1: Run Interactions ---
     if not args.skip_interactions:
@@ -201,6 +214,7 @@ def main():
             "evaluation/scripts/run_interactions.py",
             "--user_id", args.user_id,
             "--base_url", args.base_url,
+            "--app_name", args.app_name,
             "--questions_file", str(temp_questions_path),
             "--num_questions", "-1",  # Use -1 as we've already sampled
             "--results_dir", str(args.results_dir),
@@ -211,6 +225,10 @@ def main():
         if args.metadata_filters:
             for f in args.metadata_filters:
                 run_interactions_cmd.extend(["--filter", f])
+        
+        if args.state_variables:
+            for s in args.state_variables:
+                run_interactions_cmd.extend(["--state-variable", s])
 
         print("\n--- Running Interactions ---")
         print(f"Command: {' '.join(run_interactions_cmd)}")
