@@ -7,17 +7,9 @@ import asyncio
 import pandas as pd
 
 import requests
-from google.cloud import bigquery
-from google.cloud.exceptions import NotFound
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from data_explorer_agent.config import get_settings
-from data_explorer_agent.utils.agent_run_utils import (
-    create_session,
-    run_agent_interaction,
-    get_gcloud_token,
-)
-from data_explorer_agent.utils.bigquery import run_query
+from evaluation.agent_client import AgentClient
 
 def get_golden_questions(filepath):
     try:
@@ -62,7 +54,19 @@ def parse_metadata_filters(filter_strings):
             filters[key] = values
     return filters
 
-async def process_question(question_data, args, token, run_id):
+def parse_state_variables(state_var_strings):
+    state_vars = {}
+    if not state_var_strings:
+        return state_vars
+    for s in state_var_strings:
+        if ':' not in s:
+            print(f"Warning: Invalid state variable format '{s}'. Expected 'key:value'")
+            continue
+        key, value = s.split(':', 1)
+        state_vars[key.strip()] = value.strip()
+    return state_vars
+
+async def process_question(question_data, agent_client, run_id, args, state_vars):
     user_inputs = question_data['user_inputs']
     agents_evaluated = question_data["agents_evaluated"]
     question_id = question_data['id']
@@ -72,23 +76,12 @@ async def process_question(question_data, args, token, run_id):
     print(f"\n--- Running interaction for question: '{user_inputs}' (Run {run_id}/{args.runs}) ---")
     try:
         interaction_datetime=datetime.now().isoformat()
-        session_id = await asyncio.to_thread(create_session, args.base_url, args.user_id, token, question_metadata.get('tenant'))
+        
+        # Create session with explicitly provided state variables
+        session_id = await asyncio.to_thread(agent_client.create_session, **state_vars)
+        
         for turn in user_inputs:
-            await asyncio.to_thread(run_agent_interaction, args.base_url, args.user_id, session_id, turn, token)
-
-        reference_bq_raw_response = None
-        reference_sql = reference_data.get('sql_explorer:reference_sql')
-        if reference_sql:
-            default_dataset_ref = bigquery.DatasetReference(
-                project="edp-d-us-east2-etl",
-                dataset_id=question_metadata.get('tenant'),
-            )
-            reference_bq_raw_response_df = await asyncio.to_thread(run_query, query=reference_sql, default_dataset_id=default_dataset_ref)
-            reference_bq_raw_response = reference_bq_raw_response_df.to_json(orient="records")
-
-        new_reference_data = reference_data.copy()
-        if reference_bq_raw_response:
-            new_reference_data["sql_explorer:reference_bq_raw_response"] = reference_bq_raw_response
+            await asyncio.to_thread(agent_client.run_interaction, session_id, turn)
 
         result_dict = {
             "status": json.dumps({"boolean":"success"}), 
@@ -99,10 +92,11 @@ async def process_question(question_data, args, token, run_id):
             "question_metadata": json.dumps(question_metadata),
             "interaction_datetime": interaction_datetime,
             "session_id": session_id,
-            "base_url": args.base_url,
-            "ADK_USER_ID": args.user_id,
+            "base_url": agent_client.base_url,
+            "app_name": agent_client.app_name,
+            "ADK_USER_ID": agent_client.user_id,
             "USER": args.user,
-            "reference_data": json.dumps(new_reference_data),
+            "reference_data": json.dumps(reference_data),
         }
         print(f"--- Completed interaction for question '{user_inputs}' (Run {run_id}) SUCCESSFULLY ---")
         return result_dict
@@ -119,8 +113,9 @@ async def process_question(question_data, args, token, run_id):
             "question_metadata": json.dumps(question_metadata),
             "interaction_datetime": None,
             "session_id": None,
-            "base_url": args.base_url,
-            "ADK_USER_ID": args.user_id,
+            "base_url": agent_client.base_url,
+            "app_name": agent_client.app_name,
+            "ADK_USER_ID": agent_client.user_id,
             "USER": args.user,
             "reference_data": json.dumps(reference_data),
             }
@@ -129,11 +124,13 @@ async def main():
     parser = argparse.ArgumentParser(description="Run agent interactions for evaluation.")
     parser.add_argument("--user_id", type=str, default="e2e_test_user", help="The user ID to use.")
     parser.add_argument("--base_url", type=str, default="http://localhost:8080", help="The base URL of the agent service.")
+    parser.add_argument("--app_name", type=str, required=True, help="The name of the application/agent.")
     parser.add_argument("--questions_file", type=str, default="tests/datasets/su_golden_questions.json", help="Path to the JSON file with test questions.")
     parser.add_argument("--num_questions", type=int, default=-1, help="Number of questions to run. -1 for all.")
     parser.add_argument("--results_dir", type=str, default="tests/eval/results", help="Directory to save the interaction results.")
     parser.add_argument("--user", type=str, default=os.environ.get("USER"), help="The LDAP of the user running the script.")
     parser.add_argument("--filter", action="append", dest="metadata_filters", help="Filter questions by metadata.")
+    parser.add_argument("--state-variable", action="append", dest="state_variables", help="Inject state variables during session creation (e.g., 'key:value').")
     parser.add_argument("--runs", type=int, default=1, help="Number of times to run the evaluation for each question.")
     parser.add_argument("--output-csv", type=str, help="Custom output CSV file name.")
     args = parser.parse_args()
@@ -156,11 +153,13 @@ async def main():
 
     print(f"Running interactions for {len(questions_to_run)} questions ({args.runs} times each)")
 
-    token = get_gcloud_token()
+    agent_client = AgentClient(base_url=args.base_url, app_name=args.app_name, user_id=args.user_id)
+    state_vars = parse_state_variables(args.state_variables)
+
     tasks = []
     for q in questions_to_run:
         for i in range(1, args.runs + 1):
-            tasks.append(process_question(q, args, token, i))
+            tasks.append(process_question(q, agent_client, i, args, state_vars))
             
     task_results = await asyncio.gather(*tasks)
 

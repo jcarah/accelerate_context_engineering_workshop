@@ -8,21 +8,13 @@ import pandas as pd
 import re
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from data_explorer_agent.utils.agent_run_utils import (
-    get_session_state,
-    get_session_trace,
-    analyze_trace_and_extract_spans,
-    get_latency_from_spans,
-    get_agent_trajectory,
-    get_state_variable,
-    get_final_payload_field,
-    get_gcloud_token,
-)
+from evaluation.agent_client import AgentClient
 
-async def process_interaction(row, token, payload_keys, state_variables_schema, results_dir=None, skip_traces=False):
+async def process_interaction(row, state_variables_schema, results_dir=None, skip_traces=False):
     question_id = row['question_id']
     session_id = row['session_id']
     base_url = row['base_url']
+    app_name = row['app_name']
     user_id = row['ADK_USER_ID']
     row['missing_information'] = json.dumps({"boolean": False}) # Default to False
 
@@ -31,14 +23,16 @@ async def process_interaction(row, token, payload_keys, state_variables_schema, 
         if status_.get("boolean") == "failed":
             raise ValueError("Interaction failed in the previous step, run the script again or remove the failed rows in the interaction CSV.")
 
-        final_session_state = await asyncio.to_thread(get_session_state, base_url, user_id, session_id, token)
+        agent_client = AgentClient(base_url=base_url, app_name=app_name, user_id=user_id)
+
+        final_session_state = await asyncio.to_thread(agent_client.get_session_state, session_id)
         
         if skip_traces:
             print(f"Skipping trace retrieval for session {session_id} (--skip-traces flag enabled)")
             session_trace = None
         else:
             try:
-                session_trace = await asyncio.to_thread(get_session_trace, base_url, session_id, token)
+                session_trace = await asyncio.to_thread(agent_client.get_session_trace, session_id)
             except RuntimeError as e:
                 print(f"Warning: {e}")
                 session_trace = None
@@ -67,30 +61,35 @@ async def process_interaction(row, token, payload_keys, state_variables_schema, 
             row['session_trace'] = None
             row['missing_information'] = json.dumps({"boolean": True, "details": "Missing session trace, hence, also latency_data, trace_summary."})
         else:
-            analyzed_trace = analyze_trace_and_extract_spans(session_trace)
-            row['latency_data'] = json.dumps(get_latency_from_spans(analyzed_trace))
-            row['trace_summary'] = json.dumps(get_agent_trajectory(analyzed_trace))
+            analyzed_trace = AgentClient.analyze_trace_and_extract_spans(session_trace)
+            row['latency_data'] = json.dumps(AgentClient.get_latency_from_spans(analyzed_trace))
+            row['trace_summary'] = json.dumps(AgentClient.get_agent_trajectory(analyzed_trace))
             row['session_trace'] = json.dumps(session_trace)
 
-        extracted_data = {}
+        extracted_data = {
+            "state_variables": {},
+            "tool_interactions": [],
+            "sub_agent_trace": []
+        }
+        
         if 'agents_evaluated' in row and row['agents_evaluated']:
             try:
                 agents_evaluated = json.loads(row['agents_evaluated'])
                 for agent in agents_evaluated:
                     for key in state_variables_schema.get("properties", {}).get(agent, {}).get("default", []):
-                        extracted_data[key] = get_state_variable(final_session_state, key)
+                        extracted_data["state_variables"][key] = AgentClient.get_state_variable(final_session_state, key)
             except (json.JSONDecodeError, TypeError):
                 print(f"Warning: Could not parse agents_evaluated for session {session_id}")
         
-        for key in payload_keys:
-            value = get_final_payload_field(final_session_state, key)
-            if key in ['carbon_chart'] and isinstance(value, (dict, list)):
-                extracted_data[key] = json.dumps(value)
-            else:
-                extracted_data[key] = value
+        # Extract tool interactions and sub-agent trace
+        extracted_data["tool_interactions"] = AgentClient.get_tool_interactions(final_session_state)
+        extracted_data["sub_agent_trace"] = AgentClient.get_sub_agent_trace(final_session_state)
         
         row['final_session_state'] = json.dumps(final_session_state)
         row['extracted_data'] = json.dumps(extracted_data)
+        
+        # Remove top-level columns if they exist, as they are now in extracted_data
+        # Keeping them in extracted_data is cleaner for the evaluator
         
         return row
 
@@ -101,6 +100,8 @@ async def process_interaction(row, token, payload_keys, state_variables_schema, 
         row['latency_data'] = None
         row['extracted_data'] = None
         row['trace_summary'] = None
+        row['tool_interactions'] = None
+        row['sub_agent_trace'] = None
         row['missing_information'] = json.dumps({"boolean": True, "details": f"Error processing session and/or trace. Error: {e}"})
         return row
 
@@ -113,14 +114,12 @@ async def main():
     args = parser.parse_args()
 
     df = pd.read_csv(args.input_csv)
-    token = get_gcloud_token()
 
-    schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "return_payload_schema.json")
-    with open(schema_path) as f:
-        schema = json.load(f)
-    payload_keys = list(schema.get("properties", {}).keys())
+    state_variables_schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "retail_state_variables_schema.json")
+    # Fallback to eval_state_variables_schema.json if retail one doesn't exist or logic dictates
+    if not os.path.exists(state_variables_schema_path):
+         state_variables_schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "eval_state_variables_schema.json")
 
-    state_variables_schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "eval_state_variables_schema.json")
     with open(state_variables_schema_path) as f:
         state_variables_schema = json.load(f)
 
@@ -128,7 +127,7 @@ async def main():
         print("--- Trace retrieval disabled via --skip-traces flag ---")
         print("Evaluation will proceed using session state only. Latency metrics will not be available.")
 
-    tasks = [process_interaction(row, token, payload_keys, state_variables_schema, args.results_dir, args.skip_traces) for _, row in df.iterrows()]
+    tasks = [process_interaction(row, state_variables_schema, args.results_dir, args.skip_traces) for _, row in df.iterrows()]
     results = await asyncio.gather(*tasks)
 
     enriched_df = pd.DataFrame(results)
