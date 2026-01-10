@@ -1,0 +1,944 @@
+{
+    "id": "session_6aa2a470-9cf5-4fbe-8270-eeca0ebaa095",
+    "appName": "customer_service",
+    "userId": "eval_user",
+    "state": {
+        "customer_id": "123",
+        "customer_profile": "{\n    \"account_number\": \"428765091\",\n    \"customer_id\": \"123\",\n    \"customer_first_name\": \"Alex\",\n    \"customer_last_name\": \"Johnson\",\n    \"email\": \"alex.johnson@example.com\",\n    \"phone_number\": \"+1-702-555-1212\",\n    \"customer_start_date\": \"2022-06-10\",\n    \"years_as_customer\": 2,\n    \"billing_address\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"Anytown\",\n        \"state\": \"CA\",\n        \"zip\": \"12345\"\n    },\n    \"purchase_history\": [\n        {\n            \"date\": \"2023-03-05\",\n            \"items\": [\n                {\n                    \"product_id\": \"fert-111\",\n                    \"name\": \"All-Purpose Fertilizer\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"trowel-222\",\n                    \"name\": \"Gardening Trowel\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 35.98\n        },\n        {\n            \"date\": \"2023-07-12\",\n            \"items\": [\n                {\n                    \"product_id\": \"seeds-333\",\n                    \"name\": \"Tomato Seeds (Variety Pack)\",\n                    \"quantity\": 2\n                },\n                {\n                    \"product_id\": \"pots-444\",\n                    \"name\": \"Terracotta Pots (6-inch)\",\n                    \"quantity\": 4\n                }\n            ],\n            \"total_amount\": 42.5\n        },\n        {\n            \"date\": \"2024-01-20\",\n            \"items\": [\n                {\n                    \"product_id\": \"gloves-555\",\n                    \"name\": \"Gardening Gloves (Leather)\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"pruner-666\",\n                    \"name\": \"Pruning Shears\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 55.25\n        }\n    ],\n    \"loyalty_points\": 133,\n    \"preferred_store\": \"Anytown Garden Store\",\n    \"communication_preferences\": {\n        \"email\": true,\n        \"sms\": false,\n        \"push_notifications\": true\n    },\n    \"garden_profile\": {\n        \"type\": \"backyard\",\n        \"size\": \"medium\",\n        \"sun_exposure\": \"full sun\",\n        \"soil_type\": \"unknown\",\n        \"interests\": [\n            \"flowers\",\n            \"vegetables\"\n        ]\n    },\n    \"scheduled_appointments\": {}\n}",
+        "timer_start": 1768005061.8161018,
+        "request_count": 2
+    },
+    "events": [
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "hi"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-c7e9d5e4-44f2-42e4-aa2a-ce531adfd515",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "bf75b017-b464-41fe-955d-1eb4b4b98ac3",
+            "timestamp": 1768005001.435797
+        },
+        {
+            "invocationId": "e-c7e9d5e4-44f2-42e4-aa2a-ce531adfd515",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "customer_profile": "{\n    \"account_number\": \"428765091\",\n    \"customer_id\": \"123\",\n    \"customer_first_name\": \"Alex\",\n    \"customer_last_name\": \"Johnson\",\n    \"email\": \"alex.johnson@example.com\",\n    \"phone_number\": \"+1-702-555-1212\",\n    \"customer_start_date\": \"2022-06-10\",\n    \"years_as_customer\": 2,\n    \"billing_address\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"Anytown\",\n        \"state\": \"CA\",\n        \"zip\": \"12345\"\n    },\n    \"purchase_history\": [\n        {\n            \"date\": \"2023-03-05\",\n            \"items\": [\n                {\n                    \"product_id\": \"fert-111\",\n                    \"name\": \"All-Purpose Fertilizer\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"trowel-222\",\n                    \"name\": \"Gardening Trowel\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 35.98\n        },\n        {\n            \"date\": \"2023-07-12\",\n            \"items\": [\n                {\n                    \"product_id\": \"seeds-333\",\n                    \"name\": \"Tomato Seeds (Variety Pack)\",\n                    \"quantity\": 2\n                },\n                {\n                    \"product_id\": \"pots-444\",\n                    \"name\": \"Terracotta Pots (6-inch)\",\n                    \"quantity\": 4\n                }\n            ],\n            \"total_amount\": 42.5\n        },\n        {\n            \"date\": \"2024-01-20\",\n            \"items\": [\n                {\n                    \"product_id\": \"gloves-555\",\n                    \"name\": \"Gardening Gloves (Leather)\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"pruner-666\",\n                    \"name\": \"Pruning Shears\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 55.25\n        }\n    ],\n    \"loyalty_points\": 133,\n    \"preferred_store\": \"Anytown Garden Store\",\n    \"communication_preferences\": {\n        \"email\": true,\n        \"sms\": false,\n        \"push_notifications\": true\n    },\n    \"garden_profile\": {\n        \"type\": \"backyard\",\n        \"size\": \"medium\",\n        \"sun_exposure\": \"full sun\",\n        \"soil_type\": \"unknown\",\n        \"interests\": [\n            \"flowers\",\n            \"vegetables\"\n        ]\n    },\n    \"scheduled_appointments\": {}\n}"
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "32d2001a-b2a3-4c9a-a982-fd6db8ac040f",
+            "timestamp": 1768005001.436318
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Hi Alex! Welcome to Cymbal Home & Garden. How can I help you today?",
+                        "thoughtSignature": "Cq4CAY89a19o9BersFacZCnr0lWcNzBc1u2Kh4VJggApiEgcfzotsmovruhPjmR_Fx5-22nuRnT74tw3M2vtsaQUbs5RJ9k8ZdFWRRs_JT_H4ubQJ0BwBK2l9qhb1frUheZQEtgimXSWVLRzdEOxvXI_jG98uKduOksoJXkt74xS7UVgJ8TrHkoePhZHrXDtCN8UY6-MaaFI0gZo_XOo5i9FoE65OY7m-XjVA5AidA1_eDBumzh9zzzpEJIvBLIyXdYmEh1AlOlf4GRilzEq-2sNC-h0LiYpOrBikclSzj8BA5QoZyUBuhUTc_iAgObB-Jdq50skm8seJ_rtpbD-il51Mmov9zV0gb6Ek2tvJ_QjCIl8GnBji8b8Pa6L15lNyOnJN_-ekBDVFVEALGGqDgE="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3366
+                    }
+                ],
+                "cachedContentTokenCount": 3366,
+                "candidatesTokenCount": 18,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 18
+                    }
+                ],
+                "promptTokenCount": 3892,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3892
+                    }
+                ],
+                "thoughtsTokenCount": 60,
+                "totalTokenCount": 3970,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -1.060606426662869,
+            "invocationId": "e-c7e9d5e4-44f2-42e4-aa2a-ce531adfd515",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "timer_start": 1768005001.4497695,
+                    "request_count": 1
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "4b754b68-364d-4664-908c-c09ace27c188",
+            "timestamp": 1768005001.449698
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "can you please tell me what i purchased before?"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-3df99c0a-6b42-4d00-947a-96f90f2fffd9",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "a209b35a-e032-46e8-a131-b30eec720ea3",
+            "timestamp": 1768005005.724738
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Sure, Alex! I can help you with that.\n\nHere's a summary of your past purchases:\n\n*   **March 5, 2023:**\n    *   All-Purpose Fertilizer (Quantity: 1)\n    *   Gardening Trowel (Quantity: 1)\n    *   *Total Amount: $35.98*\n\n*   **July 12, 2023:**\n    *   Tomato Seeds (Variety Pack) (Quantity: 2)\n    *   Terracotta Pots (6-inch) (Quantity: 4)\n    *   *Total Amount: $42.50*\n\n*   **January 20, 2024:**\n    *   Gardening Gloves (Leather) (Quantity: 1)\n    *   Pruning Shears (Quantity: 1)\n    *   *Total Amount: $55.25*\n\nIs there anything specific you were looking for, or perhaps need recommendations for?",
+                        "thoughtSignature": "CuwBAY89a190_ROQgFjAVh5CHlHjP9t1JYt5lmF_VakAeKFCZnbTt13ur98_0TzH83wAJZ9pSoEU4zNn7UVixaQbsbhQqACllYHogz7w-cBGieMrdFWAWBI1Gh6rX_Ry4pb4Df_KB1EyrIottP-Tt3e-Z2N5vYFe1tvENMOsqFQ2Rog93fkFj9WgPd2kR1gnBBQYW_ML-ky4yH_oYwkYN-7gINmbLq_3Mawfo45R8TpmAmd1feGYmR6wQVgAWClCq7xiFaNIXd3rcO5O5RrcjnhrJtTbFKej7Llmx-AM4eBxHUknruYmeDdTOn--5B4="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3370
+                    }
+                ],
+                "cachedContentTokenCount": 3370,
+                "candidatesTokenCount": 220,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 220
+                    }
+                ],
+                "promptTokenCount": 3980,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3980
+                    }
+                ],
+                "thoughtsTokenCount": 38,
+                "totalTokenCount": 4238,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.12020957253196023,
+            "invocationId": "e-3df99c0a-6b42-4d00-947a-96f90f2fffd9",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 2
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "6804c938-ef98-4fbd-ad28-bfaa0a8deaa4",
+            "timestamp": 1768005005.729631
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "Ah yes! the tomato seeds. I planted and they grew but they do not look very healthy any more. Do you have a information on how to take care of them?"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-cba95109-07a1-4f87-973c-764d8ef3b967",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "479fb5ea-633c-43b3-af71-06dfd94c7fef",
+            "timestamp": 1768005009.059502
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "I'm sorry to hear your tomato plants aren't looking healthy. I can certainly send you some care instructions for tomatoes.\n\nWould you prefer to receive them via email or SMS?",
+                        "thoughtSignature": "CrgCAY89a190bgq2_BLXWkeQTKlZjMukmLSbT3Tlp1x5AJVg53tZUZk2rkTmDBU3RKmBUiBsDvHWEeewhwZLpqleHE2Yi20jVJ8eW9GQUFyoCne8vwQCz9mjdRfGFwBj7jTrP-Wf96TwlbXnaTdKJZLUfIGgR7x-nMzl3dScK15AIwa4li8MqirvisMlLqNMYbuQogTIgWspwPoL3Gd4ZgssVXW-JKoDh-D0o0RgXxIJkRis4N1YlATmebCHA8y2agq7muiz959sbHaibQqd01qRfY-AcpQfDv8Fm50F8rCpcsbDJZMfeK90PDWqk-UCMIoZlykT5mB2ybYyUEWrYRRqyjzPGkec69gJVTswH2_Dpp-wvsOIs1P0MHqDy083mH9VS1Gs0LE4Y8P03NHVDsehnSIY2KRL9bnT"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3402
+                    }
+                ],
+                "cachedContentTokenCount": 3402,
+                "candidatesTokenCount": 38,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 38
+                    }
+                ],
+                "promptTokenCount": 4273,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4273
+                    }
+                ],
+                "thoughtsTokenCount": 63,
+                "totalTokenCount": 4374,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.5529480482402601,
+            "invocationId": "e-cba95109-07a1-4f87-973c-764d8ef3b967",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 3
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "c0468c4a-82cb-4f27-b98e-1a7db621d4fb",
+            "timestamp": 1768005009.064549
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "yes please"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-214bcf40-0e4f-4adb-ba69-885589d02eac",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "372d0b59-04d2-4e23-acdb-656f0a0ea71a",
+            "timestamp": 1768005012.585741
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Great! And how would you like to receive the instructions, via email or SMS?",
+                        "thoughtSignature": "CtMBAY89a1_FnIiYORbV4jEeceaQl-QFIviAE8kFP8SD2p-ynEvFoPXmw0aRTQOqNuID_r8cW9cqt03CFTJOJKmdNdaHLwinRl6HSDmfkmHSiHfPVNtca805__CBqWmy9gAjMdVpjR47WY39A6zsbBvgfSGxgrrh8bJ4cETISr_lTxNluZkTj0ln7T84E4B3yTpoVIFAN0O1ZyoYkccnqGKw3RN_h8ItGljpN6WDiAg3nzgzkHGDlADwiT8CSeqYK9AqKqUCD2PP8M0qV0WIiHo00-T57g=="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3406
+                    }
+                ],
+                "cachedContentTokenCount": 3406,
+                "candidatesTokenCount": 17,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 17
+                    }
+                ],
+                "promptTokenCount": 4376,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4376
+                    }
+                ],
+                "thoughtsTokenCount": 37,
+                "totalTokenCount": 4430,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -1.0017793318804573,
+            "invocationId": "e-214bcf40-0e4f-4adb-ba69-885589d02eac",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 4
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "01243da5-1c33-4582-aa34-316acbadfe7f",
+            "timestamp": 1768005012.591558
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "hm, whats currently in my cart?"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-af3c3dd2-c0a5-4b69-a6e0-6b4cd411766b",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "fa1ed1c6-b299-4e8a-bc8b-187a9cb15c5f",
+            "timestamp": 1768005014.70068
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "functionCall": {
+                            "id": "adk-f1a9a5d8-88af-4d1e-93e6-4fbc91ef28ef",
+                            "args": {
+                                "customer_id": "123"
+                            },
+                            "name": "access_cart_information"
+                        },
+                        "thoughtSignature": "Cr4BAY89a1-WNA4vIyTGuKMlAd3_oGKEs-i72x6Wy5iCD-rhk8VepMasmu3pYeu2mV5P8P69urTCC-27oNPc753hHFmsueUNXBj_ezOFhloXU50g2zg-s3Sed0ahI_X1XidgRAJA4MHBJKI3lHfzSC9YDtwBmvUOnjIPk8NId4AKsutrqJThqSETGqnCTMd9gztdX6Frtvo7f29YfC2sn0rwFA9_LPWX9opsRSBg8xixfwmcXxzKVuSbDll_TVLX7A=="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3406
+                    }
+                ],
+                "cachedContentTokenCount": 3406,
+                "candidatesTokenCount": 11,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 11
+                    }
+                ],
+                "promptTokenCount": 4438,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4438
+                    }
+                ],
+                "thoughtsTokenCount": 39,
+                "totalTokenCount": 4488,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.46497080542824487,
+            "invocationId": "e-af3c3dd2-c0a5-4b69-a6e0-6b4cd411766b",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 5
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "a858603f-4eb9-4d17-8543-1aff66a708ee",
+            "timestamp": 1768005014.706959
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "functionResponse": {
+                            "id": "adk-f1a9a5d8-88af-4d1e-93e6-4fbc91ef28ef",
+                            "name": "access_cart_information",
+                            "response": {
+                                "items": [
+                                    {
+                                        "product_id": "soil-123",
+                                        "name": "Standard Potting Soil",
+                                        "quantity": 1
+                                    },
+                                    {
+                                        "product_id": "fert-456",
+                                        "name": "General Purpose Fertilizer",
+                                        "quantity": 1
+                                    }
+                                ],
+                                "subtotal": 25.98
+                            }
+                        }
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-af3c3dd2-c0a5-4b69-a6e0-6b4cd411766b",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "3d908831-c6bc-4975-bbb2-cd5044f90fa5",
+            "timestamp": 1768005016.826898
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Currently, your cart contains:\n\n*   Standard Potting Soil (Quantity: 1)\n*   General Purpose Fertilizer (Quantity: 1)\n\nYour subtotal is $25.98.\n\nWould you like to make any changes or proceed to checkout?",
+                        "thoughtSignature": "CuwBAY89a18x_e_4kxhqCzf7TqwDFUCaTVbYZn-3V-CB7Fptdnbu7uYKBEndsMINNdiFslc-bA2AbVs4n7CyywZ_Kt8gDJ6FM2FLjznhto9g7AJfZFm97wTlxxtbDsSUCEMtf8U8ZeLAX3qW5bSPYjbs6kltChoc7i7Om5jNocs-yV4N_8h9n9yqvnocCl0iMCTF7Rl6L9CocROTJGqiozzbEL1xLD3H_q9u8Wt__HHW26EjP_jyO-O3PmOzDdCz1PRZ5u8A7C6UKMVwWEeJnYdKyMQbs1XcuO9r51EZeHMdqAW9KfVXYCu1MoDosmE="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3376
+                    }
+                ],
+                "cachedContentTokenCount": 3376,
+                "candidatesTokenCount": 56,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 56
+                    }
+                ],
+                "promptTokenCount": 4526,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4526
+                    }
+                ],
+                "thoughtsTokenCount": 42,
+                "totalTokenCount": 4624,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.1960392849785941,
+            "invocationId": "e-af3c3dd2-c0a5-4b69-a6e0-6b4cd411766b",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 6
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "5ad3a2ae-2756-4995-b0de-db273e9ac467",
+            "timestamp": 1768005016.833581
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "will that Fertilizer do for the tomatoes?"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-7b043511-d2f6-4a40-9949-69649ebdfadd",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "5699db49-e691-46c8-bea9-ae0beddb58d5",
+            "timestamp": 1768005019.234566
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "functionCall": {
+                            "id": "adk-cf90f0b5-f20a-4072-a46c-5201cdc534fc",
+                            "args": {
+                                "customer_id": "123",
+                                "plant_type": "Tomatoes"
+                            },
+                            "name": "get_product_recommendations"
+                        },
+                        "thoughtSignature": "CqgJAY89a18AGzU6Uk85F__sZFh1PVmz_QPIFLrqR6EH5u_dn22Ffk6-fWdiMrQzbPK81MCICYMbHfXXDDpgM-XTlgA837sH3XJfIw2eTNdMGmLDGuEIdi02cxQHs6YAKHYJWyvDsYH8ElFljc5KnFhuzCByNidkQuQZzVqzxz5AQxJPYb9GHPZB94dJF7Vv4GPLwQ1wcJzuy6qB9pjXMiWh-xYir4SlLO1y0yPwiiu3cTyUtPuUMh5NCokGfC1vHN-IYGNrXW-i4h0ykD7_2xRpC8ihxmo7Ngr81sfIzzHrvNLWDJco02JaAq1Ujp_EWdVggXU2gP6cDT3a2Vs0-vF2qaTBv2JVMjij5-K059kLzoj98acvbGoyq_zYOD-woQyluAlrXccA4z4iaOVWniAO_FWoVrWjk6RY4HyXIV6kvoMYQnlXUz9_x1VIIMi7KJUDhHqkOifTsu5wXTvj92ZqTLRVNp7cblAwbOAT71IkXSbhaGpOk0fCNvjuxByCR5zVOlCjyFxlDD0U4YqWZhy_phyW9erF0Jqn0ZV2yLXBusikc0uDBiXeeRTYa_s9SFldnJyDGLH2qTiFxUrFK9LjY9TFcyprycpQj6H9HheXt5HGnDG6TqKr2LPW7imb7xkezKSrHKiB4cHcjkUVLDu3xsYjo_CppTygyWb1Ag13MPN2VOlYUra6cm9HO2zjsAV0pAqACSENP52byJkw0n_Xph3OQJkqpr2wELpTZGCBEb97aTnhQlTSXST61oxbi7D-3PHujzuskf66d71v6Z-pQD9LNWD1anY_yUOH-CS64JkfXcNx7Bo8RAn4KCY95oNsG5DDRMyHmtu0--DQyAQDOEcJumqEIgwz3LG4XjoysAi4AKLPj2qPs5MQWZF0cy9mDYzepjE0P_10ZNQEVNmq2tOSszx0TMbrkp9g7cSYiyZGOGVAD9XAtnLmK6R8wpOi-8JmPTLGC156ErVNYtfgCKjD1BY6DseqedSRUeUOzrt1nMtQSWhzMrvg-ZgwBTnkTF4XfTDOCyeZRENuf9VjBz8M5RlsRdCmKkEI3aEfbDDaxMXJ756ktU7EF2FHZwzpNlXxjGz9yjpAAeCkjTHfBQU_99LUOewKZ88rlKC_v59lekpgoLFDXojHcMo05GlBbUZ7_7vQZ8iqDCURFXJu3ADARHDGp1Ac7obw2p87qeFwCkH4PngyOnNTRIUbg8ZBm7_4NKjhviR4Dnv266-uUGdm3m0AKNUiXJZ39SAGWOYJg2vENwwMBS-79oUdb8QyH_GtoLNYYfp3hq4UKiLVP33idwNX5_cEiWmh37NX2hX7At-HFaQ6XedB3KcoqazEINuJ-yrH_DrBMtocGfrWpSUCYNPUdKRPCQKIpvUGe30_aw0yMvmi6zGCvp6yWcirs0aMvn4KCECTjgChdUUFjIA7UH2Uvegcc4MyPT3QOQf42H9hshay0lr3Ur8N92UCMv9sgoxBFvoWcZ9uHJfiKDNK10bAJyc3zgwNYHb-cgnivRWm-BRFuBuFjzE8icvDx_Vb9JHuPbVjgEZPW0amtOPLClHDeiWck7VO5I1jcYbtg3ryiKAK5A=="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4226
+                    }
+                ],
+                "cachedContentTokenCount": 4226,
+                "candidatesTokenCount": 17,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 17
+                    }
+                ],
+                "promptTokenCount": 4632,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4632
+                    }
+                ],
+                "thoughtsTokenCount": 248,
+                "totalTokenCount": 4897,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -5.785578559426701,
+            "invocationId": "e-7b043511-d2f6-4a40-9949-69649ebdfadd",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 7
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "9ef1c4fd-110a-4c9d-8bff-1fea142c80b6",
+            "timestamp": 1768005019.239823
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "functionResponse": {
+                            "id": "adk-cf90f0b5-f20a-4072-a46c-5201cdc534fc",
+                            "name": "get_product_recommendations",
+                            "response": {
+                                "recommendations": [
+                                    {
+                                        "product_id": "soil-123",
+                                        "name": "Standard Potting Soil",
+                                        "description": "A good all-purpose potting soil."
+                                    },
+                                    {
+                                        "product_id": "fert-456",
+                                        "name": "General Purpose Fertilizer",
+                                        "description": "Suitable for a wide variety of plants."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-7b043511-d2f6-4a40-9949-69649ebdfadd",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "afb5fc8c-744e-4f2b-9f78-5f082109577d",
+            "timestamp": 1768005022.417986
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Yes, the General Purpose Fertilizer in your cart is suitable for tomatoes! It's a good all-around option.\n\nWould you like those tomato care instructions sent to your email or via SMS?",
+                        "thoughtSignature": "CscCAY89a19yN3h6bmZskLOguBeCPOfzCr7gONbtVMk5hpjBpDNp9ufaCkZIQ8bCWrj1uUB84HRDuyHh9TZhd00kNm4TzO_GbvTS6pBQpRuHjNTmmjLGEj7aXPUthptqiJIyLrlkKy41IPz5GBTpW-gfuCZnaFszOj0uP3b4buiq5vnzgfZl1Qcq7HMYH1AooKQ_ERCOBVJKooPHhQVnWP6dihlG_l2GDnsfTwuCqDUGQu-jyEobciw7kH92tRSniYv8_vyZYRW3SswNVfR6TdKMKabX8wIVtxixUy_8rdKMgMuPMdwc3zpfe3xd6S_X332OutUfFDFgxcIQcNrbcrQrIhy0i0BwNea1Wu4HHMhdQ1aaE_8-jQPxX01hZJ2Ma-n0DD-8i_7qw3D_EyWBVD9nZKjy9-dKI9TdxWuETtvpwIge25BhSyyc"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3384
+                    }
+                ],
+                "cachedContentTokenCount": 3384,
+                "candidatesTokenCount": 40,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 40
+                    }
+                ],
+                "promptTokenCount": 4948,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4948
+                    }
+                ],
+                "thoughtsTokenCount": 62,
+                "totalTokenCount": 5050,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.7582267761230469,
+            "invocationId": "e-7b043511-d2f6-4a40-9949-69649ebdfadd",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 8
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "80d53b69-5e5f-4f5a-a69e-571b491cacd5",
+            "timestamp": 1768005022.422205
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "ok"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-a6efa3c7-cc45-4b3f-af27-8a85c2068025",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "62bec6c6-b3cf-4c6f-86f6-67c7c8290e58",
+            "timestamp": 1768005025.262284
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Great! To send you the tomato care instructions, please let me know if you'd prefer them sent to your email (alex.johnson@example.com) or via SMS to your phone number (+1-702-555-1212)?",
+                        "thoughtSignature": "CrMCAY89a182JaA0HD1h-zfBKGGWNc4tkAD-kvuxULFXtQWDIDvDZNr5DM7c4RYJuM4gesCvlIQJPmQf2OLS5Affczq5wP5OP3orCuNM5XDpnh5qmRTnEPkcstUYsiuqLMuAay5MysmSRSyk4X4i6TB4Xhu43uA-VweG_O-Np9IKgyzjaUqI3xUWthswoLP1dOID0ffp83fhVBp3lNao2AC3uIzakqpNrNGmxjSZicYD-YrbO9u6I8ES5dwxnFNMin_vXn31CXh6qUQwdvtL0u0jIU2GiOjuFU1lselZhkDpv2r_8LC2-OVJB2O62SyecdTR7QrGFTUvoeMBrMFYfme8zPCK0Clspt-yhnbD-LrA5_A25pK0RaURT6QAffJTIblS508DQfPukSWcRViy0ZdtypCBcw=="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3388
+                    }
+                ],
+                "cachedContentTokenCount": 3388,
+                "candidatesTokenCount": 57,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 57
+                    }
+                ],
+                "promptTokenCount": 5051,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 5051
+                    }
+                ],
+                "thoughtsTokenCount": 54,
+                "totalTokenCount": 5162,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.3244058709395559,
+            "invocationId": "e-a6efa3c7-cc45-4b3f-af27-8a85c2068025",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 9
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "56552561-cfb8-4740-b6cb-7cfe787f1199",
+            "timestamp": 1768005025.266121
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "no thats okey. lets check out now"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-606b31e7-8354-47ac-aeac-acfa6ce0f052",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "d9fe1bf1-63a4-48fc-9168-b77eca9c56ff",
+            "timestamp": 1768005027.505839
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Alright, Alex! Just to confirm, your cart currently contains:\n\n*   Standard Potting Soil (Quantity: 1)\n*   General Purpose Fertilizer (Quantity: 1)\n\nYour subtotal is $25.98.\n\nAre you ready to finalize this purchase?",
+                        "thoughtSignature": "Ct0HAY89a1-umq8kxlSNV6VRLfHLX3EGmB6gJjBqYBlAVjyhZlssHHbLk04Fp-RYwVCMfj7e3DYMlphHIIYDdPfF2ZDACkhvD9KyUm0TgWd2R147E_3ZJPBAI1EBDo6H19SYT5zbeY-NTI6fbAJ5gO9aNbz7jVherq01wgwJlhm6mkyXLjeLLdpfPcPLko-uA4oyPxtFJTZ_KdHKGovQnMt4U-Syo1LtqpgDbwZsojx3mFTu5d5ZEgKlmRw4TpCXRuWe0iyKjX3GNuOK6y23bPdjC97dTIlmrKMDP6qhc4rFb0Yd1SVVxTFxY0un7YNvGQoNpItzHd2TvlrZAhdMlPhwyyyU-zWXTayljULIDQ6c5GphotwuAYId984ZYu6XGZjSfPXFmLBf_Plz_YKijkDj15fyJItvFcfQzdp8czisfEhM0uaQY-wcs_iOeREI5eNGxMi-S9lfFQN1S7GutaPszxdWkJu6RHscGDYQXVZa3p5Sk0k-Q_z5PUQpDb18Y89tQ5GltU1iJImymKKKn5AnVbNWzMSUVaBpkf2oJm_EL4JmfXdgdPsaKZaKzq57bbURoCMZVuuQcKvVBCmvBmO_MnVUF34llYpLaDgNcvP-Xw2iRgASTKpjWiVoFUTLRuwtVNr59J06dG5ss_U6EtVQuSRTyk8PIDVmyrHhmDSsdM1h1CXn0q2L3y7wa1gIwneTKcfo7ep9QZib0qCcTRD-91rReKOlXjGJhaDTy95vgsWvjnXQSeVp0DhjWyVf5krb7jW7XR4fk8Qx9f0gcVbdW0PXWFd3aygKsi6fP7_WFrTcwyPpy6hSigoGzjh4-F1smFQlZzYpj1568WvJ58XZEZSVK6_kpbsA5GBqoJvrbNCs7sAhPAwBGzKSv22co6ea2KPfWn1iC8f9Cjjh3G0v_hX3-blce4xfvf63Hayg0Pi0HEdzOFmur-50Vi3DrrzW8eHHqbHCquOcBulWEwrrqv8fR6vJkA-HmTcSvuWHhO6UJTPhlZZgJ35Lf7eAuTNhzsjuYH18DAmiZk2IqgTjf4IqhV-2ngGzCZ6aXR9zRwhEsP7X0XYBILKOiRbDsEUyk9-kpI_8koepPJivf83Y2yr7zyYRPBusgdyPuu8l-csEjtudcQTBG_macMB_4bi45dmcaU53dXBdaB4wJAEv4oFfL5PDkzXGAwGwd-f0g6_zmI_cFRMcgHLS6NVlSPlMx3Xo8Xhcs-XE2pr6tW0tMnBAMxpV32y4k57cZ5qt8wpH5nvIIToZlkNrtMZdU2ICru5hrKeLMKNIKX8FoVPa1fyRwuLsjyKMN9LRRNM="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4243
+                    }
+                ],
+                "cachedContentTokenCount": 4243,
+                "candidatesTokenCount": 59,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 59
+                    }
+                ],
+                "promptTokenCount": 5171,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 5171
+                    }
+                ],
+                "thoughtsTokenCount": 201,
+                "totalTokenCount": 5431,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -2.818823604260461,
+            "invocationId": "e-606b31e7-8354-47ac-aeac-acfa6ce0f052",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 10
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "628f4bc5-d0ea-420f-a687-87b0281a020f",
+            "timestamp": 1768005027.509462
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "yes for the 10%!"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-163f309d-4cbd-4fca-af2e-bfdb910c5e0b",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "6edf8afd-17c9-4a0c-af24-da5af05f6ccb",
+            "timestamp": 1768005061.808714
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "I'm sorry, Alex, I don't see a 10% discount applied to your current order. Could you please clarify what 10% discount you're referring to?",
+                        "thoughtSignature": "Cp4HAY89a1_mX2nZeyuA6uEE__FNMj4lFbJf4WP7sKtdHWEOlHQVeWP1_cqTSK_3Shho7h0jk-G6ZboWugWwxat_fEjcYQzYEilOKSJm4KvNLKkT_5pl-rXzys99F0Kh_G6bPjoicqP6x-vCNbiK-tFFmn-WYr0f6JiIpiNL5QE4gImhi_bbbsEnOpb206tkptliWKlhukDqfdeT6PmvLtAqXbB8Sp8VdHGyYSLzXVUjW2WmYk3Q74YyFjKpabkonqNCTTqSaZ0L53-Rex9MHJWbeW0vF3HZJpRvvjL-YF3gFwxnJqOu88mf7-EC0BqV-nvMpdf2lqRLeExBGrmHeMkPw8q_-GZyhspJ6mSTpo279fQHXer_GDSJtDIa6PNX6u1345Vnzgu-AwkfQY3KQbf7YS1E6REGplls3b8-23yigho3qW3eZuiXvIBIeWVnxy2zRAaxtZXnJ9bRn6SEoChnzmg5m8TYDG6n1iViG7l2CGpYy93bJqZSrCt09LcZGYI0cBK2XbydRpxuuYB_iImRUe1KBvIMiyxHmgRFmh9QkItOOpgNk1JJItU7qVsGufMn8f_XTG_s4xGgvpVcmBz3tGyog1Ozz49Nig3_UkvUD-qQGHsT7BGZJE7AYbTYln_7yLSj_04fc6oOEcfR7X2E7IRubMZSLKi7K6sOnM4yZB4nyaISxh_PPPZnDu06GxTyU9OlhzGWwOlIXagOEJDUbXPM_EShzLWjFIhJxiEg2S71zgJMufaJhBV46HWPan6X8LHixrs5vr8OK_xqbx25k8xFlxRzsr70xuolNHuWU4yVDDvt5lptlx9tIMgF55Y1VRPQMY1nUbFaCQPo2wnxyK6Q7q06mcihJslKZODt2leEdUyoeRs0ImE-aq3R7NiIklq-OqnzYmMwmaPAHYgJgRsjRyz7BScvUCAno0dtLF65ioavffl0pK1Cpz7GGGDdK6O612pYdXzhY6SQCMD4vC0-aKUqnR9MHNvTfIvuDxzyjKfbNyTwS5s5Lqx9tZ9iWfh7NMgSGHmm8H5Eo9Mifx_9hGRlENHaxD_5i0V0Fqd5BZ6DUe9NN2TF52GucjCDnioW-yTv66ImWS-Pxbf56qSWpIR4ZiFfY62j4fz2KIhfuSJxnuQ9f3kbtfKLlLCQhDjIyYJO62esQ9Z0MTz161Vm18hdPCDyisN7xuOwE5n0VD8IyDrmE42mh8Yl9wWion_zaNSETEorFjCUjno="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4270
+                    }
+                ],
+                "cachedContentTokenCount": 4270,
+                "candidatesTokenCount": 40,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 40
+                    }
+                ],
+                "promptTokenCount": 5438,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 5438
+                    }
+                ],
+                "thoughtsTokenCount": 216,
+                "totalTokenCount": 5694,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -2.5199804306030273,
+            "invocationId": "e-163f309d-4cbd-4fca-af2e-bfdb910c5e0b",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "timer_start": 1768005061.8161018,
+                    "request_count": 1
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "2fe0a2ea-dc7b-47f6-b267-1217a7c8856b",
+            "timestamp": 1768005061.815982
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "nop thats all, thanks for the help"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-f58fafb7-fd8c-454d-8489-1668b3de5016",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "5d9fad15-82c9-49f6-b3b8-e6f64c788f6b",
+            "timestamp": 1768005066.671186
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "You're very welcome, Alex! I'm glad I could help.\n\nIs there anything else I can assist you with today, or are you all set to complete your purchase?",
+                        "thoughtSignature": "CtoDAY89a1-aUXbgNHo14N2r008gVwzre4B1yoZmtDDRqsC8CuVYOGzc44rGuLDOm1jAbkCKha3yL00XR8tqRI-06q9b46CZzbLid8tk22Nl8SgVyuUxpwiufskxb6-41TqP8-IjY9m5pZJwpmLKFGrnsyMlMTIKwviNdDXx8Gu1LPxOX-2re4HAAX8-P6K-R7w8I3q4zuj5MSPXZaeek8IHEIvF2g4vxF92bAXioh5diFoUi7dBU6iTWDybdMPyd4qDHXjWqx2992z_83Oh14iCFWbvJ7LfrlzBVjW3IKVQ9uZgPKEx2lZ2NoSGUbeHJrffGnqnSeH-9N0ZSVBSbThhpvQvERBSqWK5clx3-QjJH8GL31NAmt746jIMGBKdHu2adIeGdsQTYvxH8lSWxGypbbA9JllE2rj0dWm5U1fzTlaCoDaPJI4znASalNGZRZcWdLP7PpauNxCFuCNgCDMCMb7ZtYrslSbjSVbtgNccv8nmEzTBjaOZODK3MYEzc5vJRi1XbX9-uQC0ycl5BKDEfTb3s6y2PGHbs4z9t-E93fJ7bNAqTJUgF9cqPl5iyEQ7yBTcoyIxyq-HLQXE8gEj-3nKzWtMGS80lNASPw9GHk90EFkN0ry6dxL7"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 5153
+                    }
+                ],
+                "cachedContentTokenCount": 5153,
+                "candidatesTokenCount": 38,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 38
+                    }
+                ],
+                "promptTokenCount": 5702,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 5702
+                    }
+                ],
+                "thoughtsTokenCount": 87,
+                "totalTokenCount": 5827,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -1.3246443899054277,
+            "invocationId": "e-f58fafb7-fd8c-454d-8489-1668b3de5016",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 2
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "df47f3d9-d312-4dfd-a486-36b320829744",
+            "timestamp": 1768005066.677304
+        }
+    ],
+    "lastUpdateTime": 1768005066.677304
+}

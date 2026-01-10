@@ -45,7 +45,7 @@ uv run python 01_agent_interaction.py \
 | `--questions-file` | One or more paths to JSON files with test questions. **(Required)** | N/A |
 | `--user-id` | The user ID for the evaluation session. | `eval_user` |
 | `--num-questions` | Number of questions to sample from each file. -1 for all. | `-1` |
-| `--results-dir` | Directory to save results. | `evaluation/results` |
+| `--results-dir` | Directory to save results. | `results/<app_name>/<timestamp>` |
 | `--state-variable` | Inject state variables during session creation (e.g., `customer_id:123`). Can be used multiple times. | N/A |
 | `--runs` | Number of times to run each question (for variance testing). | `1` |
 
@@ -58,8 +58,7 @@ uv run python 01_agent_interaction.py \
   --app-name customer_service \
   --base-url http://localhost:8501 \
   --questions-file datasets/customer_service_golden.json \
-  --state-variable customer_id:123 \
-  --results-dir results
+  --state-variable customer_id:123
 ```
 
 ---
@@ -121,9 +120,24 @@ Below is an actual row (formatted as JSON for readability) extracted from a succ
         }
       ]
     },
+    {
+      "name": "invocation",
+      "type": "OTHER",
+      "duration_seconds": 4.325,
+      "children": [
+        {
+          "name": "invoke_agent customer_service_agent",
+          "type": "OTHER",
+          "duration_seconds": 4.3228,
+          "children": [
+            { "name": "call_llm", "type": "LLM_CALL", "duration_seconds": 4.3132 }
+          ]
+        }
+      ]
+    },
     "... (Additional turn latencies omitted for brevity)"
   ],
-  "trace_summary": [],
+  "trace_summary": ["customer_service_agent", "customer_service_agent", "..."],
   "session_trace": "... (Detailed trace data, see trace_<app>_<question_id>_<session_id>.json in results/)",
   "final_session_state": "... (Final state object, see session_<app>_<question_id>_<session_id>.json in results/)",
   "extracted_data": {
@@ -153,36 +167,6 @@ Below is an actual row (formatted as JSON for readability) extracted from a succ
       {
         "agent_name": "customer_service_agent",
         "text_response": "Hello Alex! Welcome back to Cymbal Home & Garden...",
-        "timestamp": 1768002569.10474
-      },
-      "..."
-    ]
-  }
-}
-``` \"invoke_agent customer_service_agent\", \"type\": \"OTHER\", \"duration_seconds\": 4.1932, \"children\": [{\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 4.1795}]}]}, {\"name\": \"invocation\", \"type\": \"OTHER\", \"duration_seconds\": 6.1406, \"children\": [{\"name\": \"invoke_agent customer_service_agent\", \"type\": \"OTHER\", \"duration_seconds\": 6.1372, \"children\": [{\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 2.3718, \"children\": [{\"name\": \"execute_tool get_product_recommendations\", \"type\": \"TOOL_CALL\", \"duration_seconds\": 0.0019}]}, {\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 3.7351}]}]}, {\"name\": \"invocation\", \"type\": \"OTHER\", \"duration_seconds\": 33.3861, \"children\": [{\"name\": \"invoke_agent customer_service_agent\", \"type\": \"OTHER\", \"duration_seconds\": 33.3821, \"children\": [{\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 3.6283, \"children\": [{\"name\": \"execute_tool access_cart_information\", \"type\": \"TOOL_CALL\", \"duration_seconds\": 0.001}]}, {\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 3.666}]}]}, {\"name\": \"invocation\", \"type\": \"OTHER\", \"duration_seconds\": 5.8602, \"children\": [{\"name\": \"invoke_agent customer_service_agent\", \"type\": \"OTHER\", \"duration_seconds\": 5.8564, \"children\": [{\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 2.9331, \"children\": [{\"name\": \"execute_tool generate_qr_code\", \"type\": \"TOOL_CALL\", \"duration_seconds\": 0.0008}]}, {\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 2.9129}]}]}, {\"name\": \"invocation\", \"type\": \"OTHER\", \"duration_seconds\": 5.7666, \"children\": [{\"name\": \"invoke_agent customer_service_agent\", \"type\": \"OTHER\", \"duration_seconds\": 5.7631, \"children\": [{\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 3.0245, \"children\": [{\"name\": \"execute_tool update_salesforce_crm\", \"type\": \"TOOL_CALL\", \"duration_seconds\": 0.0008}]}, {\"name\": \"call_llm\", \"type\": \"LLM_CALL\", \"duration_seconds\": 2.7259}]}]}]",
-  "trace_summary": "[]",
-  "session_trace": "... (Detailed trace data, see trace_<app>_<question_id>_<session_id>.json in results/)",
-  "final_session_state": "... (Final state object, see session_<app>_<question_id>_<session_id>.json in results/)",
-  "extracted_data": {
-    "state_variables": {
-      "customer_id": "123",
-      "customer_profile": "{...}",
-      "timer_start": 1768002604.0364587,
-      "request_count": 6
-    },
-    "tool_interactions": [
-      {
-        "tool_name": "send_care_instructions",
-        "input_arguments": {"plant_type": "Tomato", "delivery_method": "email", "customer_id": "123"},
-        "call_id": "adk-d6bc4d3c-98d4-42b8-8876-f8a493656b3a",
-        "output_result": {"status": "success", "message": "Care instructions sent."}
-      },
-      "..."
-    ],
-    "sub_agent_trace": [
-      {
-        "agent_name": "customer_service_agent",
-        "text_response": "Hello Alex! Welcome back...",
         "timestamp": 1768002569.10474
       },
       "..."

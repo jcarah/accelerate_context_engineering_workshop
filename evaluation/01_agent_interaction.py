@@ -36,6 +36,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -151,8 +152,7 @@ def main():
     parser.add_argument(
         "--results-dir",
         type=Path,
-        default=Path("evaluation/results"),
-        help="Directory to save interaction and processing results.",
+        help="Directory to save interaction and processing results. Default: results/<app_name>/<timestamp>",
     )
     parser.add_argument(
         "--user",
@@ -185,7 +185,15 @@ def main():
     )
     args = parser.parse_args()
 
-    args.results_dir.mkdir(parents=True, exist_ok=True)
+    # --- Resolve Results Directory ---
+    if args.results_dir:
+        results_dir = args.results_dir
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        results_dir = Path("results") / args.app_name / timestamp
+
+    results_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Results will be saved to: {results_dir}")
 
     # --- Consolidate questions and prepare for interaction ---
     consolidated_questions = load_and_consolidate_questions(
@@ -198,14 +206,13 @@ def main():
         sys.exit(0)
     
     # Save consolidated questions to a temporary file to pass to the next script.
-    temp_questions_path = args.results_dir / "temp_consolidated_questions.json"
+    temp_questions_path = results_dir / "temp_consolidated_questions.json"
     with open(temp_questions_path, "w") as f:
         json.dump({"questions": consolidated_questions}, f, indent=4)
     print(f"Consolidated questions saved to '{temp_questions_path}'")
 
     # Define output CSV path
-    interaction_csv_path = args.results_dir / "interaction_format_golden_data.csv"
-    #"interaction_consolidated.csv"
+    interaction_csv_path = results_dir / "interaction_format_golden_data.csv"
 
     # --- Step 1: Run Interactions ---
     if not args.skip_interactions:
@@ -217,7 +224,7 @@ def main():
             "--app_name", args.app_name,
             "--questions_file", str(temp_questions_path),
             "--num_questions", "-1",  # Use -1 as we've already sampled
-            "--results_dir", str(args.results_dir),
+            "--results_dir", str(results_dir),
             "--user", args.user,
             "--runs", str(args.runs),
             "--output-csv", str(interaction_csv_path),
@@ -248,14 +255,14 @@ def main():
         sys.executable,
         "scripts/process_interactions.py",
         "--input-csv", str(interaction_csv_path),
-        "--results_dir", str(args.results_dir),
+        "--results_dir", str(results_dir),
     ]
     print("\n--- Processing Interactions ---")
     print(f"Command: {' '.join(process_interactions_cmd)}")
     try:
         subprocess.run(process_interactions_cmd, check=True, text=True)
         print("Processing script completed successfully.")
-        print(f"\nFinal processed data saved in '{args.results_dir}'")
+        print(f"\nFinal processed data saved in '{results_dir}'")
     except subprocess.CalledProcessError as e:
         print(f"Error running processing script: {e}")
         sys.exit(1)

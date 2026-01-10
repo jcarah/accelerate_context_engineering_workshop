@@ -244,11 +244,19 @@ class AgentClient:
                 'details': {}
             }
 
-            if 'agent_run' in name:
+            if 'agent_run' in name or 'invoke_agent' in name:
                 extracted_info['type'] = 'AGENT_RUN'
                 try:
-                    # Support both "agent_run [name]" and "agent_run[name]"
-                    extracted_info['details']['agent_name'] = re.search(r'\[(.*)\]', name).group(1)
+                    # Support "agent_run [name]", "agent_run[name]", "invoke_agent name"
+                    if '[' in name and ']' in name:
+                        extracted_info['details']['agent_name'] = re.search(r'\[(.*)\]', name).group(1)
+                    else:
+                        # Assume "invoke_agent name" or similar
+                        parts = name.split(maxsplit=1)
+                        if len(parts) > 1:
+                             extracted_info['details']['agent_name'] = parts[1].strip()
+                        else:
+                             extracted_info['details']['agent_name'] = 'unknown'
                 except (IndexError, AttributeError):
                     extracted_info['details']['agent_name'] = 'unknown'
             elif 'tool_call' in name or 'execute_tool' in name:
@@ -342,11 +350,19 @@ class AgentClient:
         """Extracts the sequence of agents invoked."""
         trajectory = []
         def traverse(span):
-            if 'agent_run' in span.get('name', ''):
+            # Check type first for robustness, rely on previously extracted details
+            if span.get('type') == 'AGENT_RUN':
+                agent_name = span.get('details', {}).get('agent_name')
+                if agent_name:
+                    trajectory.append(agent_name)
+            
+            # Fallback for old traces or unclassified spans (legacy check)
+            elif 'agent_run' in span.get('name', ''):
                 match = re.search(r'\[(.*)\]', span.get('name', ''))
                 if match:
                     agent_name = match.group(1)
                     trajectory.append(agent_name)
+                    
             for child in span.get('children', []):
                 traverse(child)
         for root in analyzed_trace:
