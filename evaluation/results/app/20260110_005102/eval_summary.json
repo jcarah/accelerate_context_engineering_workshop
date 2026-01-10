@@ -1,37 +1,40 @@
 {
-    "experiment_id": "eval-20260110022645",
-    "run_type": "retail_run_4",
+    "experiment_id": "eval-20260110030826",
+    "run_type": "retail_run_6",
     "test_description": "Evaluation run from 02_agent_run_eval.py.",
     "interaction_datetime": "2026-01-10T00:51:03.436672",
     "USER": "admin_danielazamora_altostrat_co",
     "ADK_USER_ID": "eval_user",
     "base_url": "http://localhost:8501",
     "overall_summary": {
-        "average_latency": {
-            "overall": 362.23405
-        },
         "average_metrics": {
-            "token_usage": 0.312194375,
-            "latency_metrics": 362.2340769015,
-            "state_variable_fidelity": 5.0,
-            "market_research_depth": 1.0,
-            "strategic_recommendation_quality": 1.0,
-            "tool_usage_effectiveness": 5.0,
             "token_usage.llm_calls": 13.0,
             "token_usage.total_tokens": 216612.5,
             "token_usage.prompt_tokens": 134999.5,
             "token_usage.completion_tokens": 14344.5,
             "token_usage.estimated_cost_usd": 0.312194375,
-            "latency_metrics.total_latency_seconds": 362.2340769015,
+            "token_usage": 0.312194375,
+            "latency_metrics.total_latency_seconds": 362.23405,
+            "latency_metrics.average_turn_latency_seconds": 362.23405,
             "latency_metrics.llm_latency_seconds": 718.3405850835,
             "latency_metrics.tool_latency_seconds": 84.939564725,
-            "latency_metrics.time_to_first_response_seconds": 8.317924584
+            "latency_metrics.time_to_first_response_seconds": 8.317924584,
+            "latency_metrics": 362.23405,
+            "market_research_depth": 1.0,
+            "strategic_recommendation_quality": 1.0,
+            "tool_usage_effectiveness": 5.0,
+            "state_variable_fidelity": 5.0
         }
     },
     "per_metric_summary": [
         {
             "metric_name": "latency_metrics",
-            "average_score": 362.2340769015,
+            "average_score": 362.23405,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "latency_metrics.average_turn_latency_seconds",
+            "average_score": 362.23405,
             "conversation_count": 2
         },
         {
@@ -51,7 +54,7 @@
         },
         {
             "metric_name": "latency_metrics.total_latency_seconds",
-            "average_score": 362.2340769015,
+            "average_score": 362.23405,
             "conversation_count": 2
         },
         {
@@ -62,7 +65,7 @@
         {
             "metric_name": "state_variable_fidelity",
             "average_score": 5.0,
-            "conversation_count": 2
+            "conversation_count": 1
         },
         {
             "metric_name": "strategic_recommendation_quality",
@@ -109,25 +112,70 @@
         {
             "question_id": "q1",
             "runs": 1,
-            "average_latency": {
-                "overall": 362.2428
-            },
-            "average_metrics": {
-                "token_usage": 0.30481625,
-                "latency_metrics": 362.242812785,
-                "state_variable_fidelity": 5.0,
-                "market_research_depth": 1.0,
-                "strategic_recommendation_quality": 1.0,
-                "tool_usage_effectiveness": 5.0,
-                "token_usage.llm_calls": 13.0,
-                "token_usage.total_tokens": 189302.0,
-                "token_usage.prompt_tokens": 139141.0,
-                "token_usage.completion_tokens": 13089.0,
-                "token_usage.estimated_cost_usd": 0.30481625,
-                "latency_metrics.total_latency_seconds": 362.242812785,
-                "latency_metrics.llm_latency_seconds": 718.711445862,
-                "latency_metrics.tool_latency_seconds": 89.46195941799999,
-                "latency_metrics.time_to_first_response_seconds": 7.747876819
+            "metrics": {
+                "token_usage.llm_calls": {
+                    "score": 13,
+                    "explanation": "Detail llm_calls for token_usage"
+                },
+                "token_usage.total_tokens": {
+                    "score": 189302,
+                    "explanation": "Detail total_tokens for token_usage"
+                },
+                "token_usage.prompt_tokens": {
+                    "score": 139141,
+                    "explanation": "Detail prompt_tokens for token_usage"
+                },
+                "token_usage.completion_tokens": {
+                    "score": 13089,
+                    "explanation": "Detail completion_tokens for token_usage"
+                },
+                "token_usage.estimated_cost_usd": {
+                    "score": 0.30481625,
+                    "explanation": "Detail estimated_cost_usd for token_usage"
+                },
+                "token_usage": {
+                    "score": 0.30481625,
+                    "explanation": "Usage: 13 LLM calls using ['gemini-2.5-pro']. Tokens: 189302 (139141p + 13089c). Cost: $0.304816"
+                },
+                "latency_metrics.total_latency_seconds": {
+                    "score": 362.2428,
+                    "explanation": "Detail total_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.average_turn_latency_seconds": {
+                    "score": 362.2428,
+                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.llm_latency_seconds": {
+                    "score": 718.711445862,
+                    "explanation": "Detail llm_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.tool_latency_seconds": {
+                    "score": 89.46195941799999,
+                    "explanation": "Detail tool_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.time_to_first_response_seconds": {
+                    "score": 7.747876819,
+                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                },
+                "latency_metrics": {
+                    "score": 362.2428,
+                    "explanation": "Total: 362.2428s. Avg Turn: 362.2428s. LLM: 718.7114s, Tools: 89.4620s. First Response: 7.7479s"
+                },
+                "state_variable_fidelity": {
+                    "explanation": "Error"
+                },
+                "market_research_depth": {
+                    "score": 1.0,
+                    "explanation": "Both the Market Research Findings and Competitor Analysis sections are empty, indicating no market research or competitor analysis was performed or provided by the AI agent."
+                },
+                "strategic_recommendation_quality": {
+                    "score": 1.0,
+                    "explanation": "The strategic report was empty, indicating no recommendation or output was provided by the AI for evaluation, thus failing all criteria."
+                },
+                "tool_usage_effectiveness": {
+                    "score": 5.0,
+                    "explanation": "The agent effectively used the IntakeAgent to parse the request, then transferred to a specialized agent. It conducted highly relevant searches for both direct ('specialty coffee shop') and indirect ('cafe') competitors to ensure comprehensive coverage. Finally, it successfully generated both a detailed HTML report and a concise infographic, demonstrating optimal completion and presentation of results without any redundant calls."
+                }
             },
             "complexity": "low",
             "domain": "retail",
@@ -136,25 +184,71 @@
         {
             "question_id": "q2",
             "runs": 1,
-            "average_latency": {
-                "overall": 362.2253
-            },
-            "average_metrics": {
-                "token_usage": 0.3195725000000001,
-                "latency_metrics": 362.225341018,
-                "state_variable_fidelity": 5.0,
-                "market_research_depth": 1.0,
-                "strategic_recommendation_quality": 1.0,
-                "tool_usage_effectiveness": 5.0,
-                "token_usage.llm_calls": 13.0,
-                "token_usage.total_tokens": 243923.0,
-                "token_usage.prompt_tokens": 130858.0,
-                "token_usage.completion_tokens": 15600.0,
-                "token_usage.estimated_cost_usd": 0.3195725000000001,
-                "latency_metrics.total_latency_seconds": 362.225341018,
-                "latency_metrics.llm_latency_seconds": 717.969724305,
-                "latency_metrics.tool_latency_seconds": 80.417170032,
-                "latency_metrics.time_to_first_response_seconds": 8.887972349
+            "metrics": {
+                "token_usage.llm_calls": {
+                    "score": 13,
+                    "explanation": "Detail llm_calls for token_usage"
+                },
+                "token_usage.total_tokens": {
+                    "score": 243923,
+                    "explanation": "Detail total_tokens for token_usage"
+                },
+                "token_usage.prompt_tokens": {
+                    "score": 130858,
+                    "explanation": "Detail prompt_tokens for token_usage"
+                },
+                "token_usage.completion_tokens": {
+                    "score": 15600,
+                    "explanation": "Detail completion_tokens for token_usage"
+                },
+                "token_usage.estimated_cost_usd": {
+                    "score": 0.3195725000000001,
+                    "explanation": "Detail estimated_cost_usd for token_usage"
+                },
+                "token_usage": {
+                    "score": 0.3195725000000001,
+                    "explanation": "Usage: 13 LLM calls using ['gemini-2.5-pro']. Tokens: 243923 (130858p + 15600c). Cost: $0.319573"
+                },
+                "latency_metrics.total_latency_seconds": {
+                    "score": 362.2253,
+                    "explanation": "Detail total_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.average_turn_latency_seconds": {
+                    "score": 362.2253,
+                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.llm_latency_seconds": {
+                    "score": 717.969724305,
+                    "explanation": "Detail llm_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.tool_latency_seconds": {
+                    "score": 80.417170032,
+                    "explanation": "Detail tool_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.time_to_first_response_seconds": {
+                    "score": 8.887972349,
+                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                },
+                "latency_metrics": {
+                    "score": 362.2253,
+                    "explanation": "Total: 362.2253s. Avg Turn: 362.2253s. LLM: 717.9697s, Tools: 80.4172s. First Response: 8.8880s"
+                },
+                "state_variable_fidelity": {
+                    "score": 5.0,
+                    "explanation": "The agent state perfectly aligns with the user request. All critical fields like 'parsed_request', 'target_location', 'business_type', 'market_research_findings', 'competitor_analysis', and 'gap_analysis' are fully populated with highly relevant and detailed data. The consistency across different stages is excellent, with findings from earlier stages directly informing later analyses and the final strategic report. The 'high-end' context is consistently maintained throughout the analysis."
+                },
+                "market_research_depth": {
+                    "score": 1.0,
+                    "explanation": "The 'Market Research Findings' and 'Competitor Analysis' sections are completely empty, providing no information to evaluate against the specified criteria for depth, specificity, relevance, or synthesis."
+                },
+                "strategic_recommendation_quality": {
+                    "score": 1.0,
+                    "explanation": "The strategic report to be evaluated is missing from the prompt. Without the content of the 'Strategic Report', a proper evaluation against the specified criteria (Clarity, Evidence-Based, Risk Assessment, Actionability) cannot be performed. Therefore, the AI output (the report itself) cannot be assessed as intended."
+                },
+                "tool_usage_effectiveness": {
+                    "score": 5.0,
+                    "explanation": "The AI agent demonstrated optimal tool usage. It accurately parsed the user's request, performed highly relevant searches for 'luxury gym' and 'high-end fitness center' in the specified location to gather comprehensive data on competitors, and successfully generated both a detailed HTML report and a concise infographic. The generated report clearly indicates that the search results were used for an in-depth analysis to identify the 'best spot', going beyond simple listing to provide strategic insights and recommendations, thus fully addressing the user's complex request efficiently and comprehensively."
+                }
             },
             "complexity": "low",
             "domain": "retail",

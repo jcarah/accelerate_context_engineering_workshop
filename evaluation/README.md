@@ -14,9 +14,9 @@ The pipeline is orchestrated by three core scripts:
 
 ## Prerequisites: Running the Agents
 
-Before you can record interactions (Step 1), the agent you want to evaluate must be running locally with its FastAPI endpoint active. 
+Before you can record interactions (Step 1), the agent you want to evaluate must be accessible. You can run the pipeline against a **local instance** for development or a **deployed application URL** (e.g., Cloud Run or Vertex AI Agent Engine) for staging/production testing.
 
-### Start the Agent Service
+### Option A: Start the Agent Service Locally
 
 Depending on which agent you are testing, navigate to its directory and run the appropriate command. Both agents are configured to run on port **8501** by default.
 
@@ -31,15 +31,17 @@ Depending on which agent you are testing, navigate to its directory and run the 
     make dev
     ```
 
+### Option B: Use a Deployed URL
+Ensure you have the full URL of your deployed service (e.g., `https://my-agent-abc123.a.run.app`).
+
 ### Execution Strategy
-1.  **Run each agent independently.** Each agent occupies the local port (8501) and requires its own set of golden questions.
-2.  **Lifecycle:** The agent service is **only required for Step 1**. Once you have generated the `processed_interaction` files, you can stop the agent process (e.g., `Ctrl+C`) and proceed to Step 2 using the static interaction data.
+1.  **Lifecycle:** The agent service (local or remote) is **only required for Step 1**. Once you have generated the `processed_interaction` files, you can proceed to Step 2 using the static interaction data.
 
 ---
 
 ## Step 1: Running Agent Interactions (`01_agent_interaction.py`)
 
-This script runs a dataset of questions against your active agent and produces a processed CSV file ready for evaluation.
+This script runs a dataset of questions against your active agent (local or deployed) and produces a processed CSV file ready for evaluation.
 
 ### Usage
 
@@ -57,7 +59,7 @@ uv run python 01_agent_interaction.py \
 | Argument | Description | Default |
 |---|---|---|
 | `--app-name` | The name of the application/agent (e.g., `customer_service`, `app`). **(Required)** | N/A |
-| `--base-url` | The base URL where the agent service is running. | `http://localhost:8501` |
+| `--base-url` | The URL where the agent service is running (local or deployed). | `http://localhost:8501` |
 | `--questions-file` | One or more paths to JSON files with test questions. **(Required)** | N/A |
 | `--user-id` | The user ID for the evaluation session. | `eval_user` |
 | `--num-questions` | Number of questions to sample from each file. -1 for all. | `-1` |
@@ -110,7 +112,7 @@ uv run python 02_agent_run_eval.py \
 These metrics provide objective, reproducible measurements by analyzing execution traces.
 
 *   **`token_usage`**: Calculates the **Estimated Cost in USD** for the session based on model-specific pricing (e.g., Gemini 1.5 Pro).
-*   **`latency_metrics`**: Measures the **Total Session Duration in Seconds** from the first to last trace event.
+*   **`latency_metrics`**: Measures both **Total Session Duration** and **Average Turn Latency** in seconds, breaking down time spent in LLM calls vs tools.
 
 ---
 
@@ -122,17 +124,66 @@ The script generates an `eval_summary.json` file which flattens complex data int
 *   **Flattened Detailed Metrics:** Aggregated metrics like `latency_metrics` are expanded into sub-metrics (e.g., `latency_metrics.llm_latency_seconds`) to help identify bottlenecks.
 *   **Dynamic Metadata Integration:** Any metadata from the golden dataset (e.g., `source_file`) is automatically merged into the per-question results.
 
-**Example `average_metrics` structure:**
+### Output Structure
+
+**1. Overall Summary (`average_metrics`):**
+Aggregates scores across all questions.
 
 ```json
-"average_metrics": {
-    "response_correctness": 5.0,
-    "token_usage.estimated_cost_usd": 0.012,
-    "latency_metrics.total_latency_seconds": 40.74,
-    "latency_metrics.llm_latency_seconds": 32.65,
-    "latency_metrics.tool_latency_seconds": 0.002
+"overall_summary": {
+    "average_metrics": {
+        "response_correctness": 5.0,
+        "token_usage.estimated_cost_usd": 0.012,
+        "latency_metrics.total_latency_seconds": 40.74,
+        "latency_metrics.average_turn_latency_seconds": 13.58,
+        "latency_metrics.llm_latency_seconds": 32.65,
+        "latency_metrics.tool_latency_seconds": 0.002
+    }
 }
 ```
+
+**2. Per-Question Summary:**
+Includes detailed scores and explanations for each run, allowing for deep-dive analysis.
+
+```json
+"per_question_summary": [
+    {
+        "question_id": "q1_billing",
+        "metrics": {
+            "response_correctness": {
+                "score": 1.0,
+                "explanation": "The agent failed to address the user's specific billing question..."
+            },
+            "latency_metrics.total_latency_seconds": {
+                "score": 4.5,
+                "explanation": "Detail total_latency_seconds for latency_metrics"
+            }
+        },
+        "metadata_field": "value"
+    }
+]
+```
+
+---
+
+## Customizing Metrics
+
+The evaluation framework is designed for extensibility. `02_agent_run_eval.py` dynamically loads metrics from two sources, so you can add or modify them without changing the main script.
+
+### 1. Deterministic Metrics (Python)
+Logic-based metrics are defined in `evaluation/scripts/deterministic_metrics.py`.
+
+*   **How it works:** The script maintains a `DETERMINISTIC_METRICS` registry mapping metric names to Python functions.
+*   **To add a metric:**
+    1.  Define a new function in `deterministic_metrics.py` (e.g., `def calculate_my_metric(...)`).
+    2.  Add it to the `DETERMINISTIC_METRICS` dictionary at the bottom of the file.
+    3.  `02_agent_run_eval.py` will automatically detect and run it if listed in your JSON config or if passed via CLI filters.
+
+### 2. LLM-based Metrics (JSON)
+AI-as-judge metrics are defined in JSON configuration files (e.g., `metrics/metric_definitions_customer_service.json`).
+
+*   **How it works:** These files define the prompt templates and data mapping logic.
+*   **To add a metric:** Simply add a new entry to the `metrics` object in your JSON file. The pipeline reads these files at runtime, so no code changes are needed.
 
 ---
 

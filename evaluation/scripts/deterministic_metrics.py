@@ -109,7 +109,8 @@ def calculate_token_usage(
 
 
 def calculate_latency_metrics(
-    session_trace: List[Dict[str, Any]]
+    session_trace: List[Dict[str, Any]],
+    latency_data: List[Dict[str, Any]] = None
 ) -> Tuple[float, str, Dict[str, Any]]:
     """
     Calculate latency metrics from the session trace.
@@ -119,6 +120,7 @@ def calculate_latency_metrics(
     llm_latency = 0.0
     tool_latency = 0.0
     first_response_latency = None
+    average_turn_latency = 0.0
     
     if not session_trace:
         return 0.0, "No trace data available for latency calculation", {}
@@ -134,15 +136,12 @@ def calculate_latency_metrics(
 
     root_start = sorted_spans[0]['start_time']
     
-    # Calculate Total Latency (End of last span - Start of first span)
-    max_end = max([s.get('end_time', 0) for s in session_trace])
-    if max_end > root_start:
-        total_latency = (max_end - root_start) / 1e9  # nanoseconds to seconds
-
-    # Calculate Component Latencies
+    # Calculate Component Latencies from full trace
+    max_end = 0
     for span in session_trace:
         start = span.get('start_time', 0)
         end = span.get('end_time', 0)
+        max_end = max(max_end, end)
         duration = (end - start) / 1e9
         name = span.get('name', '')
         
@@ -155,14 +154,32 @@ def calculate_latency_metrics(
         elif 'tool_call' in name or 'execute_tool' in name:
             tool_latency += duration
 
+    # Calculate Total & Average Latency from high-level summary (latency_data)
+    # This is preferred as it excludes user think time in multi-turn sessions.
+    if latency_data:
+        turn_latencies = []
+        for item in latency_data:
+            if item.get('name') == 'invocation':
+                turn_latencies.append(item.get('duration_seconds', 0))
+        
+        if turn_latencies:
+            average_turn_latency = sum(turn_latencies) / len(turn_latencies)
+            total_latency = sum(turn_latencies)
+
+    # Fallback: Wall-clock duration from trace if latency_data is missing
+    if total_latency == 0.0 and max_end > root_start:
+        total_latency = (max_end - root_start) / 1e9  # nanoseconds to seconds
+
     explanation = (
-        f"Total: {total_latency:.2f}s. "
-        f"LLM: {llm_latency:.2f}s, Tools: {tool_latency:.2f}s. "
-        f"First Response: {first_response_latency if first_response_latency else 0:.2f}s"
+        f"Total: {total_latency:.4f}s. "
+        f"Avg Turn: {average_turn_latency:.4f}s. "
+        f"LLM: {llm_latency:.4f}s, Tools: {tool_latency:.4f}s. "
+        f"First Response: {first_response_latency if first_response_latency else 0:.4f}s"
     )
     
     details = {
         'total_latency_seconds': total_latency,
+        'average_turn_latency_seconds': average_turn_latency,
         'llm_latency_seconds': llm_latency,
         'tool_latency_seconds': tool_latency,
         'time_to_first_response_seconds': first_response_latency
@@ -185,7 +202,8 @@ def evaluate_deterministic_metrics(
     question_metadata: Dict[str, Any],
     metrics_to_run: List[str] = None,
     reference_data: Dict[str, Any] = None,
-    metric_definitions: Dict[str, Any] = None
+    metric_definitions: Dict[str, Any] = None,
+    latency_data: List[Dict[str, Any]] = None
 ) -> Dict[str, Dict[str, Any]]:
     """
     Evaluate all specified deterministic metrics.
@@ -201,7 +219,11 @@ def evaluate_deterministic_metrics(
         metric_func = DETERMINISTIC_METRICS[metric_name]
         
         try:
-            score, explanation, details = metric_func(session_trace)
+            if metric_name == 'latency_metrics':
+                score, explanation, details = metric_func(session_trace, latency_data=latency_data)
+            else:
+                score, explanation, details = metric_func(session_trace)
+                
             results[metric_name] = {
                 'score': score,
                 'explanation': explanation,

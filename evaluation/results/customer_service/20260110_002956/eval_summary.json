@@ -1,37 +1,40 @@
 {
-    "experiment_id": "eval-20260110022428",
-    "run_type": "customer_service_run_5",
+    "experiment_id": "eval-20260110031116",
+    "run_type": "customer_service_run_8",
     "test_description": "Evaluation run from 02_agent_run_eval.py.",
     "interaction_datetime": "2026-01-10T00:29:57.326369",
     "USER": "admin_danielazamora_altostrat_co",
     "ADK_USER_ID": "eval_user",
     "base_url": "http://localhost:8501",
     "overall_summary": {
-        "average_latency": {
-            "overall": 3.8381250000000002
-        },
         "average_metrics": {
-            "token_usage": 0.01235195,
-            "latency_metrics": 40.738397959249994,
-            "trajectory_accuracy": 3.0,
-            "response_correctness": 5.0,
-            "tool_usage_accuracy": 3.5,
-            "state_management_fidelity": 3.5,
             "token_usage.llm_calls": 8.0,
             "token_usage.total_tokens": 38657.25,
             "token_usage.prompt_tokens": 37556.5,
             "token_usage.completion_tokens": 434.0,
             "token_usage.estimated_cost_usd": 0.01235195,
-            "latency_metrics.total_latency_seconds": 40.738397959249994,
+            "token_usage": 0.01235195,
+            "latency_metrics.total_latency_seconds": 40.669774999999994,
+            "latency_metrics.average_turn_latency_seconds": 6.290607499999999,
             "latency_metrics.llm_latency_seconds": 32.650796183749996,
             "latency_metrics.tool_latency_seconds": 0.0018410722499999999,
-            "latency_metrics.time_to_first_response_seconds": 3.83771502275
+            "latency_metrics.time_to_first_response_seconds": 3.83771502275,
+            "latency_metrics": 40.669774999999994,
+            "trajectory_accuracy": 3.5,
+            "response_correctness": 4.5,
+            "tool_usage_accuracy": 3.5,
+            "state_management_fidelity": 3.5
         }
     },
     "per_metric_summary": [
         {
             "metric_name": "latency_metrics",
-            "average_score": 40.738397959249994,
+            "average_score": 40.669774999999994,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "latency_metrics.average_turn_latency_seconds",
+            "average_score": 6.290607499999999,
             "conversation_count": 4
         },
         {
@@ -51,12 +54,12 @@
         },
         {
             "metric_name": "latency_metrics.total_latency_seconds",
-            "average_score": 40.738397959249994,
+            "average_score": 40.669774999999994,
             "conversation_count": 4
         },
         {
             "metric_name": "response_correctness",
-            "average_score": 5.0,
+            "average_score": 4.5,
             "conversation_count": 4
         },
         {
@@ -101,7 +104,7 @@
         },
         {
             "metric_name": "trajectory_accuracy",
-            "average_score": 3.0,
+            "average_score": 3.5,
             "conversation_count": 4
         }
     ],
@@ -109,25 +112,71 @@
         {
             "question_id": "cs_full_657f2ed9",
             "runs": 1,
-            "average_latency": {
-                "overall": 4.2682
-            },
-            "average_metrics": {
-                "token_usage": 0.0184556,
-                "latency_metrics": 67.765465021,
-                "trajectory_accuracy": 4.0,
-                "response_correctness": 5.0,
-                "tool_usage_accuracy": 2.0,
-                "state_management_fidelity": 2.0,
-                "token_usage.llm_calls": 12.0,
-                "token_usage.total_tokens": 58185.0,
-                "token_usage.prompt_tokens": 56427.0,
-                "token_usage.completion_tokens": 611.0,
-                "token_usage.estimated_cost_usd": 0.0184556,
-                "latency_metrics.total_latency_seconds": 67.765465021,
-                "latency_metrics.llm_latency_seconds": 66.87721909899999,
-                "latency_metrics.tool_latency_seconds": 0.0017946519999999999,
-                "latency_metrics.time_to_first_response_seconds": 4.267802809
+            "metrics": {
+                "token_usage.llm_calls": {
+                    "score": 12,
+                    "explanation": "Detail llm_calls for token_usage"
+                },
+                "token_usage.total_tokens": {
+                    "score": 58185,
+                    "explanation": "Detail total_tokens for token_usage"
+                },
+                "token_usage.prompt_tokens": {
+                    "score": 56427,
+                    "explanation": "Detail prompt_tokens for token_usage"
+                },
+                "token_usage.completion_tokens": {
+                    "score": 611,
+                    "explanation": "Detail completion_tokens for token_usage"
+                },
+                "token_usage.estimated_cost_usd": {
+                    "score": 0.0184556,
+                    "explanation": "Detail estimated_cost_usd for token_usage"
+                },
+                "token_usage": {
+                    "score": 0.0184556,
+                    "explanation": "Usage: 12 LLM calls using ['gemini-2.5-flash']. Tokens: 58185 (56427p + 611c). Cost: $0.018456"
+                },
+                "latency_metrics.total_latency_seconds": {
+                    "score": 67.622,
+                    "explanation": "Detail total_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.average_turn_latency_seconds": {
+                    "score": 6.7622,
+                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.llm_latency_seconds": {
+                    "score": 66.87721909899999,
+                    "explanation": "Detail llm_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.tool_latency_seconds": {
+                    "score": 0.0017946519999999999,
+                    "explanation": "Detail tool_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.time_to_first_response_seconds": {
+                    "score": 4.267802809,
+                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                },
+                "latency_metrics": {
+                    "score": 67.622,
+                    "explanation": "Total: 67.6220s. Avg Turn: 6.7622s. LLM: 66.8772s, Tools: 0.0018s. First Response: 4.2678s"
+                },
+                "trajectory_accuracy": {
+                    "score": 4.0,
+                    "explanation": "The actual trajectory is logically equivalent to the reference; both indicate that a customer service type agent handled the entire multi-turn conversation, achieving the same outcome. The difference lies in the granularity (repeated invocations in the actual vs. single entry in expected) and a minor naming variation ('customer_service_agent' vs 'customer_service'), but these do not represent a deviation in the core agent's responsibility or sequence."
+                },
+                "response_correctness": {
+                    "score": 4.0,
+                    "explanation": "The final response is polite, relevant to the customer's immediate closing statement ('thanks for the help'), and offers to complete the purchase or provide further assistance. However, it implicitly allows the customer to drop the recently raised and unresolved 10% discount inquiry without explicit confirmation. While the customer's 'nop thats all' can be interpreted as a desire to drop the issue, a more comprehensive response would have explicitly acknowledged the status of the discount to ensure full closure. Thus, it directly answers the user's closing, but its phrasing or content could be improved for conversational completeness regarding the unresolved discount."
+                },
+                "tool_usage_accuracy": {
+                    "score": 2.0,
+                    "explanation": "The agent used some correct tools with correct parameters (`access_cart_information`, `get_product_recommendations`). However, it missed several key actions, including sending care instructions for tomatoes, re-accessing cart information when explicitly asked a second time, and generating a QR code for checkout. Additionally, `get_product_recommendations` was called prematurely and out of sequence from the user's explicit request."
+                },
+                "state_management_fidelity": {
+                    "score": 2.0,
+                    "explanation": "The agent correctly captured the comprehensive `customer_profile` and `purchase_history` based on the initial query about past purchases, which is a key variable. However, it significantly failed to extract and map subsequent critical information and intents such as the user's specific interest in 'tomato seeds' for care instructions, the request for 'care information', the 'current cart' query, the 'checkout' intent, and the '10%' discount confirmation. These omissions are not minor details but represent key turning points and explicit requests in the conversation."
+                }
             },
             "tenant": "cymbal_home_garden",
             "source_file": "full_conversation.test.json"
@@ -135,25 +184,71 @@
         {
             "question_id": "cs_full_eb4390d8",
             "runs": 1,
-            "average_latency": {
-                "overall": 3.6744
-            },
-            "average_metrics": {
-                "token_usage": 0.023468699999999995,
-                "latency_metrics": 72.931345407,
-                "trajectory_accuracy": 2.0,
-                "response_correctness": 5.0,
-                "tool_usage_accuracy": 2.0,
-                "state_management_fidelity": 2.0,
-                "token_usage.llm_calls": 14.0,
-                "token_usage.total_tokens": 72401.0,
-                "token_usage.prompt_tokens": 70129.0,
-                "token_usage.completion_tokens": 972.0,
-                "token_usage.estimated_cost_usd": 0.023468699999999995,
-                "latency_metrics.total_latency_seconds": 72.931345407,
-                "latency_metrics.llm_latency_seconds": 41.545229196,
-                "latency_metrics.tool_latency_seconds": 0.003019934,
-                "latency_metrics.time_to_first_response_seconds": 3.674068281
+            "metrics": {
+                "token_usage.llm_calls": {
+                    "score": 14,
+                    "explanation": "Detail llm_calls for token_usage"
+                },
+                "token_usage.total_tokens": {
+                    "score": 72401,
+                    "explanation": "Detail total_tokens for token_usage"
+                },
+                "token_usage.prompt_tokens": {
+                    "score": 70129,
+                    "explanation": "Detail prompt_tokens for token_usage"
+                },
+                "token_usage.completion_tokens": {
+                    "score": 972,
+                    "explanation": "Detail completion_tokens for token_usage"
+                },
+                "token_usage.estimated_cost_usd": {
+                    "score": 0.023468699999999995,
+                    "explanation": "Detail estimated_cost_usd for token_usage"
+                },
+                "token_usage": {
+                    "score": 0.023468699999999995,
+                    "explanation": "Usage: 14 LLM calls using ['gemini-2.5-flash']. Tokens: 72401 (70129p + 972c). Cost: $0.023469"
+                },
+                "latency_metrics.total_latency_seconds": {
+                    "score": 72.82079999999999,
+                    "explanation": "Detail total_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.average_turn_latency_seconds": {
+                    "score": 7.282079999999999,
+                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.llm_latency_seconds": {
+                    "score": 41.545229196,
+                    "explanation": "Detail llm_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.tool_latency_seconds": {
+                    "score": 0.003019934,
+                    "explanation": "Detail tool_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.time_to_first_response_seconds": {
+                    "score": 3.674068281,
+                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                },
+                "latency_metrics": {
+                    "score": 72.82079999999999,
+                    "explanation": "Total: 72.8208s. Avg Turn: 7.2821s. LLM: 41.5452s, Tools: 0.0030s. First Response: 3.6741s"
+                },
+                "trajectory_accuracy": {
+                    "score": 4.0,
+                    "explanation": "The expected trajectory specifies that the `customer_service` agent should handle the entire user goal. The actual trajectory shows `customer_service_agent` being consistently invoked for each turn of the multi-turn conversation. Assuming `customer_service` and `customer_service_agent` refer to the same functional entity, the type of agent used aligns perfectly with the expectation. The difference in the number of entries (one in expected vs. multiple in actual) is interpreted as a difference in logging granularity for a multi-turn interaction rather than a functional deviation in orchestration logic or a misordering/missing step. The agent successfully handled the user goal, achieving the same logical outcome as expected."
+                },
+                "response_correctness": {
+                    "score": 4.0,
+                    "explanation": "The AI agent provided mostly accurate and relevant responses with an empathetic and professional tone, proactively offering advice and discounts. However, there were minor conversational flow issues, such as repeating a question for delivery method and a redundant closing message, indicating that phrasing and conversational management could be slightly improved."
+                },
+                "tool_usage_accuracy": {
+                    "score": 2.0,
+                    "explanation": "The agent missed two critical tool calls (`send_care_instructions`) which were explicitly requested by the user, representing a significant failure in completeness. While some tools (`access_cart_information`, `get_product_recommendations`, `generate_qr_code`) were correctly selected and used with correct parameters for their respective requests, the `access_cart_information` call was made out of order, and an additional, unexpected tool (`update_salesforce_crm`) was invoked. The omission of key actions leads to a score of 2."
+                },
+                "state_management_fidelity": {
+                    "score": 2.0,
+                    "explanation": "The agent correctly captured the `customer_id` and loaded the extensive `customer_profile` which was relevant to the user's initial query about past purchases. However, it significantly failed to extract and map critical entities and intents from the subsequent turns of the conversation. Missing key variables include 'tomato seeds' as a current product of interest/concern, the user's intent to seek care information, the request to check the cart, the specific product 'Fertilizer' being discussed, the 'checkout' intent, and the '10%' discount. These omissions indicate a major gap in tracking the evolving conversational context."
+                }
             },
             "tenant": "cymbal_home_garden",
             "source_file": "full_conversation.test.json"
@@ -161,25 +256,71 @@
         {
             "question_id": "cs_simple_17a89ba6",
             "runs": 1,
-            "average_latency": {
-                "overall": 3.6914
-            },
-            "average_metrics": {
-                "token_usage": 0.0037269999999999994,
-                "latency_metrics": 11.177492871,
-                "trajectory_accuracy": 3.0,
-                "response_correctness": 5.0,
-                "tool_usage_accuracy": 5.0,
-                "state_management_fidelity": 5.0,
-                "token_usage.llm_calls": 3.0,
-                "token_usage.total_tokens": 12022.0,
-                "token_usage.prompt_tokens": 11840.0,
-                "token_usage.completion_tokens": 70.0,
-                "token_usage.estimated_cost_usd": 0.0037269999999999994,
-                "latency_metrics.total_latency_seconds": 11.177492871,
-                "latency_metrics.llm_latency_seconds": 11.145239490000002,
-                "latency_metrics.tool_latency_seconds": 0.001110595,
-                "latency_metrics.time_to_first_response_seconds": 3.690975889
+            "metrics": {
+                "token_usage.llm_calls": {
+                    "score": 3,
+                    "explanation": "Detail llm_calls for token_usage"
+                },
+                "token_usage.total_tokens": {
+                    "score": 12022,
+                    "explanation": "Detail total_tokens for token_usage"
+                },
+                "token_usage.prompt_tokens": {
+                    "score": 11840,
+                    "explanation": "Detail prompt_tokens for token_usage"
+                },
+                "token_usage.completion_tokens": {
+                    "score": 70,
+                    "explanation": "Detail completion_tokens for token_usage"
+                },
+                "token_usage.estimated_cost_usd": {
+                    "score": 0.0037269999999999994,
+                    "explanation": "Detail estimated_cost_usd for token_usage"
+                },
+                "token_usage": {
+                    "score": 0.0037269999999999994,
+                    "explanation": "Usage: 3 LLM calls using ['gemini-2.5-flash']. Tokens: 12022 (11840p + 70c). Cost: $0.003727"
+                },
+                "latency_metrics.total_latency_seconds": {
+                    "score": 11.167,
+                    "explanation": "Detail total_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.average_turn_latency_seconds": {
+                    "score": 5.5835,
+                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.llm_latency_seconds": {
+                    "score": 11.145239490000002,
+                    "explanation": "Detail llm_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.tool_latency_seconds": {
+                    "score": 0.001110595,
+                    "explanation": "Detail tool_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.time_to_first_response_seconds": {
+                    "score": 3.690975889,
+                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                },
+                "latency_metrics": {
+                    "score": 11.167,
+                    "explanation": "Total: 11.1670s. Avg Turn: 5.5835s. LLM: 11.1452s, Tools: 0.0011s. First Response: 3.6910s"
+                },
+                "trajectory_accuracy": {
+                    "score": 3.0,
+                    "explanation": "The agent correctly identified the need to call a customer service-related agent (assuming 'customer_service_agent' is functionally equivalent to 'customer_service'). However, it made an unnecessary second call to the same agent, which is a minor deviation consisting of one extra step."
+                },
+                "response_correctness": {
+                    "score": 5.0,
+                    "explanation": "The AI response provides a polite and personalized greeting, then accurately and clearly lists the items in the customer's cart along with the subtotal, directly answering the customer's question in a comprehensive and customer-friendly manner."
+                },
+                "tool_usage_accuracy": {
+                    "score": 5.0,
+                    "explanation": "The agent perfectly matched the expected tool call, using the correct tool with the exact parameters and no redundant calls. The additional fields in the actual call (`call_id`, `output_result`) are execution details and do not detract from the correctness of the tool interaction itself."
+                },
+                "state_management_fidelity": {
+                    "score": 5.0,
+                    "explanation": "The user input 'hi, tell me what is in my cart?' does not contain any explicit entities that should be extracted and stored as new state variables. The 'Expected State Variables' is empty, indicating that no specific entities or changes to the state were anticipated from this particular input. The agent correctly did not extract any new semantic entities from the input. The actual state variables show pre-existing customer context (`customer_id`, `customer_profile`) and system metadata (`timer_start`, `request_count`), which are not extracted from the current input but are part of the ongoing session state. This demonstrates perfect adherence to the expectation of not extracting non-existent entities and maintaining session context."
+                }
             },
             "tenant": "cymbal_home_garden",
             "source_file": "simple.test.json"
@@ -187,25 +328,71 @@
         {
             "question_id": "cs_simple_2f260f51",
             "runs": 1,
-            "average_latency": {
-                "overall": 3.7185
-            },
-            "average_metrics": {
-                "token_usage": 0.0037565,
-                "latency_metrics": 11.079288538,
-                "trajectory_accuracy": 3.0,
-                "response_correctness": 5.0,
-                "tool_usage_accuracy": 5.0,
-                "state_management_fidelity": 5.0,
-                "token_usage.llm_calls": 3.0,
-                "token_usage.total_tokens": 12021.0,
-                "token_usage.prompt_tokens": 11830.0,
-                "token_usage.completion_tokens": 83.0,
-                "token_usage.estimated_cost_usd": 0.0037565,
-                "latency_metrics.total_latency_seconds": 11.079288538,
-                "latency_metrics.llm_latency_seconds": 11.035496949999999,
-                "latency_metrics.tool_latency_seconds": 0.001439108,
-                "latency_metrics.time_to_first_response_seconds": 3.718013112
+            "metrics": {
+                "token_usage.llm_calls": {
+                    "score": 3,
+                    "explanation": "Detail llm_calls for token_usage"
+                },
+                "token_usage.total_tokens": {
+                    "score": 12021,
+                    "explanation": "Detail total_tokens for token_usage"
+                },
+                "token_usage.prompt_tokens": {
+                    "score": 11830,
+                    "explanation": "Detail prompt_tokens for token_usage"
+                },
+                "token_usage.completion_tokens": {
+                    "score": 83,
+                    "explanation": "Detail completion_tokens for token_usage"
+                },
+                "token_usage.estimated_cost_usd": {
+                    "score": 0.0037565,
+                    "explanation": "Detail estimated_cost_usd for token_usage"
+                },
+                "token_usage": {
+                    "score": 0.0037565,
+                    "explanation": "Usage: 3 LLM calls using ['gemini-2.5-flash']. Tokens: 12021 (11830p + 83c). Cost: $0.003756"
+                },
+                "latency_metrics.total_latency_seconds": {
+                    "score": 11.0693,
+                    "explanation": "Detail total_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.average_turn_latency_seconds": {
+                    "score": 5.53465,
+                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.llm_latency_seconds": {
+                    "score": 11.035496949999999,
+                    "explanation": "Detail llm_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.tool_latency_seconds": {
+                    "score": 0.001439108,
+                    "explanation": "Detail tool_latency_seconds for latency_metrics"
+                },
+                "latency_metrics.time_to_first_response_seconds": {
+                    "score": 3.718013112,
+                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                },
+                "latency_metrics": {
+                    "score": 11.0693,
+                    "explanation": "Total: 11.0693s. Avg Turn: 5.5347s. LLM: 11.0355s, Tools: 0.0014s. First Response: 3.7180s"
+                },
+                "trajectory_accuracy": {
+                    "score": 3.0,
+                    "explanation": "The agent correctly identified the need for a 'customer_service' related action, represented by 'customer_service_agent'. However, it invoked this agent twice, which is an unnecessary and redundant step. This is considered a minor deviation as per the rubric (e.g., one extra step)."
+                },
+                "response_correctness": {
+                    "score": 5.0,
+                    "explanation": "The AI provided a polite greeting, accurately identified the customer by name, and then precisely answered the question about the cart contents, including item details and subtotal, in a clear and well-formatted manner, concluding with a helpful follow-up question. The tone is perfectly appropriate for customer service."
+                },
+                "tool_usage_accuracy": {
+                    "score": 5.0,
+                    "explanation": "The agent selected the exact required tool (`access_cart_information`) with the exact expected parameters (`customer_id: 123`) and made no redundant calls. All necessary actions were performed perfectly according to the expectation."
+                },
+                "state_management_fidelity": {
+                    "score": 5.0,
+                    "explanation": "The user input 'hi, tell me what is in my cart?' does not contain any explicit entities that would typically be extracted into session state variables. The 'Expected State Variables' is empty, indicating that no specific entities were anticipated to be captured from this particular input. The 'Actual State Variables' displays pre-existing session information (customer_id, customer_profile, timer_start, request_count), which are not derived from the current user input. Since the agent was not expected to extract any new entities from this input, and it correctly did not, the state capture is perfect in terms of handling the current interaction."
+                }
             },
             "tenant": "cymbal_home_garden",
             "source_file": "simple.test.json"

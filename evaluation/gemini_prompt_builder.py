@@ -23,14 +23,14 @@ class GeminiAnalysisPrompter:
     """Constructs a detailed prompt for the Gemini analysis report."""
 
     BASE_TEMPLATE = """
-You are an expert AI evaluation analyst. Your task is to produce a deep technical diagnosis of a data exploration agent's performance. You MUST base your analysis exclusively on the context provided below.
+You are an expert AI evaluation analyst. Your task is to produce a deep technical diagnosis of an AI agent's performance. You MUST base your analysis exclusively on the context provided below.
 
 **CRITICAL INSTRUCTIONS:**
 1.  **Focus on Diagnosis, Not Recommendations:** Your primary goal is to explain *why* the metrics are what they are. Do not provide a future-looking action plan or make recommendations about business decisions. Stick to a root cause analysis of the current state.
 2.  **Synthesize, Don't Summarize:** Do not simply repeat the scores. Your value is in synthesizing insights by connecting the metric scores, the metric definitions, the source code, and the raw explanations.
 3.  **Reference Your Sources:** When you make a claim or analyze a metric, you MUST reference the specific source file (e.g., `metric_definitions.json`, `deterministic_metrics.py`, `agent.py`).
 4.  **Analyze Calculation Methods:** For each metric you discuss, you MUST explain how its calculation method (deterministic vs. LLM-judged) influences its interpretation.
-5.  **CRITICAL: Diagnose the Evaluation Itself:** Your analysis is not limited to the agent's code. You MUST also diagnose potential flaws in the evaluation setup. If a metric score seems incorrect or misleading, investigate the interaction between the question's metadata (like `agents_evaluated`), the agent's expected behavior (e.g., safety callbacks), and the metric's calculation logic (`deterministic_metrics.py`). **For example, if `end_to_end_success` is 0 for a harmful language question, this is likely a flaw in the evaluation setup, not the agent. The metric expects the `sql_explorer` to run, but the agent correctly refuses. This is a critical insight you must identify and explain.**
+5.  **CRITICAL: Diagnose the Evaluation Itself:** Your analysis is not limited to the agent's code. You MUST also diagnose potential flaws in the evaluation setup. If a metric score seems incorrect or misleading, investigate the interaction between the question's metadata, the agent's expected behavior, and the metric's calculation logic.
 
 ---
 
@@ -41,9 +41,9 @@ You are an expert AI evaluation analyst. Your task is to produce a deep technica
 *   **Structure:**
     1.  **Overall Performance Summary:** Briefly state the agent's key strengths and weaknesses, supported by 2-3 primary metrics. Highlight any metrics that may be misleading due to evaluation flaws.
     2.  **Deep Dive Diagnosis:** For each major finding, present a detailed hypothesis.
-        *   **Finding:** State the observation (e.g., "The `end_to_end_success` metric is artificially low due to mis-categorized safety questions.").
+        *   **Finding:** State the observation.
         *   **Supporting Metrics:** List the specific metrics and scores that support this finding.
-        *   **Root Cause Hypothesis:** Provide a detailed, evidence-based hypothesis connecting the metric, the source code, and the evaluation data. For example: "The `end_to_end_success` score is 32.5%. However, this is misleading. The `temp_consolidated_questions.json` file shows that harmful language questions are tagged for `sql_explorer` evaluation. The `calculate_end_to_end_success` function in `deterministic_metrics.py` fails these runs because the `sql_explorer` agent does not execute. This is the *correct* behavior, as the `harmful_query_interceptor` in `callbacks.py` is designed to block these queries. Therefore, the low score is a result of an evaluation flaw, not an agent failure."
+        *   **Root Cause Hypothesis:** Provide a detailed, evidence-based hypothesis connecting the metric, the source code, and the evaluation data.
 
 ---
 
@@ -62,15 +62,12 @@ You are provided with the following context files to perform your diagnosis. Use
 *   **Metric Definitions:** The rubrics and descriptions for each metric. You MUST use these files to understand what each metric is actually measuring and whether it is `llm` judged or `deterministic`.
 {metric_definitions_section}
 
-*   **Deterministic Logic:** The Python code that calculates the deterministic metrics. Refer to this file to understand the precise logic behind scores for metrics like `sql_execution_success` or `sql_result_exact_match`.
+*   **Deterministic Logic:** The Python code that calculates the deterministic metrics. Refer to this file to understand the precise logic behind scores for metrics like `token_usage` or `latency_metrics`.
 {deterministic_logic_section}
 
 **3. Agent Implementation Details:**
-*   **Agent Source Code:** The complete source code for the agent and its sub-agents. This is your primary source for forming hypotheses about *why* the agent behaves a certain way. Connect metric failures directly to specific functions or prompts in these files.
+*   **Agent Source Code:** The source code for the agent being evaluated. This is your primary source for forming hypotheses about *why* the agent behaves a certain way.
 {source_code_section}
-
-*   **Example Trace:** A JSON trace showing the sequence of agent and tool calls for a single turn. Use this to understand the agent's runtime orchestration.
-{trace_section}
 
 **4. Evaluation Questions:**
 *   **Questions Evaluated:** The full set of questions used in the evaluation. This can provide context if certain types of questions are causing specific failures.
@@ -115,19 +112,13 @@ Format your entire response as a single Markdown document.
 
         deterministic_logic_section = self._format_code_section("evaluation/scripts/deterministic_metrics.py")
 
-        source_code_section = "\n".join([
-            self._format_code_section("data_explorer_agent/agent.py"),
-            self._format_code_section("data_explorer_agent/prompts.py"),
-            self._format_code_section("data_explorer_agent/callbacks.py"),
-            self._format_code_section("data_explorer_agent/tools.py"),
-            self._format_code_section("data_explorer_agent/sub_agents/sql_explorer/agent.py"),
-            self._format_code_section("data_explorer_agent/sub_agents/sql_explorer/prompts.py"),
-            self._format_code_section("data_explorer_agent/sub_agents/sql_explorer/sql_executor.py"),
-            self._format_code_section("data_explorer_agent/sub_agents/visualization/agent.py"),
-            self._format_code_section("data_explorer_agent/sub_agents/visualization/prompts.py"),
-        ])
-
-        trace_section = self._format_code_section("evaluation/examples/example_trace.json", "json")
+        # Dynamically include all .py files except deterministic_metrics.py
+        source_code_parts = []
+        for file_path in self.context_files:
+            if file_path.endswith(".py") and "deterministic_metrics.py" not in file_path:
+                source_code_parts.append(self._format_code_section(file_path))
+        
+        source_code_section = "\n".join(source_code_parts) if source_code_parts else "No agent source code provided."
 
         questions_section = self._format_context_section(
             "Questions Evaluated",
@@ -141,6 +132,5 @@ Format your entire response as a single Markdown document.
             metric_definitions_section=metric_definitions_section,
             deterministic_logic_section=deterministic_logic_section,
             source_code_section=source_code_section,
-            trace_section=trace_section,
             questions_section=questions_section,
         )

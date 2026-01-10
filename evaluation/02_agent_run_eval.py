@@ -247,7 +247,7 @@ def generate_summary_table(per_metric_summary: List[Dict[str, Any]]) -> str:
 
     for summary in per_metric_summary:
         max_name = max(max_name, len(summary["metric_name"]))
-        max_score = max(max_score, len(f"{summary['average_score']:.2f}"))
+        max_score = max(max_score, len(f"{summary['average_score']:.4f}"))
         max_count = max(max_count, len(str(summary["conversation_count"])))
 
     # Create table
@@ -255,7 +255,7 @@ def generate_summary_table(per_metric_summary: List[Dict[str, Any]]) -> str:
     separator = f"| {'-' * max_name} | {'-' * max_score} | {'-' * max_count} |"
     rows = [header_line, separator]
     for summary in per_metric_summary:
-        row = f"| {summary['metric_name']:<{max_name}} | {summary['average_score']:<{max_score}.2f} | {summary['conversation_count']:<{max_count}} |"
+        row = f"| {summary['metric_name']:<{max_name}} | {summary['average_score']:<{max_score}.4f} | {summary['conversation_count']:<{max_count}} |"
         rows.append(row)
     return "\n".join(rows)
 
@@ -287,57 +287,51 @@ def save_metrics_summary(
 
     all_question_summaries = []
     for question_id, group in grouped:
-        overall_latencies = []
-        if "latency_data" in group.columns:
-            latency_data_df = group["latency_data"].apply(robust_json_loads)
-            for data in latency_data_df.dropna():
-                if isinstance(data, list):
-                    for span in data:
-                        if isinstance(span, dict) and span.get("name") == "invocation":
-                            overall_latencies.append(span.get("duration_seconds", 0))
-                            break  # Assume one invocation trace per run
-
-        average_overall_latency = (
-            sum(overall_latencies) / len(overall_latencies) if overall_latencies else 0
-        )
-
         # Average all metric scores for this group
         group["eval_results"] = group["eval_results"].apply(robust_json_loads)
-        metric_scores = defaultdict(list)
-        metric_details = defaultdict(lambda: defaultdict(list))
+        
+        # Dictionary to store score and explanation for each metric
+        metrics_data = {}
 
         for result_dict in group["eval_results"].dropna():
             if not isinstance(result_dict, dict):
                 continue
             for metric_name, values in result_dict.items():
                 if isinstance(values, dict):
+                    # We assume one run per question as per instructions.
+                    # We store the score and explanation directly.
+                    # If multiple runs exist, this will effectively take the last one,
+                    # but the logic prioritizes the structure: {metric: {score: x, explanation: y}}
+                    
+                    metric_entry = {}
+                    
                     # Process Score
                     if "score" in values and values["score"] is not None:
                         try:
                             score = float(values["score"])
                             if not math.isnan(score):
-                                metric_scores[metric_name].append(score)
+                                metric_entry["score"] = score
                         except (ValueError, TypeError):
                             pass
                     
-                    # Process Details
+                    # Process Explanation
+                    if "explanation" in values:
+                        metric_entry["explanation"] = values["explanation"]
+
+                    # Process Details (flatten them into the top level for consistency with overall summary if needed, 
+                    # but for per-question, keeping them in details or just explanation is cleaner. 
+                    # However, to maintain the flattening logic requested previously for 'average_metrics':
                     if "details" in values and isinstance(values["details"], dict):
                         for det_key, det_val in values["details"].items():
                             if isinstance(det_val, (int, float)) and not isinstance(det_val, bool):
-                                metric_details[metric_name][det_key].append(det_val)
-
-        average_metrics = {
-            metric_name: sum(scores) / len(scores) if scores else 0
-            for metric_name, scores in metric_scores.items()
-        }
-
-        # Flatten aggregated details into average_metrics
-        for metric_name, details_dict in metric_details.items():
-            for det_key, val_list in details_dict.items():
-                if val_list:
-                    # e.g., latency_metrics.llm_latency_seconds
-                    avg_val = sum(val_list) / len(val_list)
-                    average_metrics[f"{metric_name}.{det_key}"] = avg_val
+                                # Add flattened details as separate metrics for visibility
+                                metrics_data[f"{metric_name}.{det_key}"] = {
+                                    "score": det_val,
+                                    "explanation": f"Detail {det_key} for {metric_name}"
+                                }
+                    
+                    if metric_entry:
+                        metrics_data[metric_name] = metric_entry
 
         # Extract all metadata dynamically
         metadata = robust_json_loads(group.iloc[0].get("question_metadata", "{}"))
@@ -348,8 +342,7 @@ def save_metrics_summary(
         question_summary = {
             "question_id": question_id,
             "runs": len(group),
-            "average_latency": {"overall": average_overall_latency},
-            "average_metrics": average_metrics,
+            "metrics": metrics_data,
         }
         # Merge metadata into the summary
         question_summary.update(metadata)
@@ -357,15 +350,12 @@ def save_metrics_summary(
         all_question_summaries.append(question_summary)
 
     # --- Calculate Overall and Per-Metric Summaries ---
-    overall_avg_latency = 0
     per_metric_scores = defaultdict(list)
     if all_question_summaries:
-        total_latency = sum(qs["average_latency"]["overall"] for qs in all_question_summaries)
-        overall_avg_latency = total_latency / len(all_question_summaries)
-
         for qs in all_question_summaries:
-            for metric, score in qs["average_metrics"].items():
-                per_metric_scores[metric].append(score)
+            for metric, data in qs["metrics"].items():
+                if "score" in data:
+                    per_metric_scores[metric].append(data["score"])
 
     final_overall_metrics = {
         metric: sum(scores) / len(scores) if scores else 0
@@ -403,7 +393,6 @@ def save_metrics_summary(
         "ADK_USER_ID": df.iloc[0]["ADK_USER_ID"] if not df.empty else None,
         "base_url": df.iloc[0]["base_url"] if not df.empty else None,
         "overall_summary": {
-            "average_latency": {"overall": overall_avg_latency},
             "average_metrics": final_overall_metrics,
         },
         "per_metric_summary": per_metric_summary,
@@ -617,6 +606,8 @@ def main():
                         reference_data = robust_json_loads(reference_data_val) or {}
                         question_metadata_val = row.get("question_metadata", "{}") if "question_metadata" in row.index else "{}"
                         question_metadata = robust_json_loads(question_metadata_val) or {}
+                        latency_data_val = row.get("latency_data") if "latency_data" in row.index else None
+                        latency_data = robust_json_loads(latency_data_val) or []
                         
                         det_results = evaluate_deterministic_metrics(
                             session_state=session_state,
@@ -625,7 +616,8 @@ def main():
                             reference_data=reference_data,
                             question_metadata=question_metadata,
                             metrics_to_run=[canonical_name], # Pass only the current metric
-                            metric_definitions={canonical_name: metric_info}
+                            metric_definitions={canonical_name: metric_info},
+                            latency_data=latency_data
                         )
                         if canonical_name in det_results:
                             # Store under the original (prefixed) name
