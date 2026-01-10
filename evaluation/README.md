@@ -1,201 +1,123 @@
 # Evaluation Pipeline
 
-This document provides a comprehensive guide to the evaluation pipeline, a three-step process designed to test, measure, and analyze the performance of the Data Explorer Agent.
+This document provides a comprehensive guide to the evaluation pipeline, a multi-step process designed to test, measure, and analyze the performance of ADK agents in an agent-agnostic way.
 
 ## Overview
 
 The pipeline is orchestrated by three core scripts:
 
-1.  `01_agent_interaction.py`: Runs a set of questions against the agent and records the interactions.
-2.  `02_agent_run_eval.py`: Calculates performance metrics based on the recorded interactions.
-3.  `03_analyze_eval_results.py`: Generates a detailed, AI-powered analysis of the results.
+1.  **Step 1: `01_agent_interaction.py`**: Runs a set of questions against the agent and records enriched interactions.
+2.  **Step 2: `02_agent_run_eval.py`**: (WIP) Calculates performance metrics based on the recorded interactions.
+3.  **Step 3: `03_analyze_eval_results.py`**: (WIP) Generates a detailed, AI-powered analysis of the results.
 
-These scripts are designed to be scalable and configurable, allowing for the easy addition of new questions and metrics without modifying the core logic.
+**Note:** We are currently working on **standardizing Steps 2 and 3**. These scripts are being refactored to be more robust and agent-agnostic, ensuring that the team has a clear and consistent way to interpret evaluation scores and strategic insights.
 
-## Running the Pipeline
+## Step 1: Running Agent Interactions
+... (existing content) ...
 
-The easiest way to run the full pipeline is by using the `Makefile`.
+## Step 2: Agent Evaluation (Work in Progress)
 
-### Quickstart
+**Objective:** To calculate specific performance metrics (e.g., correctness, safety, latency) for each interaction. 
 
-To run a full evaluation using the default golden questions and all available metrics, simply run:
+We are currently defining the standard set of metrics that will apply across all agents.
 
-```bash
-make eval-full
-```
+## Step 3: Result Analysis (Work in Progress)
 
-This command will:
-1.  Run the agent with the questions defined in `evaluation/datasets/su_golden_questions.json` and `evaluation/datasets/harmful_language_questions_su.json`.
-2.  Calculate all defined metrics.
-3.  Generate a detailed analysis report.
-4.  Save all results to a new timestamped folder inside `evaluation/results/`.
-5.  Upload the results to BigQuery.
-
-### Advanced Usage
-
-For more granular control, you can use the `make eval` command and pass arguments to each step of the pipeline.
-
-```bash
-make eval ARGS_1="..." ARGS_2="..." ARGS_3="..."
-```
-
-- `ARGS_1`: Arguments for `01_agent_interaction.py`.
-- `ARGS_2`: Arguments for `02_agent_run_eval.py`.
-- `ARGS_3`: Arguments for `03_analyze_eval_results.py`.
-
-**Example:** Run a quick evaluation on a small sample of questions, calculate only deterministic metrics, and skip the final AI analysis.
-
-```bash
-make eval \
-  ARGS_1="--questions-file evaluation/datasets/su_golden_questions.json --num-questions 5" \
-  ARGS_2="--metric-filter metric_type:deterministic" \
-  ARGS_3="--skip-gemini-analysis"
-```
+**Objective:** To generate a comprehensive executive summary of the evaluation run, highlighting strengths, weaknesses, and areas for improvement using Gemini as a judge.
 
 ---
 
-## The Three-Step Pipeline in Detail
+## Data Structure: `extracted_data`
 
-### Step 1: `01_agent_interaction.py`
+The most important output of Step 1 is the `extracted_data` column in the processed CSV. It contains a serialized JSON object with three main keys:
 
-This script orchestrates running a set of questions against the agent and processing the results.
+1.  `state_variables`: Every variable found in the agent's final session state.
+2.  `tool_interactions`: A chronological list of every tool call made by the agent, including its input arguments and the returned output.
+3.  `sub_agent_trace`: A sequence of natural language turns from all agents involved in the conversation.
 
-**Arguments:**
+### Exact Example from Customer Service Agent
 
-| Argument | Description | Default |
-|---|---|---|
-| `--user-id` | The user ID for the evaluation session. | `eval_user` |
-| `--base-url` | The base URL of the agent service. | `https://genai.ops.dematic.dev` |
-| `--questions-file` | One or more paths to JSON files with test questions. (Required) | N/A |
-| `--num-questions` | Number of questions to sample from each file. -1 for all. | `-1` |
-| `--results-dir` | Directory to save results. | `evaluation/results` |
-| `--user` | Username of the person running the script. | Current user |
-| `--filter` | Filter questions by metadata (e.g., 'complexity:level1'). | N/A |
-| `--runs` | Number of times to run each question. | `1` |
-| `--skip-interactions` | Skip running new interactions and only process an existing CSV. | `False` |
+Below is an actual row extracted from a successful evaluation run:
 
-**Usage Example:**
-
-Run the evaluation with both golden questions and harmful language questions, sampling 10 from each, and filter for `level1` complexity.
-
-```bash
-uv run python evaluation/01_agent_interaction.py \
-  --questions-file evaluation/datasets/su_golden_questions.json evaluation/datasets/harmful_language_questions_su.json \
-  --num-questions 10 \
-  --filter "complexity:level1" \
-  --results-dir evaluation/results_level1_test
-```
-
-### Step 2: `02_agent_run_eval.py`
-
-This script calculates performance metrics based on the interactions recorded in Step 1.
-
-**Arguments:**
-
-| Argument | Description | Default |
-|---|---|---|
-| `--interaction-results-file` | Path to the processed CSV from Step 1. | `evaluation/results/interaction_su_golden_questions.csv` |
-| `--results-dir` | Directory to save evaluation results. | `evaluation/results` |
-| `--metrics-files` | One or more paths to metric definition JSON files. | `evaluation/metrics/metric_definitions.json` |
-| `--scheduled` | Flag to indicate a scheduled run. | `False` |
-| `--test-description` | A brief description of the test. | "Evaluation run from 02_agent_run_eval.py." |
-| `--metric-filter` | Filter which metrics to run (e.g., 'metric_type:llm'). | N/A |
-| `--dataset-id` | The BigQuery dataset for storing results. | `data_explorer_eval` |
-
-**Usage Example:**
-
-Run only the `correctness` and `end_to_end_success` metrics on a specific interaction file.
-
-```bash
-uv run python evaluation/02_agent_run_eval.py \
-  --interaction-results-file evaluation/results_level1_test/processed_interaction_consolidated.csv \
-  --results-dir evaluation/results_level1_test \
-  --metrics-files evaluation/metrics/metric_definitions.json evaluation/metrics/metric_definitions_harmful_language.json \
-  --metric-filter "metrics:correctness,end_to_end_success"
-```
-
-### Step 3: `03_analyze_eval_results.py`
-
-This script generates a detailed, AI-powered analysis of the evaluation results.
-
-**Arguments:**
-
-| Argument | Description | Default |
-|---|---|---|
-| `--results-dir` | Directory containing the results from Step 2. (Required) | N/A |
-| `--table-id` | The BigQuery table ID to upload results to. | `eval_results` |
-| `--bq` | If set, upload the final results to BigQuery. | `False` |
-| `--dataset-id` | The BigQuery dataset to use. | `danielazamora_tests_eval` |
-| `--skip-gemini-analysis` | Skip the AI-powered analysis generation. | `False` |
-
-**Usage Example:**
-
-Generate a full analysis and upload the results to a specific BigQuery table.
-
-```bash
-uv run python evaluation/03_analyze_eval_results.py \
-  --results-dir evaluation/results_level1_test \
-  --bq \
-  --table-id my_test_run_results
+```json
+{
+  "state_variables": {
+    "customer_id": "123",
+    "customer_profile": "{\n    \"account_number\": \"428765091\",\n    \"customer_id\": \"123\",\n    \"customer_first_name\": \"Alex\",\n    ...}",
+    "timer_start": 1768002604.0364587,
+    "request_count": 6
+  },
+  "tool_interactions": [
+    {
+      "tool_name": "send_care_instructions",
+      "input_arguments": {
+        "plant_type": "Tomato",
+        "delivery_method": "email",
+        "customer_id": "123"
+      },
+      "call_id": "adk-d6bc4d3c-98d4-42b8-8876-f8a493656b3a",
+      "output_result": {
+        "status": "success",
+        "message": "Care instructions for Tomato sent via email."
+      }
+    },
+    {
+      "tool_name": "access_cart_information",
+      "input_arguments": {
+        "customer_id": "123"
+      },
+      "call_id": "adk-052fdaed-bfec-49f3-a0fe-5c0e61767d88",
+      "output_result": {
+        "items": [
+          {"product_id": "soil-123", "name": "Standard Potting Soil", "quantity": 1},
+          {"product_id": "fert-456", "name": "General Purpose Fertilizer", "quantity": 1}
+        ],
+        "subtotal": 25.98
+      }
+    }
+  ],
+  "sub_agent_trace": [
+    {
+      "agent_name": "customer_service_agent",
+      "text_response": "Hello Alex! Welcome back to Cymbal Home & Garden. How can I assist you today? \n",
+      "timestamp": 1768002569.10474
+    },
+    {
+      "agent_name": "customer_service_agent",
+      "text_response": "Certainly, Alex! I can provide you with your purchase history...",
+      "timestamp": 1768002573.884758
+    }
+  ]
+}
 ```
 
 ---
 
 ## Extending the Evaluation Framework
 
-The pipeline is designed to be easily extended without code changes.
+### Creating New Evaluation Datasets
 
-### Adding New Questions
+You can create raw evaluation datasets using the `adk eval` command provided by the ADK framework. Once you have those files, use our conversion script to move them into the structured format required by this pipeline.
 
-1.  **Location:** Add new JSON files to the `evaluation/datasets/` directory.
-2.  **Schema:** The file must contain a top-level key `questions` which is a list of question objects. Each object must conform to the schema defined in `schemas/eval_dataset_schema.json`.
-3.  **Key Fields:**
-    *   `id`: A unique identifier for the question.
-    *   `user_inputs`: A list containing the question prompt.
-    *   `agents_evaluated`: A list of agent names that this question is designed to test (e.g., `["sql_explorer", "visualization"]`).
-    *   `metadata`: Contains keys like `tier` ('positive' or 'negative') and `complexity`.
-    *   `reference_data`: Contains the ground truth, such as the `reference_sql`.
+### Importing Existing Test Data
 
-### Adding New Metrics
+If you have test data in a turn-based format (a list of objects with `query` and `expected_tool_use`), use the `convert_test_to_golden.py` script:
 
-1.  **Location:** Add new JSON files to the `evaluation/metrics/` directory.
-2.  **Structure:** The file can contain a `metric_prefix` (e.g., "safety") and a dictionary of `metrics`.
-3.  **Metric Definition:** Each metric must include:
-    *   `metric_type`: Either `llm` (for AI-judged metrics) or `deterministic`.
-    *   `template`: The prompt template for the LLM judge.
-    *   `dataset_mapping`: This is the crucial part that connects the metric to the data. It maps placeholders in the `template` to columns in the interaction CSV.
+```bash
+uv run python scripts/convert_test_to_golden.py \
+  --input path/to/your/test_data.json \
+  --output datasets/your_new_golden_data.json \
+  --agent <agent_app_name> \
+  --metadata "complexity:easy" --metadata "domain:retail" \
+  --prefix q_prefix
+```
 
----
+**Arguments:**
 
-## BigQuery Results Table
-
-When the `--bq` flag is used, the final results are appended to a BigQuery table for historical analysis and visualization.
-
-**Table Schema:**
-
-The schema of the BigQuery table mirrors the columns of the final CSV file (`evaluation_results_consolidated.csv`). All columns are of type `STRING` to ensure maximum flexibility.
-
-| Column Name | Description |
-|---|---|
-| `status` | A JSON string indicating the success or failure of the interaction script for this row. |
-| `run_id` | A unique identifier for the specific run of a question. |
-| `question_id` | The unique ID of the question from the dataset. |
-| `agents_evaluated` | A JSON string listing the agents intended to be evaluated for this question. |
-| `user_inputs` | A JSON string of the user's prompt(s). |
-| `question_metadata` | A JSON string containing metadata about the question (e.g., tier, complexity). |
-| `interaction_datetime` | Timestamp of when the interaction was run. |
-| `session_id` | The session ID from the agent interaction. |
-| `base_url` | The base URL of the agent service that was tested. |
-| `ADK_USER_ID` | The user ID passed to the agent service. |
-| `USER` | The user who ran the evaluation script. |
-| `reference_data` | A JSON string containing the ground truth data for the question. |
-| `missing_information` | A JSON string indicating if any information was missing for this run (e.g., session trace). |
-| `latency_data` | A JSON string of the raw trace spans, used for performance analysis. |
-| `trace_summary` | A JSON string providing a summary of the execution trace. |
-| `session_trace` | A JSON string of the full, detailed session trace. |
-| `final_session_state` | A JSON string of the agent's complete final session state. |
-| `extracted_data` | A JSON string containing key-value pairs extracted from the `final_session_state` for easier access during evaluation. |
-| `evaluation_datetime` | Timestamp of when the evaluation metrics were calculated. |
-| `run_type` | The type of run, either 'manual' or 'scheduled'. |
-| `experiment_id` | A unique ID for the entire evaluation experiment (grouping multiple runs). |
-| `eval_results` | A JSON string containing the scores and explanations for all calculated metrics for this run. |
+| Argument | Description | Default |
+|---|---|---|
+| `--input` | Path to the input JSON file (list of turns). **(Required)** | N/A |
+| `--output` | Path to the output golden dataset JSON file. **(Required)** | N/A |
+| `--agent` | Name of the agent being evaluated. | `customer_service` |
+| `--metadata` | Arbitrary metadata labels (e.g., `key:value`). Can be used multiple times. | N/A |
+| `--prefix` | Prefix for the generated question IDs. | `q` |
