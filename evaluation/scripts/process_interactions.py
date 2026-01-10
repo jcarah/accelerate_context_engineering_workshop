@@ -76,6 +76,8 @@ async def process_interaction(row, results_dir=None, skip_traces=False):
         state = final_session_state.get('state', {})
         if state:
             extracted_data["state_variables"] = state
+            # Flatten state variables to top level for easier access in metrics mapping
+            extracted_data.update(state)
         
         # Extract tool interactions and sub-agent trace
         extracted_data["tool_interactions"] = AgentClient.get_tool_interactions(final_session_state)
