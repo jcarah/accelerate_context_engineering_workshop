@@ -1,0 +1,107 @@
+{
+    "token_usage": {
+        "description": "Informational metric: Track estimated cost in USD (not raw token count).",
+        "rubric": "Tracks total tokens, prompt tokens, completion tokens, and estimated cost in USD.",
+        "threshold": null,
+        "range": "N/A",
+        "metric_type": "deterministic",
+        "agents": [
+            "customer_service"
+        ]
+    },
+    "latency_metrics": {
+        "description": "Deterministic metric: Track total session execution time in seconds.",
+        "rubric": "Measures total session latency (full trace duration), LLM latency, tool latency, and approx. first response time in seconds.",
+        "threshold": null,
+        "range": "N/A",
+        "metric_type": "deterministic",
+        "agents": [
+            "customer_service"
+        ]
+    },
+    "trajectory_accuracy": {
+        "description": "Evaluates how closely the actual agent execution path matched the expected sequence of sub-agents.",
+        "rubric": "0: The trajectory is completely different or empty.\n1: Major deviations; key sub-agents were skipped or invoked in the wrong order.\n2: Some correct sub-agents, but significant ordering issues or extra steps.\n3: Mostly correct trajectory with minor deviations (e.g., one extra step or slight reordering).\n4: The trajectory is logically equivalent to the reference, achieving the same outcome.\n5: Perfect match with the expected reference trajectory.",
+        "threshold": 3.0,
+        "range": "[0, 5]",
+        "metric_type": "llm",
+        "agents": [
+            "customer_service"
+        ],
+        "template": "You are an expert in evaluating AI agent orchestration. Your task is to compare the *actual* execution trajectory of an agent against the *expected* reference trajectory.\n\nAssign a score from 0 to 5 based on the rubric below.\n\n### Criteria:\n- **Sequence**: Did the agent call the sub-agents/tools in the correct order?\n- **Completeness**: Were any required steps missed?\n- **Noise**: Were there unnecessary or hallucinated steps?\n\n### Rating Rubric:\n0: The trajectory is completely different or empty.\n1: Major deviations; key sub-agents were skipped or invoked in the wrong order.\n2: Some correct sub-agents, but significant ordering issues or extra steps.\n3: Mostly correct trajectory with minor deviations (e.g., one extra step or slight reordering).\n4: The trajectory is logically equivalent to the reference, achieving the same outcome.\n5: Perfect match with the expected reference trajectory.\n\nProvide a step-by-step explanation for your score.\n\n# Execution Data\n## User Goal\n{prompt}\n\n## Expected Trajectory\n{reference}\n\n## Actual Trajectory\n{response}",
+        "dataset_mapping": {
+            "prompt": {
+                "source_column": "user_inputs"
+            },
+            "reference": {
+                "source_column": "reference_data:reference_trajectory"
+            },
+            "response": {
+                "source_column": "trace_summary"
+            }
+        }
+    },
+    "response_correctness": {
+        "description": "Assess if the final response directly addresses the user's intent and is factually consistent with the tool outputs.",
+        "rubric": "0: The response is irrelevant or factually incorrect.\n1: The response attempts to answer but is largely incorrect or misses the main point.\n2: Partially correct but contains significant omissions or minor hallucinations.\n3: Mostly correct, addresses the main point, but could be clearer or more comprehensive.\n4: Factually correct and directly answers the user's question, but phrasing could be improved.\n5: Perfect response: Accurate, comprehensive, clear, and empathetic.",
+        "threshold": 3.0,
+        "range": "[0, 5]",
+        "metric_type": "llm",
+        "agents": [
+            "customer_service"
+        ],
+        "template": "You are a Customer Service Quality Assurance specialist. Evaluate the final response provided by the AI agent to the customer.\n\nAssign a score from 0 to 5 based on the rubric below.\n\n### Criteria:\n- **Relevance**: Does it answer the customer's specific question?\n- **Accuracy**: Is the information provided consistent with the available context/tool outputs (if visible)?\n- **Tone**: Is the tone appropriate for customer service?\n\n### Rating Rubric:\n0: The response is irrelevant or factually incorrect.\n1: The response attempts to answer but is largely incorrect or misses the main point.\n2: Partially correct but contains significant omissions or minor hallucinations.\n3: Mostly correct, addresses the main point, but could be clearer or more comprehensive.\n4: Factually correct and directly answers the user's question, but phrasing could be improved.\n5: Perfect response: Accurate, comprehensive, clear, and empathetic.\n\nProvide a step-by-step explanation for your score.\n\n# Interaction Data\n## Customer Input\n{prompt}\n\n## AI Response\n{response}",
+        "dataset_mapping": {
+            "prompt": {
+                "source_column": "user_inputs"
+            },
+            "response": {
+                "source_column": "extracted_data:sub_agent_trace"
+            }
+        }
+    },
+    "tool_usage_accuracy": {
+        "description": "Evaluates if the agent used the correct tools with the correct arguments to fulfill the user's request.",
+        "rubric": "0: No tools used when required, or completely wrong tools used.\n1: Correct tool attempted but failed parameters, or irrelevant tools used extensively.\n2: Some correct tools used, but key actions missing or parameters incorrect.\n3: Main tools used correctly, but minor issues with parameters or unnecessary calls.\n4: All required tools used with correct parameters; minor efficiency improvements possible.\n5: Perfect tool usage: Exact tools, exact parameters, no redundant calls.",
+        "threshold": 3.0,
+        "range": "[0, 5]",
+        "metric_type": "llm",
+        "agents": [
+            "customer_service"
+        ],
+        "template": "You are a technical evaluator for AI agents. Your task is to compare the *actual* tool calls made by the agent against the *expected* reference tool interactions.\n\nAssign a score from 0 to 5 based on the rubric below.\n\n### Criteria:\n- **Selection**: Did the agent choose the right tool for the job?\n- **Arguments**: Were the input arguments (e.g., customer_id, plant_type) correct?\n- **Completeness**: Did it perform all necessary actions?\n\n### Rating Rubric:\n0: No tools used when required, or completely wrong tools used.\n1: Correct tool attempted but failed parameters, or irrelevant tools used extensively.\n2: Some correct tools used, but key actions missing or parameters incorrect.\n3: Main tools used correctly, but minor issues with parameters or unnecessary calls.\n4: All required tools used with correct parameters; minor efficiency improvements possible.\n5: Perfect tool usage: Exact tools, exact parameters, no redundant calls.\n\nProvide a step-by-step explanation for your score.\n\n# Interaction Data\n## User Goal\n{prompt}\n\n## Expected Tool Calls\n{reference}\n\n## Actual Tool Calls\n{response}",
+        "dataset_mapping": {
+            "prompt": {
+                "source_column": "user_inputs"
+            },
+            "reference": {
+                "source_column": "reference_data:reference_tool_interactions"
+            },
+            "response": {
+                "source_column": "extracted_data:tool_interactions"
+            }
+        }
+    },
+    "state_management_fidelity": {
+        "description": "Checks if the agent correctly updated its internal state (e.g., customer profile) based on the interaction.",
+        "rubric": "0: State is empty or completely unrelated to the interaction.\n1: Major errors in state capture; wrong entities or values.\n2: Some correct state variables, but significant omissions.\n3: Key variables captured correctly, but some minor details missed.\n4: All critical state variables present and correct.\n5: Perfect state capture, including nuances and optional fields.",
+        "threshold": 3.0,
+        "range": "[0, 5]",
+        "metric_type": "llm",
+        "agents": [
+            "customer_service"
+        ],
+        "template": "You are a backend system evaluator. Your job is to check if the AI agent correctly parsed and stored information into its session state variables.\n\nAssign a score from 0 to 5 based on the rubric below.\n\n### Criteria:\n- **Extraction**: Did the agent correctly extract entities (e.g., 'Tomato', '123') from the user input?\n- **Mapping**: Are these values mapped to the correct state keys?\n- **Accuracy**: Do the values match the expected reference state?\n\n### Rating Rubric:\n0: State is empty or completely unrelated to the interaction.\n1: Major errors in state capture; wrong entities or values.\n2: Some correct state variables, but significant omissions.\n3: Key variables captured correctly, but some minor details missed.\n4: All critical state variables present and correct.\n5: Perfect state capture, including nuances and optional fields.\n\nProvide a step-by-step explanation for your score.\n\n# Interaction Data\n## User Input\n{prompt}\n\n## Expected State Variables\n{reference}\n\n## Actual State Variables\n{response}",
+        "dataset_mapping": {
+            "prompt": {
+                "source_column": "user_inputs"
+            },
+            "reference": {
+                "source_column": "reference_data:reference_state_variables"
+            },
+            "response": {
+                "source_column": "extracted_data:state_variables"
+            }
+        }
+    }
+}

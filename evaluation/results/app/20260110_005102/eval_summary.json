@@ -1,0 +1,164 @@
+{
+    "experiment_id": "eval-20260110022645",
+    "run_type": "retail_run_4",
+    "test_description": "Evaluation run from 02_agent_run_eval.py.",
+    "interaction_datetime": "2026-01-10T00:51:03.436672",
+    "USER": "admin_danielazamora_altostrat_co",
+    "ADK_USER_ID": "eval_user",
+    "base_url": "http://localhost:8501",
+    "overall_summary": {
+        "average_latency": {
+            "overall": 362.23405
+        },
+        "average_metrics": {
+            "token_usage": 0.312194375,
+            "latency_metrics": 362.2340769015,
+            "state_variable_fidelity": 5.0,
+            "market_research_depth": 1.0,
+            "strategic_recommendation_quality": 1.0,
+            "tool_usage_effectiveness": 5.0,
+            "token_usage.llm_calls": 13.0,
+            "token_usage.total_tokens": 216612.5,
+            "token_usage.prompt_tokens": 134999.5,
+            "token_usage.completion_tokens": 14344.5,
+            "token_usage.estimated_cost_usd": 0.312194375,
+            "latency_metrics.total_latency_seconds": 362.2340769015,
+            "latency_metrics.llm_latency_seconds": 718.3405850835,
+            "latency_metrics.tool_latency_seconds": 84.939564725,
+            "latency_metrics.time_to_first_response_seconds": 8.317924584
+        }
+    },
+    "per_metric_summary": [
+        {
+            "metric_name": "latency_metrics",
+            "average_score": 362.2340769015,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "latency_metrics.llm_latency_seconds",
+            "average_score": 718.3405850835,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "latency_metrics.time_to_first_response_seconds",
+            "average_score": 8.317924584,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "latency_metrics.tool_latency_seconds",
+            "average_score": 84.939564725,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "latency_metrics.total_latency_seconds",
+            "average_score": 362.2340769015,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "market_research_depth",
+            "average_score": 1.0,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "state_variable_fidelity",
+            "average_score": 5.0,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "strategic_recommendation_quality",
+            "average_score": 1.0,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "token_usage",
+            "average_score": 0.312194375,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "token_usage.completion_tokens",
+            "average_score": 14344.5,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "token_usage.estimated_cost_usd",
+            "average_score": 0.312194375,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "token_usage.llm_calls",
+            "average_score": 13.0,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "token_usage.prompt_tokens",
+            "average_score": 134999.5,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "token_usage.total_tokens",
+            "average_score": 216612.5,
+            "conversation_count": 2
+        },
+        {
+            "metric_name": "tool_usage_effectiveness",
+            "average_score": 5.0,
+            "conversation_count": 2
+        }
+    ],
+    "per_question_summary": [
+        {
+            "question_id": "q1",
+            "runs": 1,
+            "average_latency": {
+                "overall": 362.2428
+            },
+            "average_metrics": {
+                "token_usage": 0.30481625,
+                "latency_metrics": 362.242812785,
+                "state_variable_fidelity": 5.0,
+                "market_research_depth": 1.0,
+                "strategic_recommendation_quality": 1.0,
+                "tool_usage_effectiveness": 5.0,
+                "token_usage.llm_calls": 13.0,
+                "token_usage.total_tokens": 189302.0,
+                "token_usage.prompt_tokens": 139141.0,
+                "token_usage.completion_tokens": 13089.0,
+                "token_usage.estimated_cost_usd": 0.30481625,
+                "latency_metrics.total_latency_seconds": 362.242812785,
+                "latency_metrics.llm_latency_seconds": 718.711445862,
+                "latency_metrics.tool_latency_seconds": 89.46195941799999,
+                "latency_metrics.time_to_first_response_seconds": 7.747876819
+            },
+            "complexity": "low",
+            "domain": "retail",
+            "location": "Bangalore"
+        },
+        {
+            "question_id": "q2",
+            "runs": 1,
+            "average_latency": {
+                "overall": 362.2253
+            },
+            "average_metrics": {
+                "token_usage": 0.3195725000000001,
+                "latency_metrics": 362.225341018,
+                "state_variable_fidelity": 5.0,
+                "market_research_depth": 1.0,
+                "strategic_recommendation_quality": 1.0,
+                "tool_usage_effectiveness": 5.0,
+                "token_usage.llm_calls": 13.0,
+                "token_usage.total_tokens": 243923.0,
+                "token_usage.prompt_tokens": 130858.0,
+                "token_usage.completion_tokens": 15600.0,
+                "token_usage.estimated_cost_usd": 0.3195725000000001,
+                "latency_metrics.total_latency_seconds": 362.225341018,
+                "latency_metrics.llm_latency_seconds": 717.969724305,
+                "latency_metrics.tool_latency_seconds": 80.417170032,
+                "latency_metrics.time_to_first_response_seconds": 8.887972349
+            },
+            "complexity": "low",
+            "domain": "retail",
+            "location": "Austin"
+        }
+    ]
+}

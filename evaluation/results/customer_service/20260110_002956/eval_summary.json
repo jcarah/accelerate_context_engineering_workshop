@@ -1,0 +1,214 @@
+{
+    "experiment_id": "eval-20260110022428",
+    "run_type": "customer_service_run_5",
+    "test_description": "Evaluation run from 02_agent_run_eval.py.",
+    "interaction_datetime": "2026-01-10T00:29:57.326369",
+    "USER": "admin_danielazamora_altostrat_co",
+    "ADK_USER_ID": "eval_user",
+    "base_url": "http://localhost:8501",
+    "overall_summary": {
+        "average_latency": {
+            "overall": 3.8381250000000002
+        },
+        "average_metrics": {
+            "token_usage": 0.01235195,
+            "latency_metrics": 40.738397959249994,
+            "trajectory_accuracy": 3.0,
+            "response_correctness": 5.0,
+            "tool_usage_accuracy": 3.5,
+            "state_management_fidelity": 3.5,
+            "token_usage.llm_calls": 8.0,
+            "token_usage.total_tokens": 38657.25,
+            "token_usage.prompt_tokens": 37556.5,
+            "token_usage.completion_tokens": 434.0,
+            "token_usage.estimated_cost_usd": 0.01235195,
+            "latency_metrics.total_latency_seconds": 40.738397959249994,
+            "latency_metrics.llm_latency_seconds": 32.650796183749996,
+            "latency_metrics.tool_latency_seconds": 0.0018410722499999999,
+            "latency_metrics.time_to_first_response_seconds": 3.83771502275
+        }
+    },
+    "per_metric_summary": [
+        {
+            "metric_name": "latency_metrics",
+            "average_score": 40.738397959249994,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "latency_metrics.llm_latency_seconds",
+            "average_score": 32.650796183749996,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "latency_metrics.time_to_first_response_seconds",
+            "average_score": 3.83771502275,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "latency_metrics.tool_latency_seconds",
+            "average_score": 0.0018410722499999999,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "latency_metrics.total_latency_seconds",
+            "average_score": 40.738397959249994,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "response_correctness",
+            "average_score": 5.0,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "state_management_fidelity",
+            "average_score": 3.5,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "token_usage",
+            "average_score": 0.01235195,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "token_usage.completion_tokens",
+            "average_score": 434.0,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "token_usage.estimated_cost_usd",
+            "average_score": 0.01235195,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "token_usage.llm_calls",
+            "average_score": 8.0,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "token_usage.prompt_tokens",
+            "average_score": 37556.5,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "token_usage.total_tokens",
+            "average_score": 38657.25,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "tool_usage_accuracy",
+            "average_score": 3.5,
+            "conversation_count": 4
+        },
+        {
+            "metric_name": "trajectory_accuracy",
+            "average_score": 3.0,
+            "conversation_count": 4
+        }
+    ],
+    "per_question_summary": [
+        {
+            "question_id": "cs_full_657f2ed9",
+            "runs": 1,
+            "average_latency": {
+                "overall": 4.2682
+            },
+            "average_metrics": {
+                "token_usage": 0.0184556,
+                "latency_metrics": 67.765465021,
+                "trajectory_accuracy": 4.0,
+                "response_correctness": 5.0,
+                "tool_usage_accuracy": 2.0,
+                "state_management_fidelity": 2.0,
+                "token_usage.llm_calls": 12.0,
+                "token_usage.total_tokens": 58185.0,
+                "token_usage.prompt_tokens": 56427.0,
+                "token_usage.completion_tokens": 611.0,
+                "token_usage.estimated_cost_usd": 0.0184556,
+                "latency_metrics.total_latency_seconds": 67.765465021,
+                "latency_metrics.llm_latency_seconds": 66.87721909899999,
+                "latency_metrics.tool_latency_seconds": 0.0017946519999999999,
+                "latency_metrics.time_to_first_response_seconds": 4.267802809
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "full_conversation.test.json"
+        },
+        {
+            "question_id": "cs_full_eb4390d8",
+            "runs": 1,
+            "average_latency": {
+                "overall": 3.6744
+            },
+            "average_metrics": {
+                "token_usage": 0.023468699999999995,
+                "latency_metrics": 72.931345407,
+                "trajectory_accuracy": 2.0,
+                "response_correctness": 5.0,
+                "tool_usage_accuracy": 2.0,
+                "state_management_fidelity": 2.0,
+                "token_usage.llm_calls": 14.0,
+                "token_usage.total_tokens": 72401.0,
+                "token_usage.prompt_tokens": 70129.0,
+                "token_usage.completion_tokens": 972.0,
+                "token_usage.estimated_cost_usd": 0.023468699999999995,
+                "latency_metrics.total_latency_seconds": 72.931345407,
+                "latency_metrics.llm_latency_seconds": 41.545229196,
+                "latency_metrics.tool_latency_seconds": 0.003019934,
+                "latency_metrics.time_to_first_response_seconds": 3.674068281
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "full_conversation.test.json"
+        },
+        {
+            "question_id": "cs_simple_17a89ba6",
+            "runs": 1,
+            "average_latency": {
+                "overall": 3.6914
+            },
+            "average_metrics": {
+                "token_usage": 0.0037269999999999994,
+                "latency_metrics": 11.177492871,
+                "trajectory_accuracy": 3.0,
+                "response_correctness": 5.0,
+                "tool_usage_accuracy": 5.0,
+                "state_management_fidelity": 5.0,
+                "token_usage.llm_calls": 3.0,
+                "token_usage.total_tokens": 12022.0,
+                "token_usage.prompt_tokens": 11840.0,
+                "token_usage.completion_tokens": 70.0,
+                "token_usage.estimated_cost_usd": 0.0037269999999999994,
+                "latency_metrics.total_latency_seconds": 11.177492871,
+                "latency_metrics.llm_latency_seconds": 11.145239490000002,
+                "latency_metrics.tool_latency_seconds": 0.001110595,
+                "latency_metrics.time_to_first_response_seconds": 3.690975889
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "simple.test.json"
+        },
+        {
+            "question_id": "cs_simple_2f260f51",
+            "runs": 1,
+            "average_latency": {
+                "overall": 3.7185
+            },
+            "average_metrics": {
+                "token_usage": 0.0037565,
+                "latency_metrics": 11.079288538,
+                "trajectory_accuracy": 3.0,
+                "response_correctness": 5.0,
+                "tool_usage_accuracy": 5.0,
+                "state_management_fidelity": 5.0,
+                "token_usage.llm_calls": 3.0,
+                "token_usage.total_tokens": 12021.0,
+                "token_usage.prompt_tokens": 11830.0,
+                "token_usage.completion_tokens": 83.0,
+                "token_usage.estimated_cost_usd": 0.0037565,
+                "latency_metrics.total_latency_seconds": 11.079288538,
+                "latency_metrics.llm_latency_seconds": 11.035496949999999,
+                "latency_metrics.tool_latency_seconds": 0.001439108,
+                "latency_metrics.time_to_first_response_seconds": 3.718013112
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "simple.test.json"
+        }
+    ]
+}

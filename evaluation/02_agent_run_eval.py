@@ -63,7 +63,6 @@ from vertexai.evaluation import EvalTask, PointwiseMetric
 
 # Add project root to Python path to allow importing from other modules.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from data_explorer_agent.config import get_settings
 # Import deterministic metrics calculator
 from evaluation.scripts.deterministic_metrics import evaluate_deterministic_metrics
 
@@ -73,12 +72,16 @@ def robust_json_loads(x: Any) -> Optional[Dict | List | str]:
     Safely parse a JSON string, returning None for invalid or empty inputs.
 
     Args:
-        x: The input to parse, expected to be a string.
+        x: The input to parse.
 
     Returns:
-        The parsed JSON object (dict or list), the original input if it's not
-        a valid JSON string but is a string, or None for non-string inputs.
+        The parsed JSON object (dict or list), the original input if it's already
+        an object or not a valid JSON string, or None for empty inputs.
     """
+    if x is None:
+        return None
+    if isinstance(x, (dict, list)):
+        return x
     if not isinstance(x, str) or not x:
         return None
     try:
@@ -301,22 +304,45 @@ def save_metrics_summary(
         # Average all metric scores for this group
         group["eval_results"] = group["eval_results"].apply(robust_json_loads)
         metric_scores = defaultdict(list)
+        metric_details = defaultdict(lambda: defaultdict(list))
+
         for result_dict in group["eval_results"].dropna():
             if not isinstance(result_dict, dict):
                 continue
             for metric_name, values in result_dict.items():
-                if isinstance(values, dict) and "score" in values and values["score"] is not None:
-                    try:
-                        score = float(values["score"])
-                        if not math.isnan(score):
-                            metric_scores[metric_name].append(score)
-                    except (ValueError, TypeError):
-                        continue
+                if isinstance(values, dict):
+                    # Process Score
+                    if "score" in values and values["score"] is not None:
+                        try:
+                            score = float(values["score"])
+                            if not math.isnan(score):
+                                metric_scores[metric_name].append(score)
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # Process Details
+                    if "details" in values and isinstance(values["details"], dict):
+                        for det_key, det_val in values["details"].items():
+                            if isinstance(det_val, (int, float)) and not isinstance(det_val, bool):
+                                metric_details[metric_name][det_key].append(det_val)
 
         average_metrics = {
             metric_name: sum(scores) / len(scores) if scores else 0
             for metric_name, scores in metric_scores.items()
         }
+
+        # Flatten aggregated details into average_metrics
+        for metric_name, details_dict in metric_details.items():
+            for det_key, val_list in details_dict.items():
+                if val_list:
+                    # e.g., latency_metrics.llm_latency_seconds
+                    avg_val = sum(val_list) / len(val_list)
+                    average_metrics[f"{metric_name}.{det_key}"] = avg_val
+
+        # Extract all metadata dynamically
+        metadata = robust_json_loads(group.iloc[0].get("question_metadata", "{}"))
+        if not isinstance(metadata, dict):
+            metadata = {}
 
         # Create summary for this question
         question_summary = {
@@ -324,10 +350,10 @@ def save_metrics_summary(
             "runs": len(group),
             "average_latency": {"overall": average_overall_latency},
             "average_metrics": average_metrics,
-            "tenant": extract_metadata_field(group, "tenant"),
-            "tier": extract_metadata_field(group, "tier"),
-            "complexity": extract_metadata_field(group, "complexity"),
         }
+        # Merge metadata into the summary
+        question_summary.update(metadata)
+        
         all_question_summaries.append(question_summary)
 
     # --- Calculate Overall and Per-Metric Summaries ---
@@ -399,26 +425,26 @@ def main():
     parser.add_argument(
         "--interaction-results-file",
         type=Path,
-        default=Path("evaluation/results/interaction_su_golden_questions.csv"),
+        required=True,
         help="Path to the CSV file with agent interaction results.",
     )
     parser.add_argument(
         "--results-dir",
         type=Path,
-        default=Path("evaluation/results"),
-        help="Directory to save the evaluation results.",
+        help="Directory to save the evaluation results. Defaults to the directory of the input file.",
     )
     parser.add_argument(
         "--metrics-files",
         type=str,
         nargs="+",
-        default=["evaluation/metrics/metric_definitions.json"],
+        required=True,
         help="List of paths to the metric definition JSON files.",
     )
     parser.add_argument(
-        "--scheduled",
-        action="store_true",
-        help="Flag to indicate if the run is a scheduled execution.",
+        "--input-label",
+        type=str,
+        default="manual",
+        help="Label for the run (e.g., 'manual', 'scheduled', 'ci').",
     )
     parser.add_argument(
         "--test-description",
@@ -432,30 +458,35 @@ def main():
         dest="metric_filters",
         help="Filter metrics by criteria. Format: 'key:value1,value2'. Can be used multiple times.",
     )
-    parser.add_argument(
-        "--dataset-id",
-        type=str,
-        default="data_explorer_eval",
-        help="The BigQuery dataset ID for storing evaluation results.",
-    )
     args = parser.parse_args()
 
     # --- Initialization ---
-    settings = get_settings()
-    project_id = settings.GOOGLE_CLOUD_PROJECT
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+    if not project_id:
+        print("Error: GOOGLE_CLOUD_PROJECT environment variable not set.")
+        sys.exit(1)
     aiplatform.init(project=project_id, location="us-central1")
 
     # --- Load Data and Metrics ---
-    try:
-        interaction_results = pd.read_csv(args.interaction_results_file, dtype={"question_id": str})
-    except FileNotFoundError:
+    if not args.interaction_results_file.exists():
         print(f"Error: The interaction results file was not found at '{args.interaction_results_file}'")
         sys.exit(1)
+        
+    try:
+        interaction_results = pd.read_csv(args.interaction_results_file, dtype={"question_id": str})
+    except Exception as e:
+        print(f"Error reading CSV: {e}")
+        sys.exit(1)
+
+    # Determine results directory
+    results_dir = args.results_dir if args.results_dir else args.interaction_results_file.parent
+    results_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Results will be saved to: {results_dir}")
 
     metric_definitions = load_and_consolidate_metrics(args.metrics_files)
 
     # Save the consolidated metrics to the results directory for the next step.
-    consolidated_metrics_path = args.results_dir / "temp_consolidated_metrics.json"
+    consolidated_metrics_path = results_dir / "temp_consolidated_metrics.json"
     with open(consolidated_metrics_path, "w") as f:
         json.dump(metric_definitions, f, indent=4)
     print(f"Saved consolidated metrics to {consolidated_metrics_path}")
@@ -493,12 +524,14 @@ def main():
     if "extracted_data" in interaction_results.columns:
         extracted_data_df = pd.json_normalize(interaction_results["extracted_data"]).add_prefix("extracted_data.")
         dfs_to_concat.append(extracted_data_df)
-        columns_to_drop.append("extracted_data")
+        # Don't drop original column, we need it for nested dict access
+        # columns_to_drop.append("extracted_data") 
     
     if "reference_data" in interaction_results.columns:
         reference_data_df = pd.json_normalize(interaction_results["reference_data"]).add_prefix("reference_data.")
         dfs_to_concat.append(reference_data_df)
-        columns_to_drop.append("reference_data")
+        # Don't drop original column
+        # columns_to_drop.append("reference_data")
     
     if columns_to_drop:
         dfs_to_concat[0] = interaction_results.drop(columns=columns_to_drop)
@@ -550,6 +583,20 @@ def main():
 
             if metric_type == "deterministic":
                 print(f"Calculating deterministic metric: {metric_name}")
+                # Strip prefix to get the canonical function name (e.g. cs__token_usage -> token_usage)
+                # Assuming prefix ends with __ or _
+                canonical_name = metric_name
+                if "__" in metric_name:
+                    canonical_name = metric_name.split("__", 1)[1]
+                elif "_" in metric_name and metric_name.count("_") > 1: # simplistic heuristic
+                     # Fallback check against registry
+                     from evaluation.scripts.deterministic_metrics import DETERMINISTIC_METRICS
+                     if metric_name not in DETERMINISTIC_METRICS:
+                         for key in DETERMINISTIC_METRICS:
+                             if metric_name.endswith(f"_{key}"):
+                                 canonical_name = key
+                                 break
+
                 # Deterministic metrics may need the original, non-normalized data.
                 original_agent_df = original_df[original_df["agents_evaluated"].apply(
                     lambda x: agent in robust_json_loads(x) if x else False
@@ -577,10 +624,12 @@ def main():
                             agents_evaluated=agents_evaluated,
                             reference_data=reference_data,
                             question_metadata=question_metadata,
-                            metric_definitions={metric_name: metric_info} # Pass only the current metric
+                            metrics_to_run=[canonical_name], # Pass only the current metric
+                            metric_definitions={canonical_name: metric_info}
                         )
-                        if metric_name in det_results:
-                            deterministic_results_by_row[index][metric_name] = det_results[metric_name]
+                        if canonical_name in det_results:
+                            # Store under the original (prefixed) name
+                            deterministic_results_by_row[index][metric_name] = det_results[canonical_name]
                     except Exception as e:
                         print(f"Error calculating deterministic metric {metric_name} for row {index}: {e}")
                 continue  # Go to the next metric
@@ -598,12 +647,25 @@ def main():
                     source_cols = [source_cols]
                 
                 for col in source_cols:
-                    # Check for normalized column names first.
-                    for prefix in ["extracted_data.", "reference_data."]:
-                        if f"{prefix}{col}" in agent_df.columns:
-                            all_source_columns.append(f"{prefix}{col}")
-                            break
-                    else: # If not found with prefix, check for original column name.
+                    found_col = False
+                    # 1. Try explicit mapping first (e.g. reference_data:field -> reference_data.field)
+                    if ":" in col:
+                        prefix, field = col.split(":", 1)
+                        dot_col = f"{prefix}.{field}"
+                        if dot_col in agent_df.columns:
+                            all_source_columns.append(dot_col)
+                            found_col = True
+                    
+                    if not found_col:
+                        # 2. Check for normalized column names with standard prefixes
+                        for prefix in ["extracted_data.", "reference_data."]:
+                            if f"{prefix}{col}" in agent_df.columns:
+                                all_source_columns.append(f"{prefix}{col}")
+                                found_col = True
+                                break
+                    
+                    if not found_col:
+                         # 3. Check for original column name
                         if col in agent_df.columns:
                             all_source_columns.append(col)
 
@@ -615,27 +677,61 @@ def main():
             for placeholder, details in mapping.items():
                 if "source_column" in details:
                     col = details["source_column"]
-                    # Find the correct column name (prefixed or original)
+                    # Find the correct column name
+                    candidates = []
+                    # 1. Try explicit dot notation if colon is used
+                    if ":" in col:
+                        candidates.append(col.replace(":", "."))
+                    # 2. Try standard prefixes
+                    candidates.extend([f"extracted_data.{col}", f"reference_data.{col}", col])
+                    
+                    # 3. Fallback: Check if the *root* of a colon-separated path exists (e.g. "reference_data")
+                    root_col = None
+                    field_path = None
+                    if ":" in col:
+                        parts = col.split(":", 1)
+                        if parts[0] in metric_df.columns:
+                            root_col = parts[0]
+                            field_path = parts[1]
+
                     source_col_name = next(
-                        (c for c in [f"extracted_data.{col}", f"reference_data.{col}", col] if c in metric_df.columns),
+                        (c for c in candidates if c in metric_df.columns),
                         None
                     )
+                    
                     if source_col_name:
+                        # Direct column match (flattened or simple)
                         eval_dataset[placeholder] = metric_df[source_col_name].apply(
                             lambda x: json.dumps(x) if isinstance(x, (dict, list)) else str(x)
+                        )
+                    elif root_col and field_path:
+                        # Nested extraction from a root dict column
+                        def extract_nested_field(row_data, path):
+                            if isinstance(row_data, str):
+                                row_data = robust_json_loads(row_data)
+                            if isinstance(row_data, dict):
+                                return row_data.get(path)
+                            return None
+
+                        eval_dataset[placeholder] = metric_df[root_col].apply(
+                            lambda x: extract_nested_field(x, field_path)
+                        ).apply(
+                            lambda x: json.dumps(x) if isinstance(x, (dict, list)) else str(x) if x is not None else ""
                         )
                 elif "template" in details:
                     def format_template(row):
                         template_vars = {}
                         for col in details["source_columns"]:
+                            # Same lookup logic as above
+                            candidates = []
+                            if ":" in col:
+                                candidates.append(col.replace(":", "."))
+                            candidates.extend([f"extracted_data.{col}", f"reference_data.{col}", col])
+                            
                             source_col_name = next(
                                 (
                                     c
-                                    for c in [
-                                        f"extracted_data.{col}",
-                                        f"reference_data.{col}",
-                                        col,
-                                    ]
+                                    for c in candidates
                                     if c in row and row[c] is not None and (not isinstance(row[c], list) or len(row[c]) > 0)
                                 ),
                                 None,
@@ -675,12 +771,11 @@ def main():
                         print(f"All {max_retries} retries failed for metric '{metric_name}'.")
 
     # --- Aggregate and Save Results ---
-    args.results_dir.mkdir(parents=True, exist_ok=True)
+    # results_dir already created above
 
     final_results_df = original_df.copy()
     final_results_df["evaluation_datetime"] = evaluation_datetime.isoformat()
-    run_type = "scheduled" if args.scheduled else "manual"
-    final_results_df["run_type"] = run_type
+    final_results_df["input_label"] = args.input_label
     final_results_df["experiment_id"] = base_run_id
 
     # Create a placeholder for evaluation results for each row.
@@ -712,15 +807,15 @@ def main():
     if "processed_interaction" not in input_basename:
         output_basename = f"evaluation_results_{input_basename}"
 
-    output_csv_path = args.results_dir / output_basename
+    output_csv_path = results_dir / output_basename
     final_results_df.to_csv(output_csv_path, index=False)
     print(f"\nEvaluation complete. Full results saved to {output_csv_path}")
 
     save_metrics_summary(
         final_results_df,
-        args.results_dir,
+        results_dir,
         base_run_id,
-        run_type,
+        args.input_label,
         args.test_description,
     )
 
