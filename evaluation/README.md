@@ -187,6 +187,43 @@ AI-as-judge metrics are defined in JSON configuration files (e.g., `metrics/metr
 
 ---
 
+# Metrics Reference
+
+## 1. Deterministic Metrics
+Calculated directly from execution traces without using an LLM.
+
+| Metric | Description | Calculation Logic |
+| :--- | :--- | :--- |
+| **`token_usage`** | Cost & Volume | Sums prompt, completion, and cached tokens from `usage_metadata`. Calculates estimated cost using model-specific pricing (e.g., Gemini 1.5 Pro). |
+| **`latency_metrics`** | Speed | **Total:** Sum of all agent invocation durations (excludes user think time). **Avg Turn:** Mean duration of agent invocations. **LLM/Tool:** Sum of individual span durations. |
+| **`cache_efficiency`** | Optimization | `Cache Hit Rate = Cached Tokens / (Cached + Fresh Prompt Tokens)`. Measures how effectively the Context Cache is being used. |
+| **`thinking_metrics`** | Cognitive Effort | `Reasoning Ratio = Thinking Tokens / Total Output Tokens`. Measures the proportion of output spent on internal reasoning (for Thinking models). |
+| **`tool_utilization`** | Tool Usage | Counts total and unique tool calls. Provides a breakdown of which tools were called how often. |
+| **`tool_success_rate`** | Reliability | `Successful Calls / Total Calls`. Parses tool output JSON to check for `status: "error"` or error messages. |
+| **`grounding_utilization`** | Factuality Proxy | Counts the number of Google Search grounding chunks (citations) present in the LLM response metadata. |
+| **`context_saturation`** | Capacity Planning | Tracks the **Maximum Total Tokens** used in any single turn. Helps identify if the session is nearing the model's context window limit. |
+| **`agent_handoffs`** | Orchestration | Counts the number of times control transferred between agents (`invoke_agent` spans). Validates multi-agent architecture. |
+| **`output_density`** | Conciseness | `Average Output Tokens per LLM Call`. A proxy for the "Reduce" pillar; lower values (for non-generative tasks) often indicate better instruction following. |
+| **`sandbox_usage`** | Offloading | Counts calls to file system tools (`save_artifact`, `read_file`, etc.). Deterministically verifies if state is being offloaded to disk. |
+
+## 2. LLM Metrics (Customer Service)
+Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_customer_service.json`.
+
+*   **`trajectory_accuracy` (0-5):** Did the agent follow the expected sequence of sub-tasks? Compares actual agent order vs. reference trajectory.
+*   **`response_correctness` (0-5):** Is the final answer relevant, accurate, and consistent with tool outputs?
+*   **`tool_usage_accuracy` (0-5):** Did the agent pick the right tools and use the correct arguments (e.g., correct `customer_id`)?
+*   **`state_management_fidelity` (0-5):** Did the agent correctly extract entities from the conversation and update its internal session state variables?
+
+## 3. LLM Metrics (Retail Location Strategy)
+Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_retail_location.json`.
+
+*   **`state_variable_fidelity` (0-5):** Checks if complex artifacts (Market Research, Gap Analysis) were correctly stored in the session state.
+*   **`market_research_depth` (0-5):** Evaluates the quality of the gathered data. Does it cover demographics and specific competitors? Is it synthesized well?
+*   **`strategic_recommendation_quality` (0-5):** Assesses the business logic. Is the recommendation evidence-based? Are risks acknowledged? Are next steps actionable?
+*   **`tool_usage_effectiveness` (0-5):** Did the agent perform a comprehensive search (coverage)? Did it successfully generate the final HTML/Infographic artifacts?
+
+---
+
 ## Example Evaluation Commands
 
 ### Retail Location Strategy Agent
