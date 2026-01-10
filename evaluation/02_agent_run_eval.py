@@ -286,52 +286,67 @@ def save_metrics_summary(
     grouped = df.groupby("question_id")
 
     all_question_summaries = []
+    
+    # helper for overall aggregation
+    per_metric_scores = defaultdict(list)
+
     for question_id, group in grouped:
         # Average all metric scores for this group
         group["eval_results"] = group["eval_results"].apply(robust_json_loads)
         
-        # Dictionary to store score and explanation for each metric
-        metrics_data = {}
+        det_metrics_data = {}
+        llm_metrics_data = {}
 
         for result_dict in group["eval_results"].dropna():
             if not isinstance(result_dict, dict):
                 continue
             for metric_name, values in result_dict.items():
                 if isinstance(values, dict):
-                    # We assume one run per question as per instructions.
-                    # We store the score and explanation directly.
-                    # If multiple runs exist, this will effectively take the last one,
-                    # but the logic prioritizes the structure: {metric: {score: x, explanation: y}}
+                    # Check if deterministic
+                    # Note: We assume keys in eval_results match DETERMINISTIC_METRICS keys
+                    # or follow the pattern used in main()
+                    is_det = False
+                    canonical_name = metric_name
+                    if metric_name in DETERMINISTIC_METRICS:
+                        is_det = True
+                    else:
+                        # Handle potential prefixes if they exist in the output
+                        for key in DETERMINISTIC_METRICS:
+                            if metric_name.endswith(f"_{key}"):
+                                is_det = True
+                                canonical_name = key
+                                break
                     
-                    metric_entry = {}
-                    
-                    # Process Score
+                    # Flatten/Collect scores for overall summary
                     if "score" in values and values["score"] is not None:
                         try:
                             score = float(values["score"])
                             if not math.isnan(score):
-                                metric_entry["score"] = score
+                                per_metric_scores[metric_name].append(score)
+                                
+                                # Also track sub-details for overall summary if present
+                                if "details" in values and isinstance(values["details"], dict):
+                                    for det_key, det_val in values["details"].items():
+                                        if isinstance(det_val, (int, float)) and not isinstance(det_val, bool):
+                                            per_metric_scores[f"{metric_name}.{det_key}"].append(det_val)
                         except (ValueError, TypeError):
                             pass
-                    
-                    # Process Explanation
-                    if "explanation" in values:
-                        metric_entry["explanation"] = values["explanation"]
 
-                    # Process Details (flatten them into the top level for consistency with overall summary if needed, 
-                    # but for per-question, keeping them in details or just explanation is cleaner. 
-                    # However, to maintain the flattening logic requested previously for 'average_metrics':
-                    if "details" in values and isinstance(values["details"], dict):
-                        for det_key, det_val in values["details"].items():
-                            if isinstance(det_val, (int, float)) and not isinstance(det_val, bool):
-                                # Add flattened details as separate metrics for visibility
-                                metrics_data[f"{metric_name}.{det_key}"] = {
-                                    "score": det_val,
-                                    "explanation": f"Detail {det_key} for {metric_name}"
-                                }
-                    
-                    if metric_entry:
-                        metrics_data[metric_name] = metric_entry
+                    # Format for Per-Question Summary
+                    if is_det:
+                        # For deterministic: extract details (preferred) or score. No explanation.
+                        data_content = values.get("details")
+                        if data_content is None:
+                            data_content = values.get("score")
+                        det_metrics_data[metric_name] = data_content
+                    else:
+                        # For LLM: keep score and explanation
+                        metric_entry = {}
+                        if "score" in values:
+                            metric_entry["score"] = values["score"]
+                        if "explanation" in values:
+                            metric_entry["explanation"] = values["explanation"]
+                        llm_metrics_data[metric_name] = metric_entry
 
         # Extract all metadata dynamically
         metadata = robust_json_loads(group.iloc[0].get("question_metadata", "{}"))
@@ -342,44 +357,38 @@ def save_metrics_summary(
         question_summary = {
             "question_id": question_id,
             "runs": len(group),
-            "metrics": metrics_data,
+            "deterministic_metrics": det_metrics_data,
+            "llm_metrics": llm_metrics_data,
         }
         # Merge metadata into the summary
         question_summary.update(metadata)
         
         all_question_summaries.append(question_summary)
 
-    # --- Calculate Overall and Per-Metric Summaries ---
-    per_metric_scores = defaultdict(list)
-    if all_question_summaries:
-        for qs in all_question_summaries:
-            for metric, data in qs["metrics"].items():
-                if "score" in data:
-                    per_metric_scores[metric].append(data["score"])
+    # --- Calculate Overall Summary ---
+    deterministic_summary = {}
+    llm_summary = {}
 
-    final_overall_metrics = {
-        metric: sum(scores) / len(scores) if scores else 0
-        for metric, scores in per_metric_scores.items()
-    }
-    
-    per_metric_summary = [
-        {
-            "metric_name": metric,
-            "average_score": sum(scores) / len(scores) if scores else 0,
-            "conversation_count": len(scores),
-        }
-        for metric, scores in per_metric_scores.items()
-    ]
-    # Sort by name for consistent output
-    per_metric_summary.sort(key=lambda x: x["metric_name"])
-
-
-    # --- Create and Print Summary Table ---
-    summary_table = generate_summary_table(per_metric_summary)
-    print("\n--- Per-Metric Evaluation Summary ---")
-    print(summary_table)
-    print("-------------------------------------\n")
-
+    for metric, scores in per_metric_scores.items():
+        if not scores:
+            continue
+        
+        avg_score = sum(scores) / len(scores)
+        
+        # Check if this is a deterministic metric or a detail of one
+        is_deterministic_root = metric in DETERMINISTIC_METRICS
+        # Check if it's a detail (starts with 'metric.' or matches canonical check)
+        is_deterministic_detail = any(metric.startswith(f"{k}.") for k in DETERMINISTIC_METRICS)
+        
+        if is_deterministic_detail:
+            # Keep flattened details in overall summary
+            deterministic_summary[metric] = avg_score
+        elif is_deterministic_root:
+            # Skip top-level scalar average for complex deterministic metrics
+            continue
+        else:
+            # Assume everything else is an LLM/Custom metric
+            llm_summary[metric] = avg_score
 
     # Create the final summary JSON object
     output_json = {
@@ -393,9 +402,9 @@ def save_metrics_summary(
         "ADK_USER_ID": df.iloc[0]["ADK_USER_ID"] if not df.empty else None,
         "base_url": df.iloc[0]["base_url"] if not df.empty else None,
         "overall_summary": {
-            "average_metrics": final_overall_metrics,
+            "deterministic_metrics": deterministic_summary,
+            "llm_based_metrics": llm_summary,
         },
-        "per_metric_summary": per_metric_summary,
         "per_question_summary": all_question_summaries,
     }
 
