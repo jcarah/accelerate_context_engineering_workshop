@@ -127,7 +127,7 @@ def main():
     parser.add_argument(
         "--base-url",
         type=str,
-        default="https://genai.ops.dematic.dev",
+        default="http://localhost:8501",
         help="The base URL of the agent service.",
     )
     parser.add_argument(

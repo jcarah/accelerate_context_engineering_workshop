@@ -41,7 +41,7 @@ uv run python 01_agent_interaction.py \
 | Argument | Description | Default |
 |---|---|---|
 | `--app-name` | The name of the application/agent (e.g., `customer_service`, `app`). **(Required)** | N/A |
-| `--base-url` | The base URL where the agent service is running. | `https://genai.ops.dematic.dev` |
+| `--base-url` | The base URL where the agent service is running. | `http://localhost:8501` |
 | `--questions-file` | One or more paths to JSON files with test questions. **(Required)** | N/A |
 | `--user-id` | The user ID for the evaluation session. | `eval_user` |
 | `--num-questions` | Number of questions to sample from each file. -1 for all. | `-1` |
