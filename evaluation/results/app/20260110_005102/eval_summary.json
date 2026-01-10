@@ -1,180 +1,161 @@
 {
-    "experiment_id": "eval-20260110030826",
-    "run_type": "retail_run_6",
+    "experiment_id": "eval-20260110040058",
+    "run_type": "retail_run_7",
     "test_description": "Evaluation run from 02_agent_run_eval.py.",
     "interaction_datetime": "2026-01-10T00:51:03.436672",
     "USER": "admin_danielazamora_altostrat_co",
     "ADK_USER_ID": "eval_user",
     "base_url": "http://localhost:8501",
     "overall_summary": {
-        "average_metrics": {
+        "deterministic_metrics": {
             "token_usage.llm_calls": 13.0,
             "token_usage.total_tokens": 216612.5,
             "token_usage.prompt_tokens": 134999.5,
             "token_usage.completion_tokens": 14344.5,
+            "token_usage.cached_tokens": 49087.0,
             "token_usage.estimated_cost_usd": 0.312194375,
-            "token_usage": 0.312194375,
             "latency_metrics.total_latency_seconds": 362.23405,
             "latency_metrics.average_turn_latency_seconds": 362.23405,
             "latency_metrics.llm_latency_seconds": 718.3405850835,
             "latency_metrics.tool_latency_seconds": 84.939564725,
             "latency_metrics.time_to_first_response_seconds": 8.317924584,
-            "latency_metrics": 362.23405,
+            "cache_efficiency.cache_hit_rate": 0.2667961180569581,
+            "cache_efficiency.total_cached_tokens": 49087.0,
+            "cache_efficiency.total_fresh_prompt_tokens": 134999.5,
+            "cache_efficiency.total_input_tokens": 184086.5,
+            "thinking_metrics.reasoning_ratio": 0.37686130348838864,
+            "thinking_metrics.total_thinking_tokens": 8633.5,
+            "thinking_metrics.total_candidate_tokens": 14344.5,
+            "thinking_metrics.total_output_tokens": 22978.0,
+            "thinking_metrics.turns_with_thinking": 11.0,
+            "tool_utilization.total_tool_calls": 6.0,
+            "tool_utilization.unique_tools_used": 5.0,
+            "tool_success_rate.tool_success_rate": 1.0,
+            "tool_success_rate.total_tool_calls": 6.0,
+            "tool_success_rate.failed_tool_calls": 0.0,
+            "grounding_utilization.total_grounding_chunks": 29.0,
+            "grounding_utilization.total_grounded_responses": 1.0,
+            "grounding_utilization.total_llm_responses": 19.0,
+            "context_saturation.max_total_tokens": 81230.0,
+            "agent_handoffs.total_handoffs": 9.0,
+            "agent_handoffs.unique_agents_count": 9.0,
+            "output_density.average_output_tokens": 1103.423076923077,
+            "output_density.total_output_tokens": 14344.5,
+            "output_density.llm_calls_count": 13.0,
+            "sandbox_usage.total_sandbox_ops": 0.0,
+            "sandbox_usage.unique_ops_used": 0.0
+        },
+        "llm_based_metrics": {
+            "state_variable_fidelity": 5.0,
             "market_research_depth": 1.0,
             "strategic_recommendation_quality": 1.0,
-            "tool_usage_effectiveness": 5.0,
-            "state_variable_fidelity": 5.0
+            "tool_usage_effectiveness": 5.0
         }
     },
-    "per_metric_summary": [
-        {
-            "metric_name": "latency_metrics",
-            "average_score": 362.23405,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "latency_metrics.average_turn_latency_seconds",
-            "average_score": 362.23405,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "latency_metrics.llm_latency_seconds",
-            "average_score": 718.3405850835,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "latency_metrics.time_to_first_response_seconds",
-            "average_score": 8.317924584,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "latency_metrics.tool_latency_seconds",
-            "average_score": 84.939564725,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "latency_metrics.total_latency_seconds",
-            "average_score": 362.23405,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "market_research_depth",
-            "average_score": 1.0,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "state_variable_fidelity",
-            "average_score": 5.0,
-            "conversation_count": 1
-        },
-        {
-            "metric_name": "strategic_recommendation_quality",
-            "average_score": 1.0,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "token_usage",
-            "average_score": 0.312194375,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "token_usage.completion_tokens",
-            "average_score": 14344.5,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "token_usage.estimated_cost_usd",
-            "average_score": 0.312194375,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "token_usage.llm_calls",
-            "average_score": 13.0,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "token_usage.prompt_tokens",
-            "average_score": 134999.5,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "token_usage.total_tokens",
-            "average_score": 216612.5,
-            "conversation_count": 2
-        },
-        {
-            "metric_name": "tool_usage_effectiveness",
-            "average_score": 5.0,
-            "conversation_count": 2
-        }
-    ],
     "per_question_summary": [
         {
             "question_id": "q1",
             "runs": 1,
-            "metrics": {
-                "token_usage.llm_calls": {
-                    "score": 13,
-                    "explanation": "Detail llm_calls for token_usage"
-                },
-                "token_usage.total_tokens": {
-                    "score": 189302,
-                    "explanation": "Detail total_tokens for token_usage"
-                },
-                "token_usage.prompt_tokens": {
-                    "score": 139141,
-                    "explanation": "Detail prompt_tokens for token_usage"
-                },
-                "token_usage.completion_tokens": {
-                    "score": 13089,
-                    "explanation": "Detail completion_tokens for token_usage"
-                },
-                "token_usage.estimated_cost_usd": {
-                    "score": 0.30481625,
-                    "explanation": "Detail estimated_cost_usd for token_usage"
-                },
+            "deterministic_metrics": {
                 "token_usage": {
-                    "score": 0.30481625,
-                    "explanation": "Usage: 13 LLM calls using ['gemini-2.5-pro']. Tokens: 189302 (139141p + 13089c). Cost: $0.304816"
-                },
-                "latency_metrics.total_latency_seconds": {
-                    "score": 362.2428,
-                    "explanation": "Detail total_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.average_turn_latency_seconds": {
-                    "score": 362.2428,
-                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.llm_latency_seconds": {
-                    "score": 718.711445862,
-                    "explanation": "Detail llm_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.tool_latency_seconds": {
-                    "score": 89.46195941799999,
-                    "explanation": "Detail tool_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.time_to_first_response_seconds": {
-                    "score": 7.747876819,
-                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                    "llm_calls": 13,
+                    "models_used": [
+                        "gemini-2.5-pro"
+                    ],
+                    "total_tokens": 189302,
+                    "prompt_tokens": 139141,
+                    "completion_tokens": 13089,
+                    "cached_tokens": 48913,
+                    "estimated_cost_usd": 0.30481625
                 },
                 "latency_metrics": {
-                    "score": 362.2428,
-                    "explanation": "Total: 362.2428s. Avg Turn: 362.2428s. LLM: 718.7114s, Tools: 89.4620s. First Response: 7.7479s"
+                    "total_latency_seconds": 362.2428,
+                    "average_turn_latency_seconds": 362.2428,
+                    "llm_latency_seconds": 718.711445862,
+                    "tool_latency_seconds": 89.46195941799999,
+                    "time_to_first_response_seconds": 7.747876819
                 },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.2601008221042892,
+                    "total_cached_tokens": 48913,
+                    "total_fresh_prompt_tokens": 139141,
+                    "total_input_tokens": 188054
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.4105647122399351,
+                    "total_thinking_tokens": 9117,
+                    "total_candidate_tokens": 13089,
+                    "total_output_tokens": 22206,
+                    "turns_with_thinking": 11
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 6,
+                    "unique_tools_used": 5,
+                    "tool_counts": {
+                        "IntakeAgent": 1,
+                        "transfer_to_agent": 1,
+                        "search_places": 2,
+                        "generate_html_report": 1,
+                        "generate_infographic": 1
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 6,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 25,
+                    "total_grounded_responses": 1,
+                    "total_llm_responses": 19
+                },
+                "context_saturation": {
+                    "max_total_tokens": 48948,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 9,
+                    "unique_agents_count": 9,
+                    "agents_invoked_list": [
+                        "ReportGeneratorAgent",
+                        "GapAnalysisAgent",
+                        "InfographicGeneratorAgent",
+                        "retail_location_strategy",
+                        "CompetitorMappingAgent",
+                        "IntakeAgent",
+                        "StrategyAdvisorAgent",
+                        "MarketResearchAgent",
+                        "LocationStrategyPipeline"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 1006.8461538461538,
+                    "total_output_tokens": 13089,
+                    "llm_calls_count": 13
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
                 "state_variable_fidelity": {
-                    "explanation": "Error"
+                    "score": 5.0,
+                    "explanation": "The agent's final state shows perfect alignment with the user request regarding the target location and business type. All key fields like market research, competitor analysis, gap analysis, and the strategic report are fully populated with highly relevant and consistent data, indicating excellent state management fidelity across the entire pipeline."
                 },
                 "market_research_depth": {
                     "score": 1.0,
-                    "explanation": "Both the Market Research Findings and Competitor Analysis sections are empty, indicating no market research or competitor analysis was performed or provided by the AI agent."
+                    "explanation": "The market research findings and competitor analysis sections are completely empty, providing no data for demographics, economic trends, specific locations, competitor names, or quantitative analysis, thus scoring poorly on all evaluation criteria."
                 },
                 "strategic_recommendation_quality": {
                     "score": 1.0,
-                    "explanation": "The strategic report was empty, indicating no recommendation or output was provided by the AI for evaluation, thus failing all criteria."
+                    "explanation": "The 'Strategic Report' section is empty, meaning no recommendation, evidence, risk assessment, or actionable steps were provided by the AI for evaluation. This constitutes a failure to meet any of the evaluation criteria."
                 },
                 "tool_usage_effectiveness": {
                     "score": 5.0,
-                    "explanation": "The agent effectively used the IntakeAgent to parse the request, then transferred to a specialized agent. It conducted highly relevant searches for both direct ('specialty coffee shop') and indirect ('cafe') competitors to ensure comprehensive coverage. Finally, it successfully generated both a detailed HTML report and a concise infographic, demonstrating optimal completion and presentation of results without any redundant calls."
+                    "explanation": "The agent demonstrated optimal tool usage. It correctly identified the business type and location, performed relevant searches for both direct ('specialty coffee shop') and indirect ('cafe') competitors, and successfully generated comprehensive HTML and infographic reports. All steps were relevant, covered the user's request well, and were executed efficiently without redundancy."
                 }
             },
             "complexity": "low",
@@ -184,70 +165,106 @@
         {
             "question_id": "q2",
             "runs": 1,
-            "metrics": {
-                "token_usage.llm_calls": {
-                    "score": 13,
-                    "explanation": "Detail llm_calls for token_usage"
-                },
-                "token_usage.total_tokens": {
-                    "score": 243923,
-                    "explanation": "Detail total_tokens for token_usage"
-                },
-                "token_usage.prompt_tokens": {
-                    "score": 130858,
-                    "explanation": "Detail prompt_tokens for token_usage"
-                },
-                "token_usage.completion_tokens": {
-                    "score": 15600,
-                    "explanation": "Detail completion_tokens for token_usage"
-                },
-                "token_usage.estimated_cost_usd": {
-                    "score": 0.3195725000000001,
-                    "explanation": "Detail estimated_cost_usd for token_usage"
-                },
+            "deterministic_metrics": {
                 "token_usage": {
-                    "score": 0.3195725000000001,
-                    "explanation": "Usage: 13 LLM calls using ['gemini-2.5-pro']. Tokens: 243923 (130858p + 15600c). Cost: $0.319573"
-                },
-                "latency_metrics.total_latency_seconds": {
-                    "score": 362.2253,
-                    "explanation": "Detail total_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.average_turn_latency_seconds": {
-                    "score": 362.2253,
-                    "explanation": "Detail average_turn_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.llm_latency_seconds": {
-                    "score": 717.969724305,
-                    "explanation": "Detail llm_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.tool_latency_seconds": {
-                    "score": 80.417170032,
-                    "explanation": "Detail tool_latency_seconds for latency_metrics"
-                },
-                "latency_metrics.time_to_first_response_seconds": {
-                    "score": 8.887972349,
-                    "explanation": "Detail time_to_first_response_seconds for latency_metrics"
+                    "llm_calls": 13,
+                    "models_used": [
+                        "gemini-2.5-pro"
+                    ],
+                    "total_tokens": 243923,
+                    "prompt_tokens": 130858,
+                    "completion_tokens": 15600,
+                    "cached_tokens": 49261,
+                    "estimated_cost_usd": 0.3195725000000001
                 },
                 "latency_metrics": {
-                    "score": 362.2253,
-                    "explanation": "Total: 362.2253s. Avg Turn: 362.2253s. LLM: 717.9697s, Tools: 80.4172s. First Response: 8.8880s"
+                    "total_latency_seconds": 362.2253,
+                    "average_turn_latency_seconds": 362.2253,
+                    "llm_latency_seconds": 717.969724305,
+                    "tool_latency_seconds": 80.417170032,
+                    "time_to_first_response_seconds": 8.887972349
                 },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.27349141400962695,
+                    "total_cached_tokens": 49261,
+                    "total_fresh_prompt_tokens": 130858,
+                    "total_input_tokens": 180119
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.3431578947368421,
+                    "total_thinking_tokens": 8150,
+                    "total_candidate_tokens": 15600,
+                    "total_output_tokens": 23750,
+                    "turns_with_thinking": 11
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 6,
+                    "unique_tools_used": 5,
+                    "tool_counts": {
+                        "IntakeAgent": 1,
+                        "transfer_to_agent": 1,
+                        "search_places": 2,
+                        "generate_html_report": 1,
+                        "generate_infographic": 1
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 6,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 33,
+                    "total_grounded_responses": 1,
+                    "total_llm_responses": 19
+                },
+                "context_saturation": {
+                    "max_total_tokens": 113512,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 9,
+                    "unique_agents_count": 9,
+                    "agents_invoked_list": [
+                        "ReportGeneratorAgent",
+                        "GapAnalysisAgent",
+                        "InfographicGeneratorAgent",
+                        "retail_location_strategy",
+                        "CompetitorMappingAgent",
+                        "IntakeAgent",
+                        "StrategyAdvisorAgent",
+                        "MarketResearchAgent",
+                        "LocationStrategyPipeline"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 1200.0,
+                    "total_output_tokens": 15600,
+                    "llm_calls_count": 13
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
                 "state_variable_fidelity": {
-                    "score": 5.0,
-                    "explanation": "The agent state perfectly aligns with the user request. All critical fields like 'parsed_request', 'target_location', 'business_type', 'market_research_findings', 'competitor_analysis', and 'gap_analysis' are fully populated with highly relevant and detailed data. The consistency across different stages is excellent, with findings from earlier stages directly informing later analyses and the final strategic report. The 'high-end' context is consistently maintained throughout the analysis."
+                    "score": "",
+                    "explanation": ""
                 },
                 "market_research_depth": {
                     "score": 1.0,
-                    "explanation": "The 'Market Research Findings' and 'Competitor Analysis' sections are completely empty, providing no information to evaluate against the specified criteria for depth, specificity, relevance, or synthesis."
+                    "explanation": "Both the 'Market Research Findings' and 'Competitor Analysis' sections are completely empty, indicating a total lack of any research data, which aligns with the 'Poor' score criteria."
                 },
                 "strategic_recommendation_quality": {
                     "score": 1.0,
-                    "explanation": "The strategic report to be evaluated is missing from the prompt. Without the content of the 'Strategic Report', a proper evaluation against the specified criteria (Clarity, Evidence-Based, Risk Assessment, Actionability) cannot be performed. Therefore, the AI output (the report itself) cannot be assessed as intended."
+                    "explanation": "The strategic report to be evaluated is missing from the prompt, making it impossible to assess against any of the specified criteria (clarity, evidence-based, risk assessment, actionability). Thus, it constitutes a 'Failure' as there is no content to evaluate."
                 },
                 "tool_usage_effectiveness": {
                     "score": 5.0,
-                    "explanation": "The AI agent demonstrated optimal tool usage. It accurately parsed the user's request, performed highly relevant searches for 'luxury gym' and 'high-end fitness center' in the specified location to gather comprehensive data on competitors, and successfully generated both a detailed HTML report and a concise infographic. The generated report clearly indicates that the search results were used for an in-depth analysis to identify the 'best spot', going beyond simple listing to provide strategic insights and recommendations, thus fully addressing the user's complex request efficiently and comprehensively."
+                    "explanation": "The AI agent demonstrated optimal tool usage. It correctly parsed the user's request, used highly relevant search queries to identify existing 'luxury gym' and 'high-end fitness center' competitors in Austin, ensuring comprehensive data gathering. It then successfully generated both a detailed HTML report and a concise infographic, directly addressing the user's need for location strategy analysis. The workflow was logical and efficient without redundant calls."
                 }
             },
             "complexity": "low",
