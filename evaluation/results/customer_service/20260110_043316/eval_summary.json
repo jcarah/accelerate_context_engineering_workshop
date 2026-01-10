@@ -1,0 +1,443 @@
+{
+    "experiment_id": "eval-20260110044058",
+    "run_type": "customer_service_run_correct",
+    "test_description": "Evaluation run from 02_agent_run_eval.py.",
+    "interaction_datetime": "2026-01-10T04:33:17.819485",
+    "USER": "admin_danielazamora_altostrat_co",
+    "ADK_USER_ID": "eval_user",
+    "base_url": "http://localhost:8501",
+    "overall_summary": {
+        "deterministic_metrics": {
+            "token_usage.llm_calls": 7.75,
+            "token_usage.total_tokens": 36615.25,
+            "token_usage.prompt_tokens": 35565.75,
+            "token_usage.completion_tokens": 366.75,
+            "token_usage.cached_tokens": 23518.75,
+            "token_usage.estimated_cost_usd": 0.011586599999999997,
+            "latency_metrics.total_latency_seconds": 41.934625000000004,
+            "latency_metrics.average_turn_latency_seconds": 6.40773,
+            "latency_metrics.llm_latency_seconds": 34.59562199775,
+            "latency_metrics.tool_latency_seconds": 0.0070318185,
+            "latency_metrics.time_to_first_response_seconds": 3.5947070597499997,
+            "cache_efficiency.cache_hit_rate": 0.4017367526706831,
+            "cache_efficiency.total_cached_tokens": 23518.75,
+            "cache_efficiency.total_fresh_prompt_tokens": 35565.75,
+            "cache_efficiency.total_input_tokens": 59084.5,
+            "thinking_metrics.reasoning_ratio": 0.6498625447116264,
+            "thinking_metrics.total_thinking_tokens": 682.75,
+            "thinking_metrics.total_candidate_tokens": 366.75,
+            "thinking_metrics.total_output_tokens": 1049.5,
+            "thinking_metrics.turns_with_thinking": 6.5,
+            "tool_utilization.total_tool_calls": 1.75,
+            "tool_utilization.unique_tools_used": 1.5,
+            "tool_success_rate.tool_success_rate": 1.0,
+            "tool_success_rate.total_tool_calls": 1.75,
+            "tool_success_rate.failed_tool_calls": 0.0,
+            "grounding_utilization.total_grounding_chunks": 0.0,
+            "grounding_utilization.total_grounded_responses": 0.0,
+            "grounding_utilization.total_llm_responses": 9.5,
+            "context_saturation.max_total_tokens": 5065.0,
+            "agent_handoffs.total_handoffs": 6.25,
+            "agent_handoffs.unique_agents_count": 1.0,
+            "output_density.average_output_tokens": 38.14102564102564,
+            "output_density.total_output_tokens": 366.75,
+            "output_density.llm_calls_count": 7.75,
+            "sandbox_usage.total_sandbox_ops": 0.0,
+            "sandbox_usage.unique_ops_used": 0.0
+        },
+        "llm_based_metrics": {
+            "trajectory_accuracy": 2.75,
+            "response_correctness": 4.25,
+            "tool_usage_accuracy": 3.5,
+            "state_management_fidelity": 3.25
+        }
+    },
+    "per_question_summary": [
+        {
+            "question_id": "cs_full_657f2ed9",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": {
+                    "llm_calls": 13,
+                    "models_used": [
+                        "gemini-2.5-flash"
+                    ],
+                    "total_tokens": 63104,
+                    "prompt_tokens": 61330,
+                    "completion_tokens": 653,
+                    "cached_tokens": 43217,
+                    "estimated_cost_usd": 0.020031499999999997
+                },
+                "latency_metrics": {
+                    "total_latency_seconds": 70.7386,
+                    "average_turn_latency_seconds": 7.073860000000001,
+                    "llm_latency_seconds": 41.576799433,
+                    "tool_latency_seconds": 0.007235142,
+                    "time_to_first_response_seconds": 3.434585347
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.41337388925555013,
+                    "total_cached_tokens": 43217,
+                    "total_fresh_prompt_tokens": 61330,
+                    "total_input_tokens": 104547
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.6319052987598647,
+                    "total_thinking_tokens": 1121,
+                    "total_candidate_tokens": 653,
+                    "total_output_tokens": 1774,
+                    "turns_with_thinking": 11
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 3,
+                    "unique_tools_used": 2,
+                    "tool_counts": {
+                        "access_cart_information": 2,
+                        "get_product_recommendations": 1
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 3,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 16
+                },
+                "context_saturation": {
+                    "max_total_tokens": 5881,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 10,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service_agent"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 50.23076923076923,
+                    "total_output_tokens": 653,
+                    "llm_calls_count": 13
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "trajectory_accuracy": {
+                    "score": 2.0,
+                    "explanation": "The actual trajectory correctly identifies the need for a customer service agent, matching the type of agent in the expected trajectory. However, the actual trajectory invokes 'customer_service_agent' ten times, corresponding to each turn of the conversation, while the expected trajectory implies a single, overarching invocation of 'customer_service' for the entire user goal. This represents a significant number of 'extra steps' or repeated invocations compared to the single expected orchestration, fitting the description for a score of 2."
+                },
+                "response_correctness": {
+                    "score": 2.0,
+                    "explanation": "The AI correctly processes the purchase, which aligns with the customer's readiness to checkout. However, immediately after the customer stated 'nop thats all' in response to a 10% discount inquiry (signaling an end to that discussion), the AI re-offers a 10% discount for a future purchase. This demonstrates a significant misunderstanding of the customer's intent to conclude the discount topic, making the latter part of the response irrelevant to the customer's current desire to finalize the interaction without further discount discussion."
+                },
+                "tool_usage_accuracy": {
+                    "score": 2.0,
+                    "explanation": "The agent used some correct tools, specifically `access_cart_information`, for the initial cart query and a later cart query. However, it completely missed several key actions, including sending care instructions (twice) and generating a QR code for a discount. Additionally, the `get_product_recommendations` tool was called prematurely, out of the expected sequence."
+                },
+                "state_management_fidelity": {
+                    "score": 2.0,
+                    "explanation": "The `customer_profile` variable is correctly present in the session state, which is a key piece of information relevant to the user's initial query about past purchases and implicitly supports the follow-up about 'tomato seeds'. However, the agent failed to extract and map several other specific entities and intents from the subsequent user inputs, such as the explicit request for 'tomato seeds' care information, the 'cart' inquiry, the 'Fertilizer' suitability question, the 'checkout' intent, and the '10%' discount confirmation. These omissions are significant, indicating that while one major variable was correctly handled, many other specific details from the conversation were missed."
+                }
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "full_conversation.test.json"
+        },
+        {
+            "question_id": "cs_full_eb4390d8",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": {
+                    "llm_calls": 12,
+                    "models_used": [
+                        "gemini-2.5-flash"
+                    ],
+                    "total_tokens": 59254,
+                    "prompt_tokens": 57228,
+                    "completion_tokens": 676,
+                    "cached_tokens": 34099,
+                    "estimated_cost_usd": 0.018858399999999994
+                },
+                "latency_metrics": {
+                    "total_latency_seconds": 67.5476,
+                    "average_turn_latency_seconds": 6.75476,
+                    "llm_latency_seconds": 67.43799008200001,
+                    "tool_latency_seconds": 0.001647851,
+                    "time_to_first_response_seconds": 3.745982337
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.37337260612962214,
+                    "total_cached_tokens": 34099,
+                    "total_fresh_prompt_tokens": 57228,
+                    "total_input_tokens": 91327
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.6663376110562685,
+                    "total_thinking_tokens": 1350,
+                    "total_candidate_tokens": 676,
+                    "total_output_tokens": 2026,
+                    "turns_with_thinking": 11
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 2,
+                    "unique_tools_used": 2,
+                    "tool_counts": {
+                        "access_cart_information": 1,
+                        "get_product_recommendations": 1
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 2,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 14
+                },
+                "context_saturation": {
+                    "max_total_tokens": 6095,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 10,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service_agent"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 56.333333333333336,
+                    "total_output_tokens": 676,
+                    "llm_calls_count": 12
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "trajectory_accuracy": {
+                    "score": 4.0,
+                    "explanation": "The user goal is a multi-turn conversation entirely focused on customer service topics. The expected trajectory `[\"customer_service\"]` indicates that a customer service agent should be responsible for this interaction. The actual trajectory consistently calls `customer_service_agent` (functionally equivalent to `customer_service`) for each turn. While the actual trajectory shows multiple invocations compared to the single entry in the expected, this is a common and logically sound orchestration pattern for multi-turn conversations where the same agent type handles the entire interaction. The correct agent type was consistently identified and invoked for every step, achieving the same desired outcome without any incorrect or missed steps."
+                },
+                "response_correctness": {
+                    "score": 5.0,
+                    "explanation": "The final response perfectly concludes the conversation after the customer's last input of 'nop thats all, thanks for the help'. It is highly relevant, acknowledging the customer's gratitude and offering a polite and professional closing. The tone is empathetic and appropriate for customer service. While an earlier discount query remained unresolved, the customer chose to end the conversation, making this final farewell an accurate and comprehensive response to their closing statement."
+                },
+                "tool_usage_accuracy": {
+                    "score": 2.0,
+                    "explanation": "The agent correctly used `access_cart_information` for the first expected tool call with correct parameters. However, it then used `get_product_recommendations` instead of the expected `send_care_instructions` for the user's request about plant care, missing two critical actions. The agent also failed to make subsequent necessary calls such as the second `access_cart_information` and `generate_qr_code`, indicating that key actions were missing."
+                },
+                "state_management_fidelity": {
+                    "score": 1.0,
+                    "explanation": "The agent failed to extract any specific entities or intentions from the user's utterances (e.g., 'tomato seeds' as a current topic, 'Fertilizer', 'cart' inquiry, 'checkout' request, '10% discount' confirmation) into the session state. The 'customer_profile' is pre-loaded customer data, not information extracted from this specific user input, and the 'timer_start' and 'request_count' are system variables. This represents a major omission in state capture from the interaction."
+                }
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "full_conversation.test.json"
+        },
+        {
+            "question_id": "cs_simple_17a89ba6",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": {
+                    "llm_calls": 3,
+                    "models_used": [
+                        "gemini-2.5-flash"
+                    ],
+                    "total_tokens": 12086,
+                    "prompt_tokens": 11871,
+                    "completion_tokens": 68,
+                    "cached_tokens": 6696,
+                    "estimated_cost_usd": 0.0037313
+                },
+                "latency_metrics": {
+                    "total_latency_seconds": 17.5431,
+                    "average_turn_latency_seconds": 5.8477,
+                    "llm_latency_seconds": 17.480674639,
+                    "tool_latency_seconds": 0.018208353,
+                    "time_to_first_response_seconds": 3.49268978
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.36063984488608825,
+                    "total_cached_tokens": 6696,
+                    "total_fresh_prompt_tokens": 11871,
+                    "total_input_tokens": 18567
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.6837209302325581,
+                    "total_thinking_tokens": 147,
+                    "total_candidate_tokens": 68,
+                    "total_output_tokens": 215,
+                    "turns_with_thinking": 2
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 1,
+                    "unique_tools_used": 1,
+                    "tool_counts": {
+                        "access_cart_information": 1
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 1,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 4
+                },
+                "context_saturation": {
+                    "max_total_tokens": 4162,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 3,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service_agent"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 22.666666666666668,
+                    "total_output_tokens": 68,
+                    "llm_calls_count": 3
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "trajectory_accuracy": {
+                    "score": 2.0,
+                    "explanation": "The agent correctly identified the 'customer_service' (as 'customer_service_agent'), but invoked it three times instead of the expected single invocation. This constitutes significant extra steps, pushing the score down from 'mostly correct with minor deviations' to 'some correct sub-agents but significant extra steps'."
+                },
+                "response_correctness": {
+                    "score": 5.0,
+                    "explanation": "The AI's response perfectly addresses the customer's request by clearly listing the cart contents and subtotal. The tone is appropriate and friendly, and the information is presented in a comprehensive and easy-to-understand manner. It provides a direct and complete answer to the customer's question."
+                },
+                "tool_usage_accuracy": {
+                    "score": 5.0,
+                    "explanation": "The agent perfectly selected the correct tool `access_cart_information` and provided the exact required input arguments `{\"customer_id\": \"123\"}` with no redundant calls. The additional fields in the actual tool call (`call_id`, `output_result`) represent execution details and do not affect the correctness of the tool call definition."
+                },
+                "state_management_fidelity": {
+                    "score": 5.0,
+                    "explanation": "The user input was a query (\"tell me what is in my cart?\"), which does not contain new entities or information to be extracted and stored into state variables. The 'Expected State Variables' being empty correctly reflects that no new state variables were anticipated to be generated from this specific input. The agent correctly did not attempt to parse and store any new domain-specific entities from the user's utterance. The variables present in 'Actual State Variables' (`customer_profile`, `timer_start`, `request_count`) are either pre-existing session context or system metadata, and were not extracted from the current user input, thus perfectly aligning with the expectation of no new information being parsed and stored from this particular interaction."
+                }
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "simple.test.json"
+        },
+        {
+            "question_id": "cs_simple_2f260f51",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": {
+                    "llm_calls": 3,
+                    "models_used": [
+                        "gemini-2.5-flash"
+                    ],
+                    "total_tokens": 12017,
+                    "prompt_tokens": 11834,
+                    "completion_tokens": 70,
+                    "cached_tokens": 10063,
+                    "estimated_cost_usd": 0.0037251999999999997
+                },
+                "latency_metrics": {
+                    "total_latency_seconds": 11.909199999999998,
+                    "average_turn_latency_seconds": 5.954599999999999,
+                    "llm_latency_seconds": 11.887023837000001,
+                    "tool_latency_seconds": 0.001035928,
+                    "time_to_first_response_seconds": 3.705570775
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.4595606704114719,
+                    "total_cached_tokens": 10063,
+                    "total_fresh_prompt_tokens": 11834,
+                    "total_input_tokens": 21897
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.6174863387978142,
+                    "total_thinking_tokens": 113,
+                    "total_candidate_tokens": 70,
+                    "total_output_tokens": 183,
+                    "turns_with_thinking": 2
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 1,
+                    "unique_tools_used": 1,
+                    "tool_counts": {
+                        "access_cart_information": 1
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 1,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 4
+                },
+                "context_saturation": {
+                    "max_total_tokens": 4122,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 2,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service_agent"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 23.333333333333332,
+                    "total_output_tokens": 70,
+                    "llm_calls_count": 3
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "trajectory_accuracy": {
+                    "score": 3.0,
+                    "explanation": "The actual trajectory correctly identified the core functionality (customer service) despite a slight naming difference (`customer_service_agent` vs `customer_service`). However, it included an unnecessary duplicate call to the agent, which counts as one extra step, aligning with 'minor deviations (e.g., one extra step)' for a score of 3."
+                },
+                "response_correctness": {
+                    "score": 5.0,
+                    "explanation": "The AI response perfectly addressed the customer's question by accurately listing the cart contents and subtotal in a clear, comprehensive, and polite manner. The personalized greeting and offer of further assistance also contribute to an excellent customer service experience."
+                },
+                "tool_usage_accuracy": {
+                    "score": 5.0,
+                    "explanation": "The agent perfectly executed the expected tool call: it selected the correct tool ('access_cart_information') with the exact required arguments ('customer_id': '123') and made no redundant calls. This demonstrates perfect tool usage."
+                },
+                "state_management_fidelity": {
+                    "score": 5.0,
+                    "explanation": "The 'Expected State Variables' is empty, indicating that no specific entities were anticipated to be extracted directly from the user's input 'hi, tell me what is in my cart?' for this turn. The actual state variables contain 'customer_profile', 'timer_start', and 'request_count'. 'customer_profile' is a highly relevant contextual variable for a 'what is in my cart' query, and 'timer_start' and 'request_count' are standard system-level session variables. Since nothing was expected to be extracted from the utterance itself, and the existing and contextual state variables are well-formed and relevant, the agent achieved perfect state capture, including beneficial contextual information."
+                }
+            },
+            "tenant": "cymbal_home_garden",
+            "source_file": "simple.test.json"
+        }
+    ]
+}

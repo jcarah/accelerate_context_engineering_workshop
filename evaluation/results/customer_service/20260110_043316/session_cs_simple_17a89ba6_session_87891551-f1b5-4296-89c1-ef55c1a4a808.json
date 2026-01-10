@@ -1,0 +1,280 @@
+{
+    "id": "session_87891551-f1b5-4296-89c1-ef55c1a4a808",
+    "appName": "customer_service",
+    "userId": "eval_user",
+    "state": {
+        "customer_profile": "{\n    \"account_number\": \"428765091\",\n    \"customer_id\": \"123\",\n    \"customer_first_name\": \"Alex\",\n    \"customer_last_name\": \"Johnson\",\n    \"email\": \"alex.johnson@example.com\",\n    \"phone_number\": \"+1-702-555-1212\",\n    \"customer_start_date\": \"2022-06-10\",\n    \"years_as_customer\": 2,\n    \"billing_address\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"Anytown\",\n        \"state\": \"CA\",\n        \"zip\": \"12345\"\n    },\n    \"purchase_history\": [\n        {\n            \"date\": \"2023-03-05\",\n            \"items\": [\n                {\n                    \"product_id\": \"fert-111\",\n                    \"name\": \"All-Purpose Fertilizer\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"trowel-222\",\n                    \"name\": \"Gardening Trowel\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 35.98\n        },\n        {\n            \"date\": \"2023-07-12\",\n            \"items\": [\n                {\n                    \"product_id\": \"seeds-333\",\n                    \"name\": \"Tomato Seeds (Variety Pack)\",\n                    \"quantity\": 2\n                },\n                {\n                    \"product_id\": \"pots-444\",\n                    \"name\": \"Terracotta Pots (6-inch)\",\n                    \"quantity\": 4\n                }\n            ],\n            \"total_amount\": 42.5\n        },\n        {\n            \"date\": \"2024-01-20\",\n            \"items\": [\n                {\n                    \"product_id\": \"gloves-555\",\n                    \"name\": \"Gardening Gloves (Leather)\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"pruner-666\",\n                    \"name\": \"Pruning Shears\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 55.25\n        }\n    ],\n    \"loyalty_points\": 133,\n    \"preferred_store\": \"Anytown Garden Store\",\n    \"communication_preferences\": {\n        \"email\": true,\n        \"sms\": false,\n        \"push_notifications\": true\n    },\n    \"garden_profile\": {\n        \"type\": \"backyard\",\n        \"size\": \"medium\",\n        \"sun_exposure\": \"full sun\",\n        \"soil_type\": \"unknown\",\n        \"interests\": [\n            \"flowers\",\n            \"vegetables\"\n        ]\n    },\n    \"scheduled_appointments\": {}\n}",
+        "timer_start": 1768019602.4724772,
+        "request_count": 3
+    },
+    "events": [
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "hi,"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-ba32cf0d-942a-41cb-920e-53505e16bc73",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "3441c561-b16c-4844-9851-dea4a858d641",
+            "timestamp": 1768019602.46099
+        },
+        {
+            "invocationId": "e-ba32cf0d-942a-41cb-920e-53505e16bc73",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "customer_profile": "{\n    \"account_number\": \"428765091\",\n    \"customer_id\": \"123\",\n    \"customer_first_name\": \"Alex\",\n    \"customer_last_name\": \"Johnson\",\n    \"email\": \"alex.johnson@example.com\",\n    \"phone_number\": \"+1-702-555-1212\",\n    \"customer_start_date\": \"2022-06-10\",\n    \"years_as_customer\": 2,\n    \"billing_address\": {\n        \"street\": \"123 Main St\",\n        \"city\": \"Anytown\",\n        \"state\": \"CA\",\n        \"zip\": \"12345\"\n    },\n    \"purchase_history\": [\n        {\n            \"date\": \"2023-03-05\",\n            \"items\": [\n                {\n                    \"product_id\": \"fert-111\",\n                    \"name\": \"All-Purpose Fertilizer\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"trowel-222\",\n                    \"name\": \"Gardening Trowel\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 35.98\n        },\n        {\n            \"date\": \"2023-07-12\",\n            \"items\": [\n                {\n                    \"product_id\": \"seeds-333\",\n                    \"name\": \"Tomato Seeds (Variety Pack)\",\n                    \"quantity\": 2\n                },\n                {\n                    \"product_id\": \"pots-444\",\n                    \"name\": \"Terracotta Pots (6-inch)\",\n                    \"quantity\": 4\n                }\n            ],\n            \"total_amount\": 42.5\n        },\n        {\n            \"date\": \"2024-01-20\",\n            \"items\": [\n                {\n                    \"product_id\": \"gloves-555\",\n                    \"name\": \"Gardening Gloves (Leather)\",\n                    \"quantity\": 1\n                },\n                {\n                    \"product_id\": \"pruner-666\",\n                    \"name\": \"Pruning Shears\",\n                    \"quantity\": 1\n                }\n            ],\n            \"total_amount\": 55.25\n        }\n    ],\n    \"loyalty_points\": 133,\n    \"preferred_store\": \"Anytown Garden Store\",\n    \"communication_preferences\": {\n        \"email\": true,\n        \"sms\": false,\n        \"push_notifications\": true\n    },\n    \"garden_profile\": {\n        \"type\": \"backyard\",\n        \"size\": \"medium\",\n        \"sun_exposure\": \"full sun\",\n        \"soil_type\": \"unknown\",\n        \"interests\": [\n            \"flowers\",\n            \"vegetables\"\n        ]\n    },\n    \"scheduled_appointments\": {}\n}"
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "7c6aa4db-e795-4f6e-b55c-333b08b3a312",
+            "timestamp": 1768019602.461611
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Hello Alex! Welcome back to Cymbal Home & Garden. How can I assist you today?\n"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "candidatesTokenCount": 20,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 20
+                    }
+                ],
+                "promptTokenCount": 3893,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3893
+                    }
+                ],
+                "totalTokenCount": 3913,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.0785454511642456,
+            "invocationId": "e-ba32cf0d-942a-41cb-920e-53505e16bc73",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "timer_start": 1768019602.4724772,
+                    "request_count": 1
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "84bfcb9a-539f-434c-afa4-480292f34ab7",
+            "timestamp": 1768019602.472422
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "tell me what is in my cart?"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-47ecc951-a7d8-4b9a-bf94-b9fd6b5f3062",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "902f576b-8f4f-49fb-9867-8bdd3e297255",
+            "timestamp": 1768019606.012855
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "functionCall": {
+                            "id": "adk-187b6cc4-3455-4927-9212-6c080f4d499c",
+                            "args": {
+                                "customer_id": "123"
+                            },
+                            "name": "access_cart_information"
+                        },
+                        "thoughtSignature": "CtACAY89a18862yIBxv4LXo0peCbLNcxhOrJ7wmfvLeAfBeHaMjiWzZJ5HdEaL-j21yo-BdtTLMeYZa8nTKSGWPt7KDC-ano8aCV5LK4ueZ2zX9itGuCiyZyHt8mEiqQ2NeQgWsmi3LU6DTk1iYCAGdjIb-Kuba3U3j-cOJ4WOGUcg8XWHwPyvXziJ5rcRT7VejLVHJ6_h8RJNjfKzJ30QOdwG9NyCcB4-Fyo-6PCqTBtVjeu__pB3_OahMXRJiJUjNT-7eJRHTZxw2_DXKpf9Qgo__mMqw0To_CL5ss_nWoqnkrndh2JH7ouYMqw1_M7deXciKD_m1_BUWBohhvhUUivFB_BUPoib6br7NvdtfaAeY__QU8Bzvp1uGa4A6TZzwEui6sSvR8HE4hmYqnjGQadZ4UohqiFnjk2HuAyLCLgnv7Va-5DXTdXX0beYjjh-Wy"
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3364
+                    }
+                ],
+                "cachedContentTokenCount": 3364,
+                "candidatesTokenCount": 11,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 11
+                    }
+                ],
+                "promptTokenCount": 3921,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3921
+                    }
+                ],
+                "thoughtsTokenCount": 79,
+                "totalTokenCount": 4011,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.7059765729037198,
+            "invocationId": "e-47ecc951-a7d8-4b9a-bf94-b9fd6b5f3062",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 2
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "longRunningToolIds": [],
+            "id": "3df5ee01-1298-4538-a0f4-206f47e769bc",
+            "timestamp": 1768019606.016231
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "functionResponse": {
+                            "id": "adk-187b6cc4-3455-4927-9212-6c080f4d499c",
+                            "name": "access_cart_information",
+                            "response": {
+                                "items": [
+                                    {
+                                        "product_id": "soil-123",
+                                        "name": "Standard Potting Soil",
+                                        "quantity": 1
+                                    },
+                                    {
+                                        "product_id": "fert-456",
+                                        "name": "General Purpose Fertilizer",
+                                        "quantity": 1
+                                    }
+                                ],
+                                "subtotal": 25.98
+                            }
+                        }
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-47ecc951-a7d8-4b9a-bf94-b9fd6b5f3062",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "b1390cb5-4a0b-4b18-8878-5f9298a4cb68",
+            "timestamp": 1768019610.414116
+        },
+        {
+            "content": {
+                "parts": [
+                    {
+                        "text": "tell me what is in my cart?"
+                    }
+                ],
+                "role": "user"
+            },
+            "invocationId": "e-59308413-bb75-45c1-9290-bbe21e47124a",
+            "author": "user",
+            "actions": {
+                "stateDelta": {},
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "c3a79b4d-80fa-4a18-94dc-737728bde6c4",
+            "timestamp": 1768019613.244841
+        },
+        {
+            "modelVersion": "gemini-2.5-flash",
+            "content": {
+                "parts": [
+                    {
+                        "text": "Currently, your cart contains:\n*   1 unit of Standard Potting Soil\n*   1 unit of General Purpose Fertilizer\n\nYour subtotal is $25.98.",
+                        "thoughtSignature": "Ct4CAY89a1_8PwiD_qUyQ_7R6JtbZcyh549WywNit2AYFsRXRaXXEAhdKWZ8tpDtX8PTSfs8crpQ33NMXRe8NOmUjC0n7t75dR0x_icrM5KpXX3uHA5h2AdFavHPdhrZ3BsgLBCO2TDunnBJjrLFrqc6qeTosa850oRTljwGqig5zuyjDuu1u-iPujBi__Kvn8xf_P90Wzn2iUkh5j7u9nlcc1bH0uXXiCDs5P2aSmT90zlaBxCrmlZYp9iPwUYN4hA_8sFKpfnIXHTLJ0EvFkqYic1LKVyXcYT5aNm1Y0Tb0Fu7njEfvgYJ0NA1IE-m4gFvMTnOCIeTnUuVKRddM8A3-98kdsF5daY29eMKsQuDYDApN8D9Pf-2DqiW695eFiaZ0F-TM0-wr3PVPD06PuKe0q8aJAmPV1rhzXqcpli-BP6laWKT3ETot6uBvr7z2lT07z-iFvNoO6MPFmrfGNk="
+                    }
+                ],
+                "role": "model"
+            },
+            "finishReason": "STOP",
+            "usageMetadata": {
+                "cacheTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 3332
+                    }
+                ],
+                "cachedContentTokenCount": 3332,
+                "candidatesTokenCount": 37,
+                "candidatesTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 37
+                    }
+                ],
+                "promptTokenCount": 4057,
+                "promptTokensDetails": [
+                    {
+                        "modality": "TEXT",
+                        "tokenCount": 4057
+                    }
+                ],
+                "thoughtsTokenCount": 68,
+                "totalTokenCount": 4162,
+                "trafficType": "ON_DEMAND"
+            },
+            "avgLogprobs": -0.6331432445629223,
+            "invocationId": "e-59308413-bb75-45c1-9290-bbe21e47124a",
+            "author": "customer_service_agent",
+            "actions": {
+                "stateDelta": {
+                    "request_count": 3
+                },
+                "artifactDelta": {},
+                "requestedAuthConfigs": {},
+                "requestedToolConfirmations": {}
+            },
+            "id": "54deebff-00c1-4d37-b586-de0220e99160",
+            "timestamp": 1768019613.251313
+        }
+    ],
+    "lastUpdateTime": 1768019613.251313
+}
