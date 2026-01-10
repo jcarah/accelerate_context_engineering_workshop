@@ -10,7 +10,7 @@ import re
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from evaluation.agent_client import AgentClient
 
-async def process_interaction(row, state_variables_schema, results_dir=None, skip_traces=False):
+async def process_interaction(row, results_dir=None, skip_traces=False):
     question_id = row['question_id']
     session_id = row['session_id']
     base_url = row['base_url']
@@ -72,14 +72,10 @@ async def process_interaction(row, state_variables_schema, results_dir=None, ski
             "sub_agent_trace": []
         }
         
-        if 'agents_evaluated' in row and row['agents_evaluated']:
-            try:
-                agents_evaluated = json.loads(row['agents_evaluated'])
-                for agent in agents_evaluated:
-                    for key in state_variables_schema.get("properties", {}).get(agent, {}).get("default", []):
-                        extracted_data["state_variables"][key] = AgentClient.get_state_variable(final_session_state, key)
-            except (json.JSONDecodeError, TypeError):
-                print(f"Warning: Could not parse agents_evaluated for session {session_id}")
+        # Extract all state variables
+        state = final_session_state.get('state', {})
+        if state:
+            extracted_data["state_variables"] = state
         
         # Extract tool interactions and sub-agent trace
         extracted_data["tool_interactions"] = AgentClient.get_tool_interactions(final_session_state)
@@ -87,9 +83,6 @@ async def process_interaction(row, state_variables_schema, results_dir=None, ski
         
         row['final_session_state'] = json.dumps(final_session_state)
         row['extracted_data'] = json.dumps(extracted_data)
-        
-        # Remove top-level columns if they exist, as they are now in extracted_data
-        # Keeping them in extracted_data is cleaner for the evaluator
         
         return row
 
@@ -115,19 +108,11 @@ async def main():
 
     df = pd.read_csv(args.input_csv)
 
-    state_variables_schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "retail_state_variables_schema.json")
-    # Fallback to eval_state_variables_schema.json if retail one doesn't exist or logic dictates
-    if not os.path.exists(state_variables_schema_path):
-         state_variables_schema_path = os.path.join(os.path.dirname(__file__), "..", "..", "schemas", "eval_state_variables_schema.json")
-
-    with open(state_variables_schema_path) as f:
-        state_variables_schema = json.load(f)
-
     if args.skip_traces:
         print("--- Trace retrieval disabled via --skip-traces flag ---")
         print("Evaluation will proceed using session state only. Latency metrics will not be available.")
 
-    tasks = [process_interaction(row, state_variables_schema, args.results_dir, args.skip_traces) for _, row in df.iterrows()]
+    tasks = [process_interaction(row, args.results_dir, args.skip_traces) for _, row in df.iterrows()]
     results = await asyncio.gather(*tasks)
 
     enriched_df = pd.DataFrame(results)

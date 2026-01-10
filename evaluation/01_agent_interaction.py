@@ -211,7 +211,7 @@ def main():
     if not args.skip_interactions:
         run_interactions_cmd = [
             sys.executable,
-            "evaluation/scripts/run_interactions.py",
+            "scripts/run_interactions.py",
             "--user_id", args.user_id,
             "--base_url", args.base_url,
             "--app_name", args.app_name,
@@ -246,7 +246,7 @@ def main():
 
     process_interactions_cmd = [
         sys.executable,
-        "evaluation/scripts/process_interactions.py",
+        "scripts/process_interactions.py",
         "--input-csv", str(interaction_csv_path),
         "--results_dir", str(args.results_dir),
     ]
