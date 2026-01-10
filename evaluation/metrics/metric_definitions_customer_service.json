@@ -1,21 +1,5 @@
 {
     "metrics": {
-        "token_usage": {
-            "description": "Informational metric: Track estimated cost in USD (not raw token count).",
-            "rubric": "Tracks total tokens, prompt tokens, completion tokens, and estimated cost in USD.",
-            "threshold": null,
-            "range": "N/A",
-            "metric_type": "deterministic",
-            "agents": ["customer_service"]
-        },
-        "latency_metrics": {
-            "description": "Deterministic metric: Track total session execution time in seconds.",
-            "rubric": "Measures total session latency (full trace duration), LLM latency, tool latency, and approx. first response time in seconds.",
-            "threshold": null,
-            "range": "N/A",
-            "metric_type": "deterministic",
-            "agents": ["customer_service"]
-        },
         "trajectory_accuracy": {
             "description": "Evaluates how closely the actual agent execution path matched the expected sequence of sub-agents.",
             "rubric": "0: The trajectory is completely different or empty.\n1: Major deviations; key sub-agents were skipped or invoked in the wrong order.\n2: Some correct sub-agents, but significant ordering issues or extra steps.\n3: Mostly correct trajectory with minor deviations (e.g., one extra step or slight reordering).\n4: The trajectory is logically equivalent to the reference, achieving the same outcome.\n5: Perfect match with the expected reference trajectory.",

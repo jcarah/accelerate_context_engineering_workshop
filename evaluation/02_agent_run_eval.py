@@ -63,8 +63,8 @@ from vertexai.evaluation import EvalTask, PointwiseMetric
 
 # Add project root to Python path to allow importing from other modules.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# Import deterministic metrics calculator
-from evaluation.scripts.deterministic_metrics import evaluate_deterministic_metrics
+# Import deterministic metrics calculator and registry
+from evaluation.scripts.deterministic_metrics import evaluate_deterministic_metrics, DETERMINISTIC_METRICS
 
 
 def robust_json_loads(x: Any) -> Optional[Dict | List | str]:
@@ -533,6 +533,43 @@ def main():
     all_llm_results = []
     deterministic_results_by_row = defaultdict(dict)
 
+    # --- Run ALL Deterministic Metrics (Phase 1) ---
+    print("\n--- Running Deterministic Metrics (Global) ---")
+    for index, row in original_df.iterrows():
+        try:
+            if "final_session_state" not in row.index or pd.isna(row["final_session_state"]) or not row["final_session_state"]:
+                print(f"Skipping deterministic metrics for row {index}: missing final_session_state")
+                continue
+            
+            session_state = robust_json_loads(row["final_session_state"])
+            session_trace_val = row.get("session_trace") if "session_trace" in row.index else None
+            session_trace = robust_json_loads(session_trace_val) or []
+            agents_evaluated_val = row.get("agents_evaluated", "[]") if "agents_evaluated" in row.index else "[]"
+            agents_evaluated = robust_json_loads(agents_evaluated_val) or []
+            reference_data_val = row.get("reference_data") if "reference_data" in row.index else None
+            reference_data = robust_json_loads(reference_data_val) or {}
+            question_metadata_val = row.get("question_metadata", "{}") if "question_metadata" in row.index else "{}"
+            question_metadata = robust_json_loads(question_metadata_val) or {}
+            latency_data_val = row.get("latency_data") if "latency_data" in row.index else None
+            latency_data = robust_json_loads(latency_data_val) or []
+            
+            # Run ALL registered deterministic metrics
+            det_results = evaluate_deterministic_metrics(
+                session_state=session_state,
+                session_trace=session_trace,
+                agents_evaluated=agents_evaluated,
+                reference_data=reference_data,
+                question_metadata=question_metadata,
+                metrics_to_run=list(DETERMINISTIC_METRICS.keys()),
+                latency_data=latency_data
+            )
+            
+            # Merge results into row storage
+            deterministic_results_by_row[index].update(det_results)
+            
+        except Exception as e:
+            print(f"Error calculating deterministic metrics for row {index}: {e}")
+
     # Group metrics by the agent they are intended for.
     metrics_by_agent = defaultdict(list)
     for metric_name, metric_info in metric_definitions.items():
@@ -570,61 +607,22 @@ def main():
         for metric_name, metric_info in metrics:
             metric_type = metric_info.get("metric_type", "llm")
 
+            # Skip deterministic metrics as they are now run globally in Phase 1.
+            # We identify them by type OR by checking if they exist in the registry (with/without prefix).
+            is_deterministic = False
             if metric_type == "deterministic":
-                print(f"Calculating deterministic metric: {metric_name}")
-                # Strip prefix to get the canonical function name (e.g. cs__token_usage -> token_usage)
-                # Assuming prefix ends with __ or _
-                canonical_name = metric_name
-                if "__" in metric_name:
-                    canonical_name = metric_name.split("__", 1)[1]
-                elif "_" in metric_name and metric_name.count("_") > 1: # simplistic heuristic
-                     # Fallback check against registry
-                     from evaluation.scripts.deterministic_metrics import DETERMINISTIC_METRICS
-                     if metric_name not in DETERMINISTIC_METRICS:
-                         for key in DETERMINISTIC_METRICS:
-                             if metric_name.endswith(f"_{key}"):
-                                 canonical_name = key
-                                 break
-
-                # Deterministic metrics may need the original, non-normalized data.
-                original_agent_df = original_df[original_df["agents_evaluated"].apply(
-                    lambda x: agent in robust_json_loads(x) if x else False
-                )].copy()
-
-                for index, row in original_agent_df.iterrows():
-                    try:
-                        if "final_session_state" not in row.index or pd.isna(row["final_session_state"]) or not row["final_session_state"]:
-                            print(f"Skipping deterministic metric {metric_name} for row {index}: missing final_session_state")
-                            continue
-                        
-                        session_state = robust_json_loads(row["final_session_state"])
-                        session_trace_val = row.get("session_trace") if "session_trace" in row.index else None
-                        session_trace = robust_json_loads(session_trace_val) or []
-                        agents_evaluated_val = row.get("agents_evaluated", "[]") if "agents_evaluated" in row.index else "[]"
-                        agents_evaluated = robust_json_loads(agents_evaluated_val) or []
-                        reference_data_val = row.get("reference_data") if "reference_data" in row.index else None
-                        reference_data = robust_json_loads(reference_data_val) or {}
-                        question_metadata_val = row.get("question_metadata", "{}") if "question_metadata" in row.index else "{}"
-                        question_metadata = robust_json_loads(question_metadata_val) or {}
-                        latency_data_val = row.get("latency_data") if "latency_data" in row.index else None
-                        latency_data = robust_json_loads(latency_data_val) or []
-                        
-                        det_results = evaluate_deterministic_metrics(
-                            session_state=session_state,
-                            session_trace=session_trace,
-                            agents_evaluated=agents_evaluated,
-                            reference_data=reference_data,
-                            question_metadata=question_metadata,
-                            metrics_to_run=[canonical_name], # Pass only the current metric
-                            metric_definitions={canonical_name: metric_info},
-                            latency_data=latency_data
-                        )
-                        if canonical_name in det_results:
-                            # Store under the original (prefixed) name
-                            deterministic_results_by_row[index][metric_name] = det_results[canonical_name]
-                    except Exception as e:
-                        print(f"Error calculating deterministic metric {metric_name} for row {index}: {e}")
-                continue  # Go to the next metric
+                is_deterministic = True
+            elif metric_name in DETERMINISTIC_METRICS:
+                is_deterministic = True
+            else:
+                 # Check for prefixes (e.g. prefix__metric_name)
+                 for key in DETERMINISTIC_METRICS:
+                     if metric_name.endswith(f"_{key}"):
+                         is_deterministic = True
+                         break
+            
+            if is_deterministic:
+                continue
 
             # --- Prepare and run LLM-based metrics ---
             eval_dataset = pd.DataFrame()
