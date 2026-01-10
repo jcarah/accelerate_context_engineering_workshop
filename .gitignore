@@ -186,3 +186,9 @@ celerybeat.pid
 my_env.tfvars
 .saved_chats
 .requirements.txt
+
+# Evaluation Results
+evaluation/results/
+
+# Local Dev Logs
+retail-ai-location-strategy/dev_log.txt

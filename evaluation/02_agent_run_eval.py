@@ -57,9 +57,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
+from dotenv import load_dotenv
 from google.cloud import aiplatform, bigquery
 from google.cloud.exceptions import NotFound
 from vertexai.evaluation import EvalTask, PointwiseMetric
+
+# Automatically load environment variables from .env file
+load_dotenv(override=True)
 
 # Add project root to Python path to allow importing from other modules.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

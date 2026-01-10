@@ -73,6 +73,11 @@ cd app/frontend
 # Install dependencies
 npm install
 
+> [!WARNING]
+> **Do NOT run `npm audit fix --force`**.
+> This will downgrade `@copilotkit/react-ui` to an incompatible version and break the UI.
+> If you see vulnerability warnings, ignore them for this demo or fix them manually without forcing versions.
+
 # Create environment file
 cp .env.local.example .env.local
 

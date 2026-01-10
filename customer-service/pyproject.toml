@@ -116,3 +116,10 @@ example_question = "Hi there, I need help with my garden"
 
 [tool.agent-starter-pack.settings]
 agent_directory = "customer_service"
+
+[[tool.uv.index]]
+url = "https://us-python.pkg.dev/artifact-foundry-prod/ah-3p-staging-python/simple/"
+authenticate = "always"
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple/"
