@@ -60,7 +60,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from google.cloud import aiplatform, bigquery
 from google.cloud.exceptions import NotFound
-from vertexai.evaluation import EvalTask, PointwiseMetric
+from vertexai import Client
+from vertexai.evaluation import PointwiseMetric
 
 # Automatically load environment variables from .env file
 load_dotenv(override=True)
@@ -468,6 +469,7 @@ def main():
         print("Error: GOOGLE_CLOUD_PROJECT environment variable not set.")
         sys.exit(1)
     aiplatform.init(project=project_id, location="us-central1")
+    client = Client(project=project_id, location="us-central1")
 
     # --- Load Data and Metrics ---
     if not args.interaction_results_file.exists():
@@ -750,17 +752,16 @@ def main():
                 continue
 
             metric = PointwiseMetric(metric=metric_name, metric_prompt_template=metric_info["template"])
-            eval_task = EvalTask(dataset=eval_dataset, metrics=[metric])
-            eval_tasks.append((eval_task, metric_df, metric_name))
+            eval_tasks.append((eval_dataset, metric, metric_df, metric_name))
 
         # Execute all prepared LLM eval tasks for the current agent.
-        for task, metric_df, metric_name in eval_tasks:
+        for eval_dataset, metric, metric_df, metric_name in eval_tasks:
             max_retries = 3
             base_delay = 5  # seconds
             for attempt in range(max_retries):
                 try:
                     print(f"Running LLM evaluation for metric: {metric_name} (Attempt {attempt + 1}/{max_retries})")
-                    result = task.evaluate()
+                    result = client.evals.evaluate(dataset=eval_dataset, metrics=[metric])
                     result.metrics_table["original_index"] = metric_df.index
                     all_llm_results.append((result, metric_name))
                     break  # Success, exit retry loop
