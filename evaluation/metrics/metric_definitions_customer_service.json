@@ -41,7 +41,7 @@
                     "source_column": "user_inputs"
                 },
                 "response": {
-                    "source_column": "extracted_data:sub_agent_trace"
+                    "source_column": "final_response"
                 }
             }
         },

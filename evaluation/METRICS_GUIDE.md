@@ -40,14 +40,16 @@ The keys (e.g., `prompt`, `response`) depend on whether you are using a Custom o
 
 **Supported Source Columns:**
 *   `user_inputs` (The user's question)
-*   `final_session_state` (Full agent memory)
+*   `final_response` (The agent's final text answer)
+*   `sub_agent_trace` (List of agent steps/responses)
+*   `trace_summary` (Full conversation transcript)
+*   `extracted_data` (JSON containing state & tool logs)
 *   `session_trace` (Full execution trace)
-*   `extracted_data` (Parsed state variables)
 *   `reference_data` (Expected answers from Golden Dataset)
 
 **Nested Lookup Syntax (`:`):**
 You can access nested fields in JSON columns using a colon.
-*   `extracted_data:customer_profile` -> Looks inside the `extracted_data` JSON for the `customer_profile` key.
+*   `extracted_data:state_variables.customer_profile` -> Looks inside the `extracted_data` JSON for the `state_variables` dict and then `customer_profile`.
 *   `reference_data:reference_trajectory` -> Looks inside `reference_data` for the `reference_trajectory` key.
 
 ---
@@ -79,7 +81,7 @@ Use this when you want to grade specific business logic (e.g., "Did the agent ex
     "dataset_mapping": {
         "prompt": { "source_column": "user_inputs" },
         "reference": { "source_column": "reference_data:expected_booking" },
-        "response": { "source_column": "extracted_data:booking_variable" }
+        "response": { "source_column": "extracted_data:state_variables" }
     }
 }
 ```
@@ -99,7 +101,7 @@ Use this to leverage Google's pre-tuned rubrics for general quality.
     
     "dataset_mapping": {
         "prompt": { "source_column": "user_inputs" },
-        "response": { "source_column": "extracted_data:sub_agent_trace" }
+        "response": { "source_column": "final_response" }
     }
 }
 ```

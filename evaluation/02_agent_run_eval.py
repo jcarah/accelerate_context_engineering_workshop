@@ -43,61 +43,67 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 from dotenv import load_dotenv
 from google.cloud import aiplatform
 from vertexai import Client, types
 from vertexai.preview.evaluation import PointwiseMetric
-from google.genai import types as genai_types
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
+
+# Import deterministic metrics calculator and registry
+from evaluation.scripts.deterministic_metrics import (
+    DETERMINISTIC_METRICS,
+    evaluate_deterministic_metrics,
+)
+
+# Import robust data mapper
+from evaluation.utils.data_mapper import map_dataset_columns, robust_json_loads
 
 # Automatically load environment variables from .env file
 load_dotenv(override=True)
 
 # Add project root to Python path to allow importing from other modules.
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# Import deterministic metrics calculator and registry
-from evaluation.scripts.deterministic_metrics import evaluate_deterministic_metrics, DETERMINISTIC_METRICS
-# Import robust data mapper
-from evaluation.utils.data_mapper import map_dataset_columns, robust_json_loads
 
 # --- Configuration Management ---
+
 
 class EvalConfig(BaseSettings):
     """
     Centralized configuration for the evaluation pipeline using Pydantic.
     Reads from environment variables and provides type safety.
     """
+
     model_config = SettingsConfigDict(
-        env_prefix="EVAL_", 
-        env_file=".env", 
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_prefix="EVAL_", env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
     # Managed Metric Names
     METRIC_TOOL_USE_QUALITY: str = "TOOL_USE_QUALITY"
     METRIC_GENERAL_QUALITY: str = "GENERAL_QUALITY"
-    
+
     # Standard Dataset Column Names
     COL_PROMPT: str = "prompt"
     COL_RESPONSE: str = "response"
     COL_INTERMEDIATE_EVENTS: str = "intermediate_events"
     COL_TOOL_USAGE: str = "tool_usage"
-    
+
     # Execution Settings
-    GOOGLE_CLOUD_PROJECT: Optional[str] = Field(default=None, description="GCP Project ID")
+    GOOGLE_CLOUD_PROJECT: Optional[str] = Field(
+        default=None, description="GCP Project ID"
+    )
     GOOGLE_CLOUD_LOCATION: str = Field(default="us-central1", description="GCP Region")
     MAX_RETRIES: int = Field(default=3, description="Max retries for LLM calls")
     RETRY_DELAY_SECONDS: int = Field(default=5, description="Base delay for retries")
     MAX_WORKERS: int = Field(default=4, description="Threads for parallel evaluation")
-    
+
     # Data Mappings
     EXTRACTED_DATA_PREFIX: str = "extracted_data"
     REFERENCE_DATA_PREFIX: str = "reference_data"
+
 
 # Initialize Config
 CONFIG = EvalConfig()
@@ -113,7 +119,10 @@ logger = logging.getLogger("agent_eval")
 
 # --- Core Logic Functions ---
 
-def parse_eval_result(result: Any, metric_name: str, metric_df: pd.DataFrame) -> pd.DataFrame:
+
+def parse_eval_result(
+    result: Any, metric_name: str, metric_df: pd.DataFrame
+) -> pd.DataFrame:
     """
     Standardizes result parsing across different Vertex AI SDK versions.
     Extracts scores and explanations into a flat DataFrame.
@@ -456,21 +465,20 @@ def main():
         for metric_name, info in metrics:
             if info.get("metric_type") == "deterministic":
                 continue
-            
+
             # --- Robust Data Mapping Logic (Extracted) ---
             eval_dataset = map_dataset_columns(
-                agent_df, 
-                original_df, 
-                info.get("dataset_mapping", {}), 
-                metric_name, 
+                agent_df,
+                original_df,
+                info.get("dataset_mapping", {}),
+                metric_name,
                 CONFIG.METRIC_TOOL_USE_QUALITY,
-                is_managed_metric=info.get("is_managed", False)
+                is_managed_metric=info.get("is_managed", False),
             )
 
             if eval_dataset.empty or len(eval_dataset.columns) == 0:
                 logger.warning(f"Empty dataset for {metric_name}. Skipping.")
                 continue
-
 
             if info.get("is_managed"):
                 m_name = info.get("managed_metric_name", "").upper()

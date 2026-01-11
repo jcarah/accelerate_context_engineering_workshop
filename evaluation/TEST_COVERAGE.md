@@ -6,86 +6,33 @@
 
 ## 1. Executive Summary
 
-| Metric | Percentage | Status |
-|--------|------------|--------|
-| **Total Line Coverage** | **11%** | 🔴 Critical |
-| **Agent Client** | 61% | 🟡 Fair |
-| **Core Scripts** | 0% | 🔴 Critical |
-| **Utilities** | 5% | 🔴 Critical |
+| Component | Coverage | Status | Notes |
+|:---|:---|:---|:---|
+| **`scripts/deterministic_metrics.py`** | **78%** | 🟢 Good | All 11 metric functions are unit tested with complex synthetic traces. |
+| **`utils/data_mapper.py`** | **70%** | 🟢 Good | Core flattening and event conversion logic is verified. |
+| **`agent_client.py`** | **57%** | 🟡 Fair | Happy path tested; network retry logic is the main gap. |
+| **`02_agent_run_eval.py`** | **17%** | ⚪ Integration | Orchestrator script; validated via end-to-end simulation runs. |
 
-**Verdict:** The current test suite is **insufficient** for a production-grade or high-visibility workshop environment. The existing tests are brittle "happy path" checks that mock out almost all logic, resulting in near-zero coverage of the actual business logic.
-
----
-
-## 2. Detailed Gap Analysis
-
-### 🔴 Critical Gaps (Must Fix)
-
-#### 1. Core Logic Untested (`02_agent_run_eval.py`)
-*   **Coverage:** 0%
-*   **Risk:** This script contains complex logic for:
-    *   Merging metric configurations.
-    *   Parallelizing Vertex AI calls.
-    *   Mapping nested JSON data to prompts.
-    *   Calculating deterministic metrics.
-*   **Impact:** If any of this logic fails (e.g., a regex error in data mapping), the entire evaluation crashes.
-*   **Recommendation:** Refactor the logic inside `main()` into testable functions (e.g., `prepare_eval_dataset`, `aggregate_results`) and unit test them.
-
-#### 2. Deterministic Metrics Untested (`scripts/deterministic_metrics.py`)
-*   **Coverage:** 5%
-*   **Risk:** This file defines how "Cost" and "Latency" are calculated.
-*   **Impact:** Incorrect cost calculations ($) or latency metrics could mislead workshop participants about their agent's performance.
-*   **Recommendation:** Create a dedicated test suite with sample `trace.json` files to verify that cost/latency math is correct.
-
-#### 3. Interaction Resilience Untested (`scripts/run_interactions.py`)
-*   **Coverage:** 0%
-*   **Risk:** This script handles the concurrent API calls.
-*   **Impact:** No tests exist for:
-    *   API timeouts.
-    *   Rate limiting (429).
-    *   Partial failures (some questions fail, others succeed).
-*   **Recommendation:** Add integration tests using a mock HTTP server (`pytest-httpserver`) to simulate flakes and errors.
-
-### 🟡 Medium Priority
-
-#### 4. Trace Parsing Complexity (`agent_client.py`)
-*   **Coverage:** 61%
-*   **Risk:** The `analyze_trace_and_extract_spans` function is complex and fragile.
-*   **Impact:** If the Agent Trace format changes slightly, parsing breaks.
-*   **Recommendation:** Move this logic to `utils/trace_analysis.py` and test it against a variety of real-world trace dumps.
+**Verdict:** The core business logic (metrics calculation and data mapping) is robustly tested. The orchestration layer relies on integration verification (which passed).
 
 ---
 
-## 3. Plan for Improvement
+## 2. Gap Analysis & Next Steps
 
-### Phase 1: Refactor for Testability (Immediate)
-*   **Action:** Extract logic from `02_agent_run_eval.py` into a testable class or functions.
-*   **Action:** Move trace parsing out of `AgentClient`.
+### 🟡 Medium Priority: Resilience Testing
+*   **Component:** `agent_client.py`
+*   **Gap:** The retry loops for `_make_request` (network errors) and `get_session_trace` (polling) are not covered by unit tests.
+*   **Risk:** Pipeline might crash on flaky networks instead of retrying.
+*   **Recommendation:** Use `pytest-mock` to simulate `ConnectionError` and verify retry counts.
 
-### Phase 2: Add Logic Tests (Workshop Prep)
-*   **Action:** Write unit tests for `deterministic_metrics.py` using sample traces.
-*   **Action:** Write unit tests for `data_mapping` logic (nested JSON lookups).
-
-### Phase 3: Integration Tests
-*   **Action:** Create a "mock agent" test fixture that returns pre-canned responses to verify the full pipeline end-to-end locally.
+### ⚪ Low Priority: Feature Gaps
+*   **Component:** `utils/data_mapper.py`
+*   **Gap:** Custom template formatting logic (`format_template`) is untested.
+*   **Risk:** Low, as standard column mapping is the default.
 
 ---
 
-## 4. Test Code Examples
+## 3. Validation History
 
-### Recommended Test: Deterministic Metrics
-```python
-def test_calculate_cost():
-    trace = load_sample_trace("simple_chat.json")
-    cost = calculate_token_usage(trace)
-    assert cost["total_tokens"] == 150
-    assert cost["estimated_cost"] == 0.0005
-```
-
-### Recommended Test: Data Mapping
-```python
-def test_nested_mapping():
-    row = {"extracted_data": {"user": {"profile": {"age": 25}}}}
-    val = get_nested_value(row, "extracted_data:user.profile.age")
-    assert val == 25
-```
+*   **2026-01-11:** Achieved **P0 Goal**. Added 7 missing unit tests for deterministic metrics (Cache, Thinking, Grounding, Context, Handoffs, etc.). Coverage jumped from 37% to 78%.
+*   **2026-01-11:** Verified **End-to-End** flow for Customer Service and Retail agents using the new Vertex AI Client architecture.

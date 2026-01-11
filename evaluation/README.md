@@ -199,17 +199,17 @@ Calculated directly from execution traces without using an LLM.
 
 | Metric | Description | Calculation Logic |
 | :--- | :--- | :--- |
-| **`token_usage`** | Cost & Volume | Sums prompt, completion, and cached tokens from `usage_metadata`. Calculates estimated cost using model-specific pricing (e.g., Gemini 1.5 Pro). |
-| **`latency_metrics`** | Speed | **Total:** Sum of all agent invocation durations (excludes user think time). **Avg Turn:** Mean duration of agent invocations. **LLM/Tool:** Sum of individual span durations. |
-| **`cache_efficiency`** | Optimization | `Cache Hit Rate = Cached Tokens / (Cached + Fresh Prompt Tokens)`. Measures how effectively the Context Cache is being used. |
-| **`thinking_metrics`** | Cognitive Effort | `Reasoning Ratio = Thinking Tokens / Total Output Tokens`. Measures the proportion of output spent on internal reasoning (for Thinking models). |
-| **`tool_utilization`** | Tool Usage | Counts total and unique tool calls. Provides a breakdown of which tools were called how often. |
-| **`tool_success_rate`** | Reliability | `Successful Calls / Total Calls`. Parses tool output JSON to check for `status: "error"` or error messages. |
-| **`grounding_utilization`** | Factuality Proxy | Counts the number of Google Search grounding chunks (citations) present in the LLM response metadata. |
-| **`context_saturation`** | Capacity Planning | Tracks the **Maximum Total Tokens** used in any single turn. Helps identify if the session is nearing the model's context window limit. |
-| **`agent_handoffs`** | Orchestration | Counts the number of times control transferred between agents (`invoke_agent` spans). Validates multi-agent architecture. |
-| **`output_density`** | Conciseness | `Average Output Tokens per LLM Call`. A proxy for the "Reduce" pillar; lower values (for non-generative tasks) often indicate better instruction following. |
-| **`sandbox_usage`** | Offloading | Counts calls to file system tools (`save_artifact`, `read_file`, etc.). Deterministically verifies if state is being offloaded to disk. |
+| **`token_usage`** | Cost & Volume | Sums prompt, completion, and cached tokens from `usage_metadata`. Calculates estimated cost using model-specific pricing. |
+| **`latency_metrics`** | Speed | Measures **Total Session Duration**, **Avg Turn Latency**, and **Time to First Response**. |
+| **`cache_efficiency`** | Optimization | `Cache Hit Rate = Cached Tokens / (Cached + Fresh Prompt Tokens)`. |
+| **`thinking_metrics`** | Cognitive Effort | `Reasoning Ratio = Thinking Tokens / Total Output Tokens`. |
+| **`tool_utilization`** | Tool Usage | Counts total and unique tool calls. |
+| **`tool_success_rate`** | Reliability | `Successful Calls / Total Calls`. Checks for `status: "error"` in tool responses. |
+| **`grounding_utilization`** | Factuality Proxy | Counts the number of Google Search grounding chunks (citations). |
+| **`context_saturation`** | Capacity Planning | Tracks the **Maximum Total Tokens** used in any single turn. |
+| **`agent_handoffs`** | Orchestration | Counts the number of times control transferred between agents (`invoke_agent` spans). |
+| **`output_density`** | Conciseness | `Average Output Tokens per LLM Call`. |
+| **`sandbox_usage`** | Offloading | Counts calls to file system tools (`read_file`, `save_artifact`, etc.). |
 
 ## 2. LLM Metrics (Customer Service)
 Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_customer_service.json`.
@@ -273,27 +273,5 @@ Create a new file in `metrics/metric_definitions_travel_booker.json`.
 *   **Guide:** See **[METRICS_GUIDE.md](METRICS_GUIDE.md)** for schema details and templates.
 
 ### 3. Run the Pipeline
+
 Execute the standard workflow (Live or Simulation) pointing to your new files.
-
----
-
-
-## Maintenance Note (TODO)
-
-The file `02_agent_run_eval.py` currently operates with an older structure and version of the Vertex AI evaluation service. A migration is needed to align with the latest best practices.
-
-**Required Actions:**
-
-1.  **Migrate to Client:** Transition from `EvalTask` to the new `client` method for evaluation.
-    *   Reference: [Define your evaluation metrics | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview#define_metrics)
-    *   Alternatively, evaluate if `EvalTask` should be retained but updated to match: [Evaluate Gen AI agents | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluate-gen-ai-agents)
-
-2.  **Refactor Metrics Calculation:**
-    *   Consider using **Autoraters** for more robust evaluation.
-    *   Update `deterministic_metrics.py` to potentially use custom function metrics.
-    *   Validate that Custom metrics definitions remain compatible.
-    *   Explore using **Agentic Pre-written metrics** and **Adaptive rubrics**.
-
-3.  **Explain Metric Mapping:**
-    *   Document the "WHY" behind `metric.json` and its mapping logic.
-    *   Reference: [Details for managed rubric-based metrics | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-rubrics)

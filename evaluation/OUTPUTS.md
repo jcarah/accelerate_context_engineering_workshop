@@ -12,8 +12,9 @@ This step produces the foundational data for everything that follows. It runs in
 
 | File Name Pattern | Created By | Description |
 | :--- | :--- | :--- |
-| `interaction_*.csv` | `run_interactions.py` | **Raw Runtime Log.** Contains basic session info and the user prompts. It does NOT have traces or state yet. |
-| **`processed_interaction_*.csv`** | `process_interactions.py` | **Enriched Log.** The final output of Step 1. Contains full traces, state variables, and latency data. |
+| `interaction_*.csv` | `run_interactions.py` | **Raw Runtime Log (Live Path).** Contains basic session info and the user prompts. |
+| **`processed_interaction_*.csv`** | `process_interactions.py` | **Enriched Log (Live Path).** The final output of Step 1 for live runs. Contains full traces and state. |
+| **`run_*.csv`** | `convert_adk_history...` | **Simulation Log (Sim Path).** The converted dataset from ADK User Simulator history. |
 
 ### **Processed CSV Column Reference**
 

@@ -1,0 +1,31 @@
+{
+  "eval_set_id": "eval_set_with_scenarios",
+  "name": "eval_set_with_scenarios",
+  "eval_cases": [
+    {
+      "eval_id": "d85689dc",
+      "conversation_scenario": {
+        "starting_prompt": "I want to open a coffee shop in Indiranagar, Bangalore. Can you analyze this location for me?",
+        "conversation_plan": "Just wait for the agent to complete its 7-stage pipeline analysis and provide the final strategic recommendation."
+      },
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768151544.822822
+    },
+    {
+      "eval_id": "13fc6434",
+      "conversation_scenario": {
+        "starting_prompt": "Where should I open a fitness studio in Austin, Texas?",
+        "conversation_plan": "Ask the agent to research Austin, map competitors, and give a recommendation for the best neighborhood."
+      },
+      "session_input": {
+        "app_name": "app",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768151544.823611
+    }
+  ],
+  "creation_timestamp": 1768151120.5290823
+}
