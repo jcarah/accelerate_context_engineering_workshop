@@ -1,95 +1,106 @@
 # Evaluation Pipeline
 
-This document provides a comprehensive guide to the evaluation pipeline, a multi-step process designed to test, measure, and analyze the performance of ADK agents in an agent-agnostic way.
+This document provides a comprehensive guide to the evaluation pipeline, a multi-step process designed to test, measure, and analyze the performance of ADK agents.
 
 ## Overview
 
-The pipeline is orchestrated by three core scripts:
+We support two primary workflows for generating evaluation data:
 
-1.  **Step 1: `01_agent_interaction.py`**: Runs a set of questions against the agent and records enriched interactions.
-2.  **Step 2: `02_agent_run_eval.py`**: Calculates performance metrics (both deterministic and LLM-based) using the recorded interactions.
-3.  **Step 3: `03_analyze_eval_results.py`**: (WIP) Generates a detailed, AI-powered analysis of the results.
+### 1. The Simulation Path (Recommended)
+**"Write Scenarios, Generate Conversations."**
+*   **Best for:** Development, regression testing, and creating high-quality multi-turn datasets without manual effort.
+*   **How it works:** You define high-level *Conversation Scenarios* (your "wishlist" of user behaviors). The ADK User Simulator plays these out against your agent locally.
+*   **Advantage:** No need to manually script every turn or deploy the agent to a remote URL.
 
----
-
-## Prerequisites: Running the Agents
-
-Before you can record interactions (Step 1), the agent you want to evaluate must be accessible. You can run the pipeline against a **local instance** for development or a **deployed application URL** (e.g., Cloud Run or Vertex AI Agent Engine) for staging/production testing.
-
-### Option A: Start the Agent Service Locally
-
-Depending on which agent you are testing, navigate to its directory and run the appropriate command. Both agents are configured to run on port **8501** by default.
-
-*   **Customer Service Agent:**
-    ```bash
-    cd customer-service
-    make playground
-    ```
-*   **Retail AI Location Strategy Agent:**
-    ```bash
-    cd retail-ai-location-strategy
-    make dev
-    ```
-
-### Option B: Use a Deployed URL
-Ensure you have the full URL of your deployed service (e.g., `https://my-agent-abc123.a.run.app`).
-
-### Execution Strategy
-1.  **Lifecycle:** The agent service (local or remote) is **only required for Step 1**. Once you have generated the `processed_interaction` files, you can proceed to Step 2 using the static interaction data.
+### 2. The Live/Remote Path
+**"Run Questions against a URL."**
+*   **Best for:** End-to-end testing of deployed environments (Staging/Prod) or running legacy fixed-question datasets.
+*   **How it works:** You run `01_agent_interaction.py` to send a list of static questions to a running agent service (e.g., Cloud Run).
 
 ---
 
-## Step 1: Running Agent Interactions (`01_agent_interaction.py`)
+## Workflow: The Simulation Path
 
-This script runs a dataset of questions against your active agent (local or deployed) and produces a processed CSV file ready for evaluation.
+### Step 0: Blueprinting & Scenarios
+Before running anything, we define *what* we want to test. We analyze the agent's code to create "Conversation Scenarios."
 
-### Usage
+*   **Input:** `conversation_scenarios.json`
+*   **Concept:** Instead of writing "User: Hi, Agent: Hello", you write "User wants to buy Petunias but needs a discount." The Simulator handles the dialogue.
 
+(See "Case Study: Blueprinting" below for details)
+
+### Step 1: User Simulation & ADK Evaluation (CLI)
+Execute the scenarios using the ADK CLI. This runs the agent locally and performs initial safety checks.
+
+**Prerequisites:**
+1. `cd customer-service` (or your agent directory)
+2. `gcloud auth application-default login`
+
+**Commands:**
+1.  **Create Eval Set:** `uv run adk eval_set create customer_service eval_set_with_scenarios`
+2.  **Add Scenarios:**
+    ```bash
+    uv run adk eval_set add_eval_case customer_service eval_set_with_scenarios \
+      --scenarios_file customer_service/conversation_scenarios.json \
+      --session_input_file customer_service/session_input.json
+    ```
+3.  **Run Simulation:**
+    ```bash
+    uv run adk eval customer_service \
+      --config_file_path customer_service/eval_config.json \
+      eval_set_with_scenarios \
+      --print_detailed_results
+    ```
+
+**Output:** Trace files generated in `.adk/eval_history`.
+
+---
+
+
+### Step 2: Process Simulation Data (The Bridge)
+This step bridges the gap between the ADK Eval's raw history logs and our evaluation pipeline (ADK Eval with User Simulation currently only supports 2 evaluation metrics: hallucination & safety). It converts the simulation traces into a structured, analyzable dataset.
+
+**Usage:**
 ```bash
-uv run python 01_agent_interaction.py \
-  --app-name <agent_app_name> \
-  --base-url <agent_service_url> \
-  --questions-file <path_to_golden_dataset.json> \
-  --results-dir <output_directory> \
-  [--state-variable key:value]
+cd evaluation && uv run python scripts/convert_adk_history_to_dataset.py \
+  --agent-dir customer-service/customer_service
 ```
 
-### Arguments
+**Output:** `customer-service/eval/eval_data/interactions/run_<timestamp>.csv`
 
-| Argument | Description | Default |
-|---|---|---|
-| `--app-name` | The name of the application/agent (e.g., `customer_service`, `app`). **(Required)** | N/A |
-| `--base-url` | The URL where the agent service is running (local or deployed). | `http://localhost:8501` |
-| `--questions-file` | One or more paths to JSON files with test questions. **(Required)** | N/A |
-| `--user-id` | The user ID for the evaluation session. | `eval_user` |
-| `--num-questions` | Number of questions to sample from each file. -1 for all. | `-1` |
-| `--results-dir` | Directory to save results. | `results/<app_name>/<timestamp>` |
-| `--state-variable` | Inject state variables during session creation (e.g., `customer_id:123`). Can be used multiple times. | N/A |
-| `--runs` | Number of times to run each question (for variance testing). | `1` |
+#### Dataset Reference (`run_<timestamp>.csv`)
 
-### Example
+This CSV is the "Golden Record" for analysis.
 
-```bash
-uv run python 01_agent_interaction.py \
-  --app-name customer_service \
-  --base-url http://localhost:8501 \
-  --questions-file datasets/customer_service_golden.json \
-  --state-variable customer_id:123
-```
+| Column | Description | Detailed Example | Source/Logic |
+| :--- | :--- | :--- | :--- |
+| **`eval_id`** | Unique ID for the specific test case. | `68e57b06` | ADK Eval History |
+| **`session_id`** | Unique ID for the conversation session. | `___eval___session___700c...` | `session_details.id` |
+| **`agent_name`** | Internal name of the agent. | `customer_service` | `session_details.app_name` |
+| **`score.hallucinations_v1`** | **Quality Metric:** Pass/Fail score (0-1) for hallucination. | `1.0` (Pass) | Extracted from `eval_metric_results` in ADK history. |
+| **`score.safety_v1`** | **Quality Metric:** Pass/Fail score (0-1) for safety. | `0.0` (Fail) | Extracted from `eval_metric_results`. |
+| **`metric.duration_sec`** | **Perf Metric:** Total wall-clock time of the session. | `18.47` | `last_event.timestamp - first_event.timestamp` |
+| **`metric.total_tokens`** | **Cost Metric:** Total tokens consumed (Prompt + Completion). | `17045` | Sum of `usage_metadata.total_token_count` across all turns. |
+| **`metric.cache_hit_rate`** | **Optimization:** Efficiency of Context Caching. | `0.41` (41%) | `cached_tokens / (input_tokens + epsilon)` |
+| **`metric.turn_count`** | **Behavior:** Length of conversation. | `3` | Count of user messages. |
+| **`metric.tool_calls`** | **Behavior:** Number of tools invoked. | `5` | Count of `functionCall` events. |
+| **`metric.tool_errors`** | **Reliability:** Number of failed tool calls. | `0` | Count of `functionResponse` where `status='error'`. |
+| **`metric.unique_tools`** | **Behavior:** Which tools were actually used. | `["generate_qr_code", "search"]` | Set of unique tool names used. |
+| **`final_response`** | The final answer given to the user. | "I have scheduled your appointment..." | Text from the last model turn. |
+| **`system_instructions`** | **Context:** The system prompt used. | "You are Project Pro..." | Extracted from `app_details`. |
+| **`custom_extract`** | **Deep Analysis Log:** Rich list of turns. | `[{"turn":1, "role":"user", "tokens":{...}, "tool_calls":[...]}]` | Custom parsing containing tokens, models, timestamps, and tool I/O per turn. |
+| **`session_state`** | **Full Fidelity:** Complete session object. | `{"state": {...}, "events": [...]}` | JSON dump of the entire `session_details` object. |
+| **`session_trace`** | **Synthetic Trace:** OTEL-compatible spans. | `[{"name": "call_llm", "start_time": ...}]` | Synthetic span tree constructed from events for compatibility with trace analyzers. |
 
----
 
-## Step 2: Running Evaluations (`02_agent_run_eval.py`)
+### Step 3: Deep Metrics Calculation (`02_agent_run_eval.py`)
+Now that we have the `run_<timestamp>.csv`, we can apply advanced Python-based metrics (e.g., business logic validation, complex latency breakdown) that go beyond the basic ADK checks.
 
-This script consumes the processed interaction data from Step 1 and applies a suite of metrics. It supports both **deterministic metrics** (exact logic) and **LLM-based metrics** (AI-as-judge).
-
-**Note:** You do NOT need the agent service running to perform this step.
-
-### Usage
+**Usage:**
 
 ```bash
 uv run python 02_agent_run_eval.py \
-  --interaction-results-file <path_to_step1_output.csv> \
+  --interaction-results-file <path_to_step2_csv> \
   --metrics-files <path_to_metrics.json> \
   [--input-label <run_label>] \
   [--test-description <description>] \
@@ -100,7 +111,7 @@ uv run python 02_agent_run_eval.py \
 
 | Argument | Description | Default |
 |---|---|---|
-| `--interaction-results-file` | Path to the CSV file generated by Step 1. **(Required)** | N/A |
+| `--interaction-results-file` | Path to the CSV file generated by Step 2. **(Required)** | N/A |
 | `--metrics-files` | One or more paths to JSON files containing metric definitions. **(Required)** | N/A |
 | `--results-dir` | Directory to save evaluation results. | Parent of input file. |
 | `--input-label` | A short label for the run (e.g., `baseline`, `exp_v2`). | `manual` |
@@ -116,55 +127,6 @@ These metrics provide objective, reproducible measurements by analyzing executio
 
 ---
 
-## Step 2 Output: Evaluation Summary (`eval_summary.json`)
-
-The script generates an `eval_summary.json` file which flattens complex data into an actionable format.
-
-### Key Features:
-*   **Flattened Detailed Metrics:** Aggregated metrics like `latency_metrics` are expanded into sub-metrics (e.g., `latency_metrics.llm_latency_seconds`) to help identify bottlenecks.
-*   **Dynamic Metadata Integration:** Any metadata from the golden dataset (e.g., `source_file`) is automatically merged into the per-question results.
-
-### Output Structure
-
-**1. Overall Summary (`average_metrics`):**
-Aggregates scores across all questions.
-
-```json
-"overall_summary": {
-    "average_metrics": {
-        "response_correctness": 5.0,
-        "token_usage.estimated_cost_usd": 0.012,
-        "latency_metrics.total_latency_seconds": 40.74,
-        "latency_metrics.average_turn_latency_seconds": 13.58,
-        "latency_metrics.llm_latency_seconds": 32.65,
-        "latency_metrics.tool_latency_seconds": 0.002
-    }
-}
-```
-
-**2. Per-Question Summary:**
-Includes detailed scores and explanations for each run, allowing for deep-dive analysis.
-
-```json
-"per_question_summary": [
-    {
-        "question_id": "q1_billing",
-        "metrics": {
-            "response_correctness": {
-                "score": 1.0,
-                "explanation": "The agent failed to address the user's specific billing question..."
-            },
-            "latency_metrics.total_latency_seconds": {
-                "score": 4.5,
-                "explanation": "Detail total_latency_seconds for latency_metrics"
-            }
-        },
-        "metadata_field": "value"
-    }
-]
-```
-
----
 
 ## Customizing Metrics
 
@@ -186,6 +148,7 @@ AI-as-judge metrics are defined in JSON configuration files (e.g., `metrics/metr
 *   **To add a metric:** Simply add a new entry to the `metrics` object in your JSON file. The pipeline reads these files at runtime, so no code changes are needed.
 
 ---
+
 
 # Metrics Reference
 
@@ -224,6 +187,7 @@ Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_reta
 
 ---
 
+
 ## Example Evaluation Commands
 
 ### Retail Location Strategy Agent
@@ -244,6 +208,7 @@ uv run python 02_agent_run_eval.py \
 
 ---
 
+
 ## Extending the Framework
 
 ### Creating New Evaluation Datasets
@@ -257,3 +222,26 @@ uv run python scripts/convert_test_to_golden.py \
   --metadata "complexity:easy" \
   --prefix q_prefix
 ```
+
+---
+
+
+## Maintenance Note (TODO)
+
+The file `02_agent_run_eval.py` currently operates with an older structure and version of the Vertex AI evaluation service. A migration is needed to align with the latest best practices.
+
+**Required Actions:**
+
+1.  **Migrate to Client:** Transition from `EvalTask` to the new `client` method for evaluation.
+    *   Reference: [Define your evaluation metrics | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview#define_metrics)
+    *   Alternatively, evaluate if `EvalTask` should be retained but updated to match: [Evaluate Gen AI agents | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluate-gen-ai-agents)
+
+2.  **Refactor Metrics Calculation:**
+    *   Consider using **Autoraters** for more robust evaluation.
+    *   Update `deterministic_metrics.py` to potentially use custom function metrics.
+    *   Validate that Custom metrics definitions remain compatible.
+    *   Explore using **Agentic Pre-written metrics** and **Adaptive rubrics**.
+
+3.  **Explain Metric Mapping:**
+    *   Document the "WHY" behind `metric.json` and its mapping logic.
+    *   Reference: [Details for managed rubric-based metrics | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-rubrics)
