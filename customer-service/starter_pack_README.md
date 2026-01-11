@@ -58,7 +58,7 @@ For full command options and usage, refer to the [Makefile](Makefile).
 
 This template follows a "bring your own agent" approach - you focus on your business logic, and the template handles everything else (UI, infrastructure, deployment, monitoring).
 
-1. **Prototype:** Build your Generative AI Agent using the intro notebooks in `notebooks/` for guidance. Use Vertex AI Evaluation to assess performance.
+1. **Prototype:** Build your Generative AI Agent using the intro notebooks in `notebooks/` for guidance. Use the robust **[Evaluation Pipeline](../evaluation/README.md)** to assess performance with parallel execution and custom metrics.
 2. **Integrate:** Import your agent into the app by editing `customer_service/agent.py`.
 3. **Test:** Explore your agent functionality using the Streamlit playground with `make playground`. The playground offers features like chat history, user feedback, and various input types, and automatically reloads your agent on code changes.
 4. **Deploy:** Set up and initiate the CI/CD pipelines, customizing tests as necessary. Refer to the [deployment section](#deployment) for comprehensive instructions. For streamlined infrastructure deployment, simply run `uvx agent-starter-pack setup-cicd`. Check out the [`agent-starter-pack setup-cicd` CLI command](https://googlecloudplatform.github.io/agent-starter-pack/cli/setup_cicd.html). Currently supports GitHub with both Google Cloud Build and GitHub Actions as CI/CD runners.

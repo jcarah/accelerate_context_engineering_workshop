@@ -104,15 +104,26 @@ Use this to leverage Google's pre-tuned rubrics for general quality.
 }
 ```
 
-### Special Case: `TOOL_USE_QUALITY`
-This managed metric requires specific mapping to work correctly.
+### Special Case: Tool Usage Metrics
+
+**Recommended Approach:** Use a **Custom Metric** (`is_managed: false`) for tool usage evaluation.
+Why? The Vertex AI SDK's managed `TOOL_USE_QUALITY` metric has strict type requirements (List of Event Objects) that can conflict with DataFrame inputs. A Custom Metric allows us to robustly flatten the tool interactions into a JSON string, which the LLM judge can then evaluate perfectly.
 
 ```json
-"tool_accuracy": {
+"tool_usage_accuracy": {
     "metric_type": "llm",
-    "is_managed": true,
-    "managed_metric_name": "TOOL_USE_QUALITY",
-    
+    "is_managed": false,
+    "description": "Evaluates if the agent used the correct tools with the correct arguments.",
+    "instruction": "Assess whether the tool calls made by the agent were necessary, correct, and effective.",
+    "criteria": {
+        "Selection": "Did the agent choose the right tool?",
+        "Arguments": "Were the arguments correct?",
+        "Outcome": "Did it help solve the user's problem?"
+    },
+    "rating_scores": {
+        "1": "Wrong tool or critical error.",
+        "5": "Perfect tool usage."
+    },
     "dataset_mapping": {
         "prompt": { "source_column": "user_inputs" },
         "response": { "source_column": "extracted_data:sub_agent_trace" },

@@ -9,6 +9,12 @@ This pipeline automates the end-to-end evaluation process:
 2.  **Evaluation:** Grades the interactions using both **Deterministic** logic (cost, latency) and **LLM-as-a-Judge** metrics (correctness, tool usage).
 3.  **Analysis:** Generates a human-readable Q&A log and an AI-powered Root Cause Analysis report.
 
+### ✨ Key Features
+*   **Parallel Execution:** Runs LLM metrics concurrently, significantly reducing evaluation time.
+*   **Robust Multi-Turn Support:** Automatically flattens conversation history to ensure compatibility with Vertex AI SDK metrics.
+*   **Hybrid Metrics:** Supports both Google-managed rubrics (Safety, Quality) and fully custom business logic rubrics.
+*   **Retry Logic:** Built-in exponential backoff for resilient API interactions.
+
 ---
 
 ## 📂 Project Structure
