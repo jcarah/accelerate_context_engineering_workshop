@@ -1,0 +1,24 @@
+{
+  "scenarios": [
+    {
+      "starting_prompt": "I'm thinking about planting some Petunias in my backyard in Las Vegas.",
+      "conversation_plan": "Ask the agent for recommendations on what soil and fertilizer to use for Petunias. Then, ask the agent to check if the recommended soil is in stock. Finally, ask the agent to add the recommended soil to your cart."
+    },
+    {
+      "starting_prompt": "I need help planting the trees I just bought.",
+      "conversation_plan": "Express interest in the planting service. Ask what times are available for planting on '2024-07-29'. Select the 9-12 slot and ask the agent to schedule the appointment for you."
+    },
+    {
+      "starting_prompt": "I found a coupon for 15% off at a competitor store. Can you match it?",
+      "conversation_plan": "Insist on the 15% discount. The agent should mention needing manager approval. Tell them to proceed with the approval request. After they confirm approval, ask them to apply it."
+    },
+    {
+      "starting_prompt": "I have a plant in my garden but I'm not sure what it is. Can you help me identify it?",
+      "conversation_plan": "Agree to use the video tool/call companion link when the agent offers it. After the agent (hypothetically) identifies it as a 'Fern', ask the agent to send care instructions for it to your email."
+    },
+    {
+      "starting_prompt": "I've been shopping here for a while. Do I get any rewards?",
+      "conversation_plan": "Ask how many loyalty points you have. Then, ask if you can get a discount code for your next visit. Request a QR code for a 10% discount."
+    }
+  ]
+}
