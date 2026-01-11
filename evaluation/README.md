@@ -1,259 +1,115 @@
-# Evaluation Pipeline
+# Agent Evaluation Pipeline
 
-This document provides a comprehensive guide to the evaluation pipeline, a multi-step process designed to test, measure, and analyze the performance of ADK agents in an agent-agnostic way.
+A professional, scalable, and agent-agnostic framework for evaluating AI agents on Google Cloud.
 
-## Overview
+## 🚀 Overview
 
-The pipeline is orchestrated by three core scripts:
-
-1.  **Step 1: `01_agent_interaction.py`**: Runs a set of questions against the agent and records enriched interactions.
-2.  **Step 2: `02_agent_run_eval.py`**: Calculates performance metrics (both deterministic and LLM-based) using the recorded interactions.
-3.  **Step 3: `03_analyze_eval_results.py`**: (WIP) Generates a detailed, AI-powered analysis of the results.
-
----
-
-## Prerequisites: Running the Agents
-
-Before you can record interactions (Step 1), the agent you want to evaluate must be accessible. You can run the pipeline against a **local instance** for development or a **deployed application URL** (e.g., Cloud Run or Vertex AI Agent Engine) for staging/production testing.
-
-### Option A: Start the Agent Service Locally
-
-Depending on which agent you are testing, navigate to its directory and run the appropriate command. Both agents are configured to run on port **8501** by default.
-
-*   **Customer Service Agent:**
-    ```bash
-    cd customer-service
-    make playground
-    ```
-*   **Retail AI Location Strategy Agent:**
-    ```bash
-    cd retail-ai-location-strategy
-    make dev
-    ```
-
-### Option B: Use a Deployed URL
-Ensure you have the full URL of your deployed service (e.g., `https://my-agent-abc123.a.run.app`).
-
-### Execution Strategy
-1.  **Lifecycle:** The agent service (local or remote) is **only required for Step 1**. Once you have generated the `processed_interaction` files, you can proceed to Step 2 using the static interaction data.
+This pipeline automates the end-to-end evaluation process:
+1.  **Interaction:** Runs a dataset of questions against your agent API (concurrently).
+2.  **Evaluation:** Grades the interactions using both **Deterministic** logic (cost, latency) and **LLM-as-a-Judge** metrics (correctness, tool usage).
+3.  **Analysis:** Generates a human-readable Q&A log and an AI-powered Root Cause Analysis report.
 
 ---
 
-## Step 1: Running Agent Interactions (`01_agent_interaction.py`)
+## 📂 Project Structure
 
-This script runs a dataset of questions against your active agent (local or deployed) and produces a processed CSV file ready for evaluation.
+| Directory | Purpose |
+| :--- | :--- |
+| **`datasets/`** | Contains the **Golden Datasets** (JSON) defining questions and expected answers. This is your input source. |
+| **`metrics/`** | Contains the **Rubrics** (JSON) for LLM-based grading. Defines what "Success" looks like for your agent. |
+| **`scripts/`** | Contains the core logic for metrics and interactions. `deterministic_metrics.py` lives here. |
+| **`tests/`** | Unit tests for the *evaluation framework itself* (not the agents). Ensures the pipeline is reliable. |
+| **`results/`** | The output directory. See [OUTPUTS.md](OUTPUTS.md) for a detailed breakdown of every generated file. |
 
-### Usage
+---
 
-```bash
-uv run python 01_agent_interaction.py \
-  --app-name <agent_app_name> \
-  --base-url <agent_service_url> \
-  --questions-file <path_to_golden_dataset.json> \
-  --results-dir <output_directory> \
-  [--state-variable key:value]
+## 🔄 Workflow & Key Files
+
+| Step | Script | Description |
+| :--- | :--- | :--- |
+| **1** | `01_agent_interaction.py` | **Data Collection.** Orchestrates `scripts/run_interactions.py` to hit your agent's API in parallel (`asyncio`). Enriches raw logs with traces and state variables via `scripts/process_interactions.py`. |
+| **2** | `02_agent_run_eval.py` | **Scoring.** Runs the evaluation suite. Uses `ThreadPoolExecutor` to run Vertex AI evaluations in parallel. Manages configuration via `Pydantic`. |
+| **3** | `03_analyze_eval_results.py` | **Insight Generation.** Produces `question_answer_log.md` (readable transcript) and uses Gemini to write `gemini_analysis.md` (technical diagnosis). |
+
+---
+
+## ⚙️ Configuration
+
+The pipeline uses a **layered configuration** strategy (CLI > Env Vars > Defaults).
+
+### Environment Variables (`.env`)
+Define these in `evaluation/.env` for infrastructure settings:
+
+```ini
+# Required
+EVAL_GOOGLE_CLOUD_PROJECT=your-project-id
+EVAL_GOOGLE_CLOUD_LOCATION=us-central1
+
+# Performance Tuning
+EVAL_MAX_WORKERS=4          # Number of parallel evaluation threads
+EVAL_MAX_RETRIES=3          # Retries for failed LLM calls
+EVAL_RETRY_DELAY_SECONDS=5  # Base delay for exponential backoff
 ```
 
-### Arguments
+### CLI Arguments
+Used for run-specific inputs.
 
-| Argument | Description | Default |
-|---|---|---|
-| `--app-name` | The name of the application/agent (e.g., `customer_service`, `app`). **(Required)** | N/A |
-| `--base-url` | The URL where the agent service is running (local or deployed). | `http://localhost:8501` |
-| `--questions-file` | One or more paths to JSON files with test questions. **(Required)** | N/A |
-| `--user-id` | The user ID for the evaluation session. | `eval_user` |
-| `--num-questions` | Number of questions to sample from each file. -1 for all. | `-1` |
-| `--results-dir` | Directory to save results. | `results/<app_name>/<timestamp>` |
-| `--state-variable` | Inject state variables during session creation (e.g., `customer_id:123`). Can be used multiple times. | N/A |
-| `--runs` | Number of times to run each question (for variance testing). | `1` |
-
-### Example
-
+**Step 1: Interaction**
 ```bash
 uv run python 01_agent_interaction.py \
   --app-name customer_service \
-  --base-url http://localhost:8501 \
-  --questions-file datasets/customer_service_golden.json \
-  --state-variable customer_id:123
+  --base-url http://localhost:8080 \
+  --questions-file datasets/your_data.json
 ```
 
----
-
-## Step 2: Running Evaluations (`02_agent_run_eval.py`)
-
-This script consumes the processed interaction data from Step 1 and applies a suite of metrics. It supports both **deterministic metrics** (exact logic) and **LLM-based metrics** (AI-as-judge).
-
-**Note:** You do NOT need the agent service running to perform this step.
-
-### Usage
-
+**Step 2: Evaluation**
 ```bash
 uv run python 02_agent_run_eval.py \
-  --interaction-results-file <path_to_step1_output.csv> \
-  --metrics-files <path_to_metrics.json> \
-  [--input-label <run_label>] \
-  [--test-description <description>] \
-  [--metric-filter key:value]
+  --interaction-results-file results/.../processed_interaction.csv \
+  --metrics-files metrics/metric_definitions_customer_service.json
 ```
 
-### Arguments
-
-| Argument | Description | Default |
-|---|---|---|
-| `--interaction-results-file` | Path to the CSV file generated by Step 1. **(Required)** | N/A |
-| `--metrics-files` | One or more paths to JSON files containing metric definitions. **(Required)** | N/A |
-| `--results-dir` | Directory to save evaluation results. | Parent of input file. |
-| `--input-label` | A short label for the run (e.g., `baseline`, `exp_v2`). | `manual` |
-| `--test-description` | A detailed description of the test scenario. | Standard description. |
-| `--metric-filter` | Filter metrics (e.g., `metric_type:llm` or `agents:customer_service`). | Run all metrics. |
-
-### Deterministic Metrics Explained
-
-These metrics provide objective, reproducible measurements by analyzing execution traces.
-
-*   **`token_usage`**: Calculates the **Estimated Cost in USD** for the session based on model-specific pricing (e.g., Gemini 1.5 Pro).
-*   **`latency_metrics`**: Measures both **Total Session Duration** and **Average Turn Latency** in seconds, breaking down time spent in LLM calls vs tools.
-
----
-
-## Step 2 Output: Evaluation Summary (`eval_summary.json`)
-
-The script generates an `eval_summary.json` file which flattens complex data into an actionable format.
-
-### Key Features:
-*   **Flattened Detailed Metrics:** Aggregated metrics like `latency_metrics` are expanded into sub-metrics (e.g., `latency_metrics.llm_latency_seconds`) to help identify bottlenecks.
-*   **Dynamic Metadata Integration:** Any metadata from the golden dataset (e.g., `source_file`) is automatically merged into the per-question results.
-
-### Output Structure
-
-**1. Overall Summary (`average_metrics`):**
-Aggregates scores across all questions.
-
-```json
-"overall_summary": {
-    "average_metrics": {
-        "response_correctness": 5.0,
-        "token_usage.estimated_cost_usd": 0.012,
-        "latency_metrics.total_latency_seconds": 40.74,
-        "latency_metrics.average_turn_latency_seconds": 13.58,
-        "latency_metrics.llm_latency_seconds": 32.65,
-        "latency_metrics.tool_latency_seconds": 0.002
-    }
-}
-```
-
-**2. Per-Question Summary:**
-Includes detailed scores and explanations for each run, allowing for deep-dive analysis.
-
-```json
-"per_question_summary": [
-    {
-        "question_id": "q1_billing",
-        "metrics": {
-            "response_correctness": {
-                "score": 1.0,
-                "explanation": "The agent failed to address the user's specific billing question..."
-            },
-            "latency_metrics.total_latency_seconds": {
-                "score": 4.5,
-                "explanation": "Detail total_latency_seconds for latency_metrics"
-            }
-        },
-        "metadata_field": "value"
-    }
-]
-```
-
----
-
-## Customizing Metrics
-
-The evaluation framework is designed for extensibility. `02_agent_run_eval.py` dynamically loads metrics from two sources, so you can add or modify them without changing the main script.
-
-### 1. Deterministic Metrics (Python)
-Logic-based metrics are defined in `evaluation/scripts/deterministic_metrics.py`.
-
-*   **How it works:** The script maintains a `DETERMINISTIC_METRICS` registry mapping metric names to Python functions.
-*   **To add a metric:**
-    1.  Define a new function in `deterministic_metrics.py` (e.g., `def calculate_my_metric(...)`).
-    2.  Add it to the `DETERMINISTIC_METRICS` dictionary at the bottom of the file.
-    3.  `02_agent_run_eval.py` will automatically detect and run it if listed in your JSON config or if passed via CLI filters.
-
-### 2. LLM-based Metrics (JSON)
-AI-as-judge metrics are defined in JSON configuration files (e.g., `metrics/metric_definitions_customer_service.json`).
-
-*   **How it works:** These files define the prompt templates and data mapping logic.
-*   **To add a metric:** Simply add a new entry to the `metrics` object in your JSON file. The pipeline reads these files at runtime, so no code changes are needed.
-
----
-
-# Metrics Reference
-
-## 1. Deterministic Metrics
-Calculated directly from execution traces without using an LLM.
-
-| Metric | Description | Calculation Logic |
-| :--- | :--- | :--- |
-| **`token_usage`** | Cost & Volume | Sums prompt, completion, and cached tokens from `usage_metadata`. Calculates estimated cost using model-specific pricing (e.g., Gemini 1.5 Pro). |
-| **`latency_metrics`** | Speed | **Total:** Sum of all agent invocation durations (excludes user think time). **Avg Turn:** Mean duration of agent invocations. **LLM/Tool:** Sum of individual span durations. |
-| **`cache_efficiency`** | Optimization | `Cache Hit Rate = Cached Tokens / (Cached + Fresh Prompt Tokens)`. Measures how effectively the Context Cache is being used. |
-| **`thinking_metrics`** | Cognitive Effort | `Reasoning Ratio = Thinking Tokens / Total Output Tokens`. Measures the proportion of output spent on internal reasoning (for Thinking models). |
-| **`tool_utilization`** | Tool Usage | Counts total and unique tool calls. Provides a breakdown of which tools were called how often. |
-| **`tool_success_rate`** | Reliability | `Successful Calls / Total Calls`. Parses tool output JSON to check for `status: "error"` or error messages. |
-| **`grounding_utilization`** | Factuality Proxy | Counts the number of Google Search grounding chunks (citations) present in the LLM response metadata. |
-| **`context_saturation`** | Capacity Planning | Tracks the **Maximum Total Tokens** used in any single turn. Helps identify if the session is nearing the model's context window limit. |
-| **`agent_handoffs`** | Orchestration | Counts the number of times control transferred between agents (`invoke_agent` spans). Validates multi-agent architecture. |
-| **`output_density`** | Conciseness | `Average Output Tokens per LLM Call`. A proxy for the "Reduce" pillar; lower values (for non-generative tasks) often indicate better instruction following. |
-| **`sandbox_usage`** | Offloading | Counts calls to file system tools (`save_artifact`, `read_file`, etc.). Deterministically verifies if state is being offloaded to disk. |
-
-## 2. LLM Metrics (Customer Service)
-Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_customer_service.json`.
-
-*   **`trajectory_accuracy` (0-5):** Did the agent follow the expected sequence of sub-tasks? Compares actual agent order vs. reference trajectory.
-*   **`response_correctness` (0-5):** Is the final answer relevant, accurate, and consistent with tool outputs?
-*   **`tool_usage_accuracy` (0-5):** Did the agent pick the right tools and use the correct arguments (e.g., correct `customer_id`)?
-*   **`state_management_fidelity` (0-5):** Did the agent correctly extract entities from the conversation and update its internal session state variables?
-
-## 3. LLM Metrics (Retail Location Strategy)
-Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_retail_location.json`.
-
-*   **`state_variable_fidelity` (0-5):** Checks if complex artifacts (Market Research, Gap Analysis) were correctly stored in the session state.
-*   **`market_research_depth` (0-5):** Evaluates the quality of the gathered data. Does it cover demographics and specific competitors? Is it synthesized well?
-*   **`strategic_recommendation_quality` (0-5):** Assesses the business logic. Is the recommendation evidence-based? Are risks acknowledged? Are next steps actionable?
-*   **`tool_usage_effectiveness` (0-5):** Did the agent perform a comprehensive search (coverage)? Did it successfully generate the final HTML/Infographic artifacts?
-
----
-
-## Example Evaluation Commands
-
-### Retail Location Strategy Agent
+**Step 3: Analysis**
 ```bash
-uv run python 02_agent_run_eval.py \
-  --interaction-results-file results/app/20260110_005102/processed_interaction_format_golden_data.csv \
-  --metrics-files metrics/metric_definitions_retail_location.json \
-  --input-label retail_run_2
-```
-
-### Customer Service Agent
-```bash
-uv run python 02_agent_run_eval.py \
-  --interaction-results-file results/customer_service/20260110_002956/processed_interaction_format_golden_data.csv \
-  --metrics-files metrics/metric_definitions_customer_service.json \
-  --input-label customer_service_run_3
+uv run python 03_analyze_eval_results.py \
+  --results-dir results/customer_service/2026...
 ```
 
 ---
 
-## Extending the Framework
+## 📊 Outputs & Artifacts
 
-### Creating New Evaluation Datasets
-You can create raw datasets using the `adk eval` command. Use `convert_test_to_golden.py` to structure existing turn-based test data:
+All results are saved in `evaluation/results/<app_name>/<timestamp>/`.
 
-```bash
-uv run python scripts/convert_test_to_golden.py \
-  --input path/to/your/test_data.json \
-  --output datasets/your_new_golden_data.json \
-  --agent <agent_app_name> \
-  --metadata "complexity:easy" \
-  --prefix q_prefix
-```
+| File | Description |
+| :--- | :--- |
+| `processed_interaction_*.csv` | **Raw Data.** The inputs, agent responses, traces, and state variables used for grading. |
+| `evaluation_results_*.csv` | **Graded Data.** The processed interactions enriched with metric scores and explanations. |
+| `eval_summary.json` | **Aggregated Stats.** Mean scores, costs, latencies, and per-question breakdowns. |
+| `question_answer_log.md` | **Transcript.** A readable Markdown log of every Q&A pair, reference data, and extracted state. |
+| `gemini_analysis.md` | **Diagnosis.** An AI-generated report identifying root causes of failures and performance trends. |
+
+For a complete data dictionary, see **[OUTPUTS.md](OUTPUTS.md)**.
+
+---
+
+## 🛠️ Developer Guide: Adding a New Agent
+
+To evaluate a new agent (e.g., "Travel Booker"), follow these steps:
+
+### 1. Create a Golden Dataset
+Create a new file in `datasets/travel_booker_golden.json`.
+*   **Format:** List of questions with expected outputs (`reference_data`).
+*   **Key Fields:** `user_inputs`, `reference_tool_interactions`, `metadata`.
+*   **Guide:** See **[DATASETS_GUIDE.md](DATASETS_GUIDE.md)** for the full schema and examples.
+
+### 2. Define Metrics
+Create a new file in `metrics/metric_definitions_travel_booker.json`.
+*   **Dataset Mapping:** Map your agent's specific state variables (e.g., `extracted_data:booking_details`) to the metric's input variables.
+*   **Rubric:** Define the criteria for `llm` metrics (e.g., "Did the agent capture the correct travel dates?").
+*   **Guide:** See **[METRICS_GUIDE.md](METRICS_GUIDE.md)** for schema details and templates.
+
+### 3. Run the Pipeline
+Execute the standard 3-step workflow, pointing to your new files:
+1.  `01_agent_interaction.py ... --questions-file datasets/travel_booker_golden.json`
+2.  `02_agent_run_eval.py ... --metrics-files metrics/metric_definitions_travel_booker.json`

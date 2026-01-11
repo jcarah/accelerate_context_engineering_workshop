@@ -48,6 +48,48 @@
         }
       },
       "template": "Evaluate the effectiveness of the AI agent's tool usage given the user's request.\n\n**User Request:**\n{user_request}\n\n**Tool Interactions:**\n{tool_interactions}\n\n**Evaluation Criteria:**\n1.  **Relevance:** Did the agent use the 'search_places' tool with queries relevant to the user's request (correct business type and location)?\n2.  **Coverage:** Did it perform enough searches to get a good picture (e.g., searching for both direct and indirect competitors)?\n3.  **Completeness:** Did it successfully call the output generation tools ('generate_html_report', 'generate_infographic') at the end?\n4.  **Efficiency:** Did it avoid unnecessary or redundant tool calls?\n\n**Scoring Rubric (1-5):**\n- 5: Optimal usage. Highly relevant search queries, comprehensive coverage, and successful report generation.\n- 4: Good usage. Relevant searches and report generation, but queries could be slightly more optimized.\n- 3: Adequate. Used tools but queries were generic or report generation was missing/failed.\n- 2: Poor. Irrelevant searches or failed to use key tools.\n- 1: Failure. No tool usage or complete failure to address the request.\n\n**Response Format:**\nScore: [1-5]\nExplanation: [Reasoning]"
+    },
+    "general_conversation_quality": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "GENERAL_QUALITY",
+      "agents": ["retail_location_strategy"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "trace_summary"
+        }
+      }
+    },
+    "instruction_following": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "INSTRUCTION_FOLLOWING",
+      "agents": ["retail_location_strategy"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "trace_summary"
+        }
+      }
+    },
+    "safety": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "SAFETY",
+      "agents": ["retail_location_strategy"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "trace_summary"
+        }
+      }
     }
   }
 }

@@ -71,31 +71,42 @@ def load_and_consolidate_questions(
                 print(f"Loaded {len(questions)} questions from '{file_path}'.")
 
                 if 0 < num_questions < len(questions):
-                    print(f"  -> Performing stratified sampling for {num_questions} questions.")
+                    print(
+                        f"  -> Performing stratified sampling for {num_questions} questions."
+                    )
                     df = pd.DataFrame(questions)
                     # Create a hashable group key from the list of agents evaluated.
-                    df["agent_group"] = df["agents_evaluated"].apply(lambda x: tuple(sorted(x)))
+                    df["agent_group"] = df["agents_evaluated"].apply(
+                        lambda x: tuple(sorted(x))
+                    )
 
                     # Calculate how many questions to sample from each agent group.
                     group_counts = df["agent_group"].value_counts()
                     proportions = group_counts / len(df)
-                    samples_per_group = (proportions * num_questions).round().astype(int)
+                    samples_per_group = (
+                        (proportions * num_questions).round().astype(int)
+                    )
 
                     # Adjust for rounding errors to ensure the total sample size is correct.
                     diff = num_questions - samples_per_group.sum()
                     if diff != 0:
                         largest_group = samples_per_group.idxmax()
                         samples_per_group[largest_group] += diff
-                    
+
                     # Perform the sampling from each group.
                     sampled_df = df.groupby("agent_group", group_keys=False).apply(
-                        lambda g: g.sample(n=min(len(g), int(samples_per_group[g.name])), random_state=42),
-                        include_groups=False
+                        lambda g: g.sample(
+                            n=min(len(g), int(samples_per_group[g.name])),
+                            random_state=42,
+                        ),
+                        include_groups=False,
                     )
-                    
+
                     sampled_questions = sampled_df.to_dict("records")
                     consolidated_questions.extend(sampled_questions)
-                    print(f"  -> Sampled {len(sampled_questions)} questions to maintain agent representation.")
+                    print(
+                        f"  -> Sampled {len(sampled_questions)} questions to maintain agent representation."
+                    )
 
                 else:
                     # If num_questions is -1 or >= total questions, take all.
@@ -157,7 +168,9 @@ def main():
     parser.add_argument(
         "--user",
         type=str,
-        default=os.environ.get("USER") or os.environ.get("GITLAB_USER_LOGIN") or "ci-runner",
+        default=os.environ.get("USER")
+        or os.environ.get("GITLAB_USER_LOGIN")
+        or "ci-runner",
         help="The username of the person running the script, for tracking.",
     )
     parser.add_argument(
@@ -204,7 +217,7 @@ def main():
     if not consolidated_questions:
         print("\nNo questions found to run after consolidation and filtering. Exiting.")
         sys.exit(0)
-    
+
     # Save consolidated questions to a temporary file to pass to the next script.
     temp_questions_path = results_dir / "temp_consolidated_questions.json"
     with open(temp_questions_path, "w") as f:
@@ -219,20 +232,29 @@ def main():
         run_interactions_cmd = [
             sys.executable,
             "scripts/run_interactions.py",
-            "--user_id", args.user_id,
-            "--base_url", args.base_url,
-            "--app_name", args.app_name,
-            "--questions_file", str(temp_questions_path),
-            "--num_questions", "-1",  # Use -1 as we've already sampled
-            "--results_dir", str(results_dir),
-            "--user", args.user,
-            "--runs", str(args.runs),
-            "--output-csv", str(interaction_csv_path),
+            "--user_id",
+            args.user_id,
+            "--base_url",
+            args.base_url,
+            "--app_name",
+            args.app_name,
+            "--questions_file",
+            str(temp_questions_path),
+            "--num_questions",
+            "-1",  # Use -1 as we've already sampled
+            "--results_dir",
+            str(results_dir),
+            "--user",
+            args.user,
+            "--runs",
+            str(args.runs),
+            "--output-csv",
+            str(interaction_csv_path),
         ]
         if args.metadata_filters:
             for f in args.metadata_filters:
                 run_interactions_cmd.extend(["--filter", f])
-        
+
         if args.state_variables:
             for s in args.state_variables:
                 run_interactions_cmd.extend(["--state-variable", s])
@@ -248,14 +270,18 @@ def main():
 
     # --- Step 2: Process Interactions ---
     if not interaction_csv_path.exists():
-        print(f"Error: Interaction CSV file not found at '{interaction_csv_path}'. Cannot run processing.")
+        print(
+            f"Error: Interaction CSV file not found at '{interaction_csv_path}'. Cannot run processing."
+        )
         sys.exit(1)
 
     process_interactions_cmd = [
         sys.executable,
         "scripts/process_interactions.py",
-        "--input-csv", str(interaction_csv_path),
-        "--results_dir", str(results_dir),
+        "--input-csv",
+        str(interaction_csv_path),
+        "--results_dir",
+        str(results_dir),
     ]
     print("\n--- Processing Interactions ---")
     print(f"Command: {' '.join(process_interactions_cmd)}")

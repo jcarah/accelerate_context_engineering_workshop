@@ -16,7 +16,11 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.append(
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
+)
 from evaluation.scripts.deterministic_metrics import evaluate_deterministic_metrics
 
 DATASET_CONFIGS = {
@@ -46,9 +50,7 @@ METRIC_THRESHOLDS = {
     "sql_result_exact_match": 1.0,
 }
 
-METRIC_DEFINITIONS = {
-    "nl_sql_output_groundedness": {"accuracy_threshold": 0.8}
-}
+METRIC_DEFINITIONS = {"nl_sql_output_groundedness": {"accuracy_threshold": 0.8}}
 
 
 def safe_json_load(value: Any) -> Optional[Union[Dict[str, Any], List[Any]]]:
@@ -84,7 +86,9 @@ def load_llm_scores(llm_eval_file: str) -> Dict[str, Any]:
     return scores
 
 
-def find_data_file(base_dir: str, primary_name: str, fallback_name: Optional[str] = None) -> str:
+def find_data_file(
+    base_dir: str, primary_name: str, fallback_name: Optional[str] = None
+) -> str:
     """Return the primary path if it exists, otherwise use the fallback if provided."""
     primary_path = os.path.join(base_dir, primary_name)
     if os.path.exists(primary_path):
@@ -108,7 +112,9 @@ def write_summary(output_dir: str, dataset_name: str, content: str) -> None:
     if not output_dir:
         return
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    summary_path = Path(output_dir) / f"deterministic_metrics_summary_{dataset_name.lower()}.md"
+    summary_path = (
+        Path(output_dir) / f"deterministic_metrics_summary_{dataset_name.lower()}.md"
+    )
     with open(summary_path, "w") as out_file:
         out_file.write(content)
     print(f"\nSummary written to {summary_path}")
@@ -121,11 +127,11 @@ def run_and_summarize(
     output_dir: Optional[str] = None,
 ) -> None:
     if not os.path.exists(interaction_file):
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(
             f"SKIPPING {dataset_name.upper()}: Interaction file not found at {interaction_file}"
         )
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         return
 
     interactions = pd.read_csv(interaction_file)
@@ -136,10 +142,10 @@ def run_and_summarize(
     det_level_counts = defaultdict(lambda: {"pass": 0, "total": 0})
     deterministic_failures: List[str] = []
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"RUNNING COMBINED EVALUATION FOR: {dataset_name.upper()}")
     print(f"Loaded {len(interactions)} interactions from {interaction_file}")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     for idx, row in interactions.iterrows():
         question_id = row.get("question_id", f"row_{idx}")
@@ -152,7 +158,9 @@ def run_and_summarize(
         reference_data = safe_json_load(row.get("reference_data")) or {}
 
         if not session_state:
-            print(f"  > Missing session state for {question_id}, skipping metric evaluation.")
+            print(
+                f"  > Missing session state for {question_id}, skipping metric evaluation."
+            )
             continue
 
         session_trace = session_trace or []
@@ -238,13 +246,15 @@ def run_and_summarize(
         correctness = defaultdict(lambda: {"correct": 0, "incorrect": 0})
         for idx, row in interactions.iterrows():
             question_id = row.get("question_id")
-            tier = (
-                safe_json_load(row.get("question_metadata")) or {}
-            ).get("tier", "unknown")
+            tier = (safe_json_load(row.get("question_metadata")) or {}).get(
+                "tier", "unknown"
+            )
             if question_id in llm_scores:
-                bq_sim_score = llm_scores[question_id].get(
-                    "bq_response_similarity", {}
-                ).get("score", 0.0)
+                bq_sim_score = (
+                    llm_scores[question_id]
+                    .get("bq_response_similarity", {})
+                    .get("score", 0.0)
+                )
                 bucket = "correct" if bq_sim_score >= 0.8 else "incorrect"
                 correctness[tier][bucket] += 1
 
@@ -291,17 +301,20 @@ def main() -> None:
     for dataset in args.datasets:
         config = DATASET_CONFIGS.get(dataset.lower())
         if not config:
-            print(f"Unknown dataset '{dataset}'. Known datasets: {list(DATASET_CONFIGS)}")
+            print(
+                f"Unknown dataset '{dataset}'. Known datasets: {list(DATASET_CONFIGS)}"
+            )
             continue
 
         interaction_path = find_data_file(
             args.results_dir, config["interaction"], config.get("interaction_fallback")
         )
-        llm_path = find_data_file(args.results_dir, config["llm"], config.get("llm_fallback"))
+        llm_path = find_data_file(
+            args.results_dir, config["llm"], config.get("llm_fallback")
+        )
 
         run_and_summarize(interaction_path, llm_path, dataset.upper(), args.output_dir)
 
 
 if __name__ == "__main__":
     main()
-
