@@ -64,7 +64,7 @@ Instead of simple "print statement" debugging, we have built a custom, reusable 
 *   **LLM Judges:** Custom rubrics (e.g., "Did the agent use the correct tool?") located in `[agent]/eval/metrics/`.
 *   **Pipeline:** Scripts to run the agent, calculate scores, and generate reports.
 
-### 000 Future State: CLI Experience (Preview)
+### Future State: CLI Experience (Preview)
 We are actively refactoring this pipeline into a unified CLI tool: `adk-eval`.
 > **Mockup:** In the future, you will simply run:
 > ```bash
@@ -73,7 +73,7 @@ We are actively refactoring this pipeline into a unified CLI tool: `adk-eval`.
 > uv run adk-eval analyze ...
 > ```
 
-### 000 Current State: Running Evaluations (Workshop Guide)
+### Current State: Running Evaluations (Workshop Guide)
 
 For now, we use the stable Python scripts. Follow these steps to evaluate your agent.
 
