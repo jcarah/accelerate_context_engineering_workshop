@@ -1,6 +1,10 @@
-import json
 import unittest
 from unittest.mock import MagicMock, patch
+import sys
+from pathlib import Path
+
+# Add project root to sys.path to allow importing from evaluation package
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from evaluation.agent_client import AgentClient
 
@@ -11,16 +15,20 @@ class TestAgentClient(unittest.TestCase):
         self.app_name = "test_app"
         self.user_id = "test_user"
         self.token = "mock_token"
-        self.client = AgentClient(self.base_url, self.app_name, self.user_id, self.token)
+        self.client = AgentClient(
+            self.base_url, self.app_name, self.user_id, self.token
+        )
 
     @patch("subprocess.check_output")
     def test_get_token_fetch(self, mock_subprocess):
         """Test that token is fetched using gcloud if not provided."""
         client = AgentClient(self.base_url, self.app_name, self.user_id)
         mock_subprocess.return_value = "fetched_token\n"
-        
+
         self.assertEqual(client.token, "fetched_token")
-        mock_subprocess.assert_called_with(["gcloud", "auth", "print-identity-token"], text=True)
+        mock_subprocess.assert_called_with(
+            ["gcloud", "auth", "print-identity-token"], text=True
+        )
 
     @patch("requests.request")
     def test_create_session(self, mock_request):
@@ -32,25 +40,22 @@ class TestAgentClient(unittest.TestCase):
 
         # Test with data
         session_id = self.client.create_session(dataset_id="dataset_abc", foo="bar")
-        
+
         self.assertTrue(session_id.startswith("session_"))
-        
+
         expected_url = f"{self.base_url}/apps/{self.app_name}/users/{self.user_id}/sessions/{session_id}"
         mock_request.assert_called_with(
-            "POST", 
-            expected_url, 
-            headers=self.client._get_headers(), 
-            json={"dataset_id": "dataset_abc", "foo": "bar"}
+            "POST",
+            expected_url,
+            headers=self.client._get_headers(),
+            json={"dataset_id": "dataset_abc", "foo": "bar"},
         )
 
         # Test without data
         session_id_empty = self.client.create_session()
         expected_url_empty = f"{self.base_url}/apps/{self.app_name}/users/{self.user_id}/sessions/{session_id_empty}"
         mock_request.assert_called_with(
-            "POST", 
-            expected_url_empty, 
-            headers=self.client._get_headers(), 
-            json=None
+            "POST", expected_url_empty, headers=self.client._get_headers(), json=None
         )
 
     @patch("requests.request")
@@ -61,7 +66,7 @@ class TestAgentClient(unittest.TestCase):
         mock_request.return_value = mock_response
 
         response = self.client.run_interaction("session_123", "Hello", streaming=True)
-        
+
         self.assertEqual(response, {"status": "success"})
         mock_request.assert_called_with(
             "POST",
@@ -73,7 +78,7 @@ class TestAgentClient(unittest.TestCase):
                 "session_id": "session_123",
                 "new_message": {"role": "user", "parts": [{"text": "Hello"}]},
                 "streaming": True,
-            }
+            },
         )
 
     @patch("requests.request")
@@ -85,12 +90,10 @@ class TestAgentClient(unittest.TestCase):
 
         state = self.client.get_session_state("session_123")
         self.assertEqual(state, {"state": {"foo": "bar"}})
-        
+
         expected_url = f"{self.base_url}/apps/{self.app_name}/users/{self.user_id}/sessions/session_123"
         mock_request.assert_called_with(
-            "GET",
-            expected_url,
-            headers=self.client._get_headers()
+            "GET", expected_url, headers=self.client._get_headers()
         )
 
     def test_analyze_trace_and_extract_spans(self):
@@ -103,7 +106,7 @@ class TestAgentClient(unittest.TestCase):
                 "name": "agent_run [MainAgent]",
                 "start_time": 1000000000,
                 "end_time": 2000000000,
-                "attributes": {}
+                "attributes": {},
             },
             {
                 "span_id": 1002,
@@ -114,26 +117,26 @@ class TestAgentClient(unittest.TestCase):
                 "attributes": {
                     "gen_ai.tool.name": "call_sql_explorer_agent",
                     "gcp.vertex.agent.tool_call_args": '{"question": "test"}',
-                    "gcp.vertex.agent.tool_response": '{"result": "ok"}'
-                }
-            }
+                    "gcp.vertex.agent.tool_response": '{"result": "ok"}',
+                },
+            },
         ]
 
         analyzed = AgentClient.analyze_trace_and_extract_spans(raw_trace)
-        
+
         self.assertEqual(len(analyzed), 1)
         root = analyzed[0]
-        self.assertEqual(root['name'], "agent_run [MainAgent]")
-        self.assertEqual(root['type'], "AGENT_RUN")
-        self.assertEqual(root['details']['agent_name'], "MainAgent")
-        
-        children = root['children']
+        self.assertEqual(root["name"], "agent_run [MainAgent]")
+        self.assertEqual(root["type"], "AGENT_RUN")
+        self.assertEqual(root["details"]["agent_name"], "MainAgent")
+
+        children = root["children"]
         self.assertEqual(len(children), 1)
         child = children[0]
-        self.assertEqual(child['type'], "TOOL_CALL")
-        self.assertEqual(child['details']['tool_name'], "call_sql_explorer_agent")
-        self.assertEqual(child['details']['arguments'], {"question": "test"})
-        self.assertEqual(child['details']['response'], {"result": "ok"})
+        self.assertEqual(child["type"], "TOOL_CALL")
+        self.assertEqual(child["details"]["tool_name"], "call_sql_explorer_agent")
+        self.assertEqual(child["details"]["arguments"], {"question": "test"})
+        self.assertEqual(child["details"]["response"], {"result": "ok"})
 
     def test_get_agent_trajectory(self):
         """Test trajectory extraction."""
@@ -141,15 +144,10 @@ class TestAgentClient(unittest.TestCase):
         analyzed_trace = [
             {
                 "name": "agent_run[AgentA]",
-                "children": [
-                    {
-                        "name": "agent_run[AgentB]",
-                        "children": []
-                    }
-                ]
+                "children": [{"name": "agent_run[AgentB]", "children": []}],
             }
         ]
-        
+
         trajectory = AgentClient.get_agent_trajectory(analyzed_trace)
         self.assertEqual(trajectory, ["AgentA", "AgentB"])
 
@@ -164,7 +162,7 @@ class TestAgentClient(unittest.TestCase):
                                 "functionCall": {
                                     "id": "call_1",
                                     "name": "search_places",
-                                    "args": {"query": "coffee"}
+                                    "args": {"query": "coffee"},
                                 }
                             }
                         ]
@@ -177,7 +175,7 @@ class TestAgentClient(unittest.TestCase):
                                 "functionResponse": {
                                     "id": "call_1",
                                     "name": "search_places",
-                                    "response": {"result": "found place"}
+                                    "response": {"result": "found place"},
                                 }
                             }
                         ]
@@ -190,31 +188,31 @@ class TestAgentClient(unittest.TestCase):
                                 "functionCall": {
                                     "id": "call_2",
                                     "name": "calculate_gap",
-                                    "args": {"data": "some_data"}
+                                    "args": {"data": "some_data"},
                                 }
                             }
                         ]
                     }
-                }
+                },
                 # call_2 has no response
             ]
         }
 
         interactions = AgentClient.get_tool_interactions(session_data)
-        
+
         self.assertEqual(len(interactions), 2)
-        
+
         # Check first interaction (completed)
-        self.assertEqual(interactions[0]['tool_name'], "search_places")
-        self.assertEqual(interactions[0]['input_arguments'], {"query": "coffee"})
-        self.assertEqual(interactions[0]['output_result'], "found place")
-        self.assertEqual(interactions[0]['call_id'], "call_1")
-        
+        self.assertEqual(interactions[0]["tool_name"], "search_places")
+        self.assertEqual(interactions[0]["input_arguments"], {"query": "coffee"})
+        self.assertEqual(interactions[0]["output_result"], "found place")
+        self.assertEqual(interactions[0]["call_id"], "call_1")
+
         # Check second interaction (pending/no response)
-        self.assertEqual(interactions[1]['tool_name'], "calculate_gap")
-        self.assertEqual(interactions[1]['input_arguments'], {"data": "some_data"})
-        self.assertEqual(interactions[1].get('status'), "no_response")
-        self.assertEqual(interactions[1]['call_id'], "call_2")
+        self.assertEqual(interactions[1]["tool_name"], "calculate_gap")
+        self.assertEqual(interactions[1]["input_arguments"], {"data": "some_data"})
+        self.assertEqual(interactions[1].get("status"), "no_response")
+        self.assertEqual(interactions[1]["call_id"], "call_2")
 
     def test_get_sub_agent_trace(self):
         """Test sub-agent trace extraction from session events."""
@@ -223,35 +221,36 @@ class TestAgentClient(unittest.TestCase):
                 {
                     "author": "user",
                     "content": {"parts": [{"text": "Hello"}]},
-                    "timestamp": 1000
+                    "timestamp": 1000,
                 },
                 {
                     "author": "RootAgent",
                     "content": {"parts": [{"text": "I will call the sub-agent."}]},
-                    "timestamp": 1001
+                    "timestamp": 1001,
                 },
                 {
                     "author": "SubAgentA",
                     "content": {"parts": [{"text": "Processing..."}]},
-                    "timestamp": 1002
+                    "timestamp": 1002,
                 },
                 {
                     "author": "SubAgentA",
                     "content": {"parts": [{"text": "Done."}]},
-                    "timestamp": 1003
-                }
+                    "timestamp": 1003,
+                },
             ]
         }
 
         trace = AgentClient.get_sub_agent_trace(session_data)
-        
+
         self.assertEqual(len(trace), 3)
-        self.assertEqual(trace[0]['agent_name'], "RootAgent")
-        self.assertEqual(trace[0]['text_response'], "I will call the sub-agent.")
-        self.assertEqual(trace[1]['agent_name'], "SubAgentA")
-        self.assertEqual(trace[1]['text_response'], "Processing...")
-        self.assertEqual(trace[2]['agent_name'], "SubAgentA")
-        self.assertEqual(trace[2]['text_response'], "Done.")
+        self.assertEqual(trace[0]["agent_name"], "RootAgent")
+        self.assertEqual(trace[0]["text_response"], "I will call the sub-agent.")
+        self.assertEqual(trace[1]["agent_name"], "SubAgentA")
+        self.assertEqual(trace[1]["text_response"], "Processing...")
+        self.assertEqual(trace[2]["agent_name"], "SubAgentA")
+        self.assertEqual(trace[2]["text_response"], "Done.")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -95,7 +95,9 @@ Format your entire response as a single Markdown document.
         return f"**{title}**\n```{lang}\n{content}\n```"
 
     def _format_code_section(self, file_path: str, lang: str = "python") -> str:
-        content = self.context_files.get(file_path, f"Error: File '{file_path}' not found.")
+        content = self.context_files.get(
+            file_path, f"Error: File '{file_path}' not found."
+        )
         return self._format_context_section(f"File: `{file_path}`", content, lang)
 
     def build_prompt(self) -> str:
@@ -104,25 +106,38 @@ Format your entire response as a single Markdown document.
             "Evaluation Summary", json.dumps(self.summary_data, indent=2), "json"
         )
 
-        explanations_section = f"**Detailed Explanations per Metric:**\n{self.analysis_content}"
+        explanations_section = (
+            f"**Detailed Explanations per Metric:**\n{self.analysis_content}"
+        )
 
         metric_definitions_section = self._format_code_section(
             self.consolidated_metrics_path, "json"
         )
 
-        deterministic_logic_section = self._format_code_section("evaluation/scripts/deterministic_metrics.py")
+        deterministic_logic_section = self._format_code_section(
+            "evaluation/scripts/deterministic_metrics.py"
+        )
 
         # Dynamically include all .py files except deterministic_metrics.py
         source_code_parts = []
         for file_path in self.context_files:
-            if file_path.endswith(".py") and "deterministic_metrics.py" not in file_path:
+            if (
+                file_path.endswith(".py")
+                and "deterministic_metrics.py" not in file_path
+            ):
                 source_code_parts.append(self._format_code_section(file_path))
-        
-        source_code_section = "\n".join(source_code_parts) if source_code_parts else "No agent source code provided."
+
+        source_code_section = (
+            "\n".join(source_code_parts)
+            if source_code_parts
+            else "No agent source code provided."
+        )
 
         questions_section = self._format_context_section(
             "Questions Evaluated",
-            self.context_files.get(self.question_file_path, "Questions file not found."),
+            self.context_files.get(
+                self.question_file_path, "Questions file not found."
+            ),
             "json",
         )
 

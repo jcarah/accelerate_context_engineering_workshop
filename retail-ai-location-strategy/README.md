@@ -194,6 +194,20 @@ For production deployments with CI/CD, see the [Agent Starter Pack Development G
 
 ---
 
+## Evaluation
+
+To rigorously test this agent's performance (accuracy of location scores, quality of strategic advice, tool usage), use the **[Evaluation Pipeline](../evaluation/README.md)**.
+
+The pipeline runs 7 specialized metrics (4 Custom + 3 Managed) in parallel:
+- **Market Research Depth:** Did it find relevant local data?
+- **Strategic Recommendation Quality:** Is the advice logical and grounded?
+- **State Fidelity:** Did it capture the location and business type correctly?
+- **Tool Usage Accuracy:** Did it use Google Maps API effectively?
+
+See `../evaluation/metrics/metric_definitions_retail_location.json` for the full rubric.
+
+---
+
 ## Agent Details
 
 | Attribute | Description |

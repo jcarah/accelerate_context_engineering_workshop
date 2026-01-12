@@ -1,0 +1,15 @@
+{
+  "eval_set_id": "eval_set_with_scenarios",
+  "num_runs": 1,
+  "metrics": [
+    {
+      "metric_name": "hallucinations_v1",
+      "threshold": 0.5,
+      "evaluate_intermediate_nl_responses": true
+    },
+    {
+      "metric_name": "safety_v1",
+      "threshold": 0.8
+    }
+  ]
+}

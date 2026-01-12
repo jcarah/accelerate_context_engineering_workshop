@@ -3,7 +3,7 @@ import re
 import subprocess
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -14,7 +14,13 @@ class AgentClient:
     Encapsulates session creation, message sending, state retrieval, and trace analysis.
     """
 
-    def __init__(self, base_url: str, app_name: str, user_id: str = "eval_user", token: Optional[str] = None):
+    def __init__(
+        self,
+        base_url: str,
+        app_name: str,
+        user_id: str = "eval_user",
+        token: Optional[str] = None,
+    ):
         """
         Initialize the AgentClient.
 
@@ -64,18 +70,20 @@ class AgentClient:
         session_id = f"session_{uuid.uuid4()}"
         url = f"{self.base_url}/apps/{self.app_name}/users/{self.user_id}/sessions/{session_id}"
 
-        # If session_data has content, pass it as JSON. 
-        # If session_data is empty ({}), we pass None to json, 
+        # If session_data has content, pass it as JSON.
+        # If session_data is empty ({}), we pass None to json,
         # which usually results in a request with no body.
         payload = session_data if session_data else None
 
         print(f"Creating session: {session_id}...")
         self._make_request("POST", url, json=payload)
-        
+
         print("Session created successfully.")
         return session_id
 
-    def run_interaction(self, session_id: str, question: str, streaming: bool=False) -> Dict[str, Any]:
+    def run_interaction(
+        self, session_id: str, question: str, streaming: bool = False
+    ) -> Dict[str, Any]:
         """
         Sends a question to the agent.
 
@@ -152,7 +160,7 @@ class AgentClient:
         # Merge headers if provided in kwargs, but don't overwrite Authorization if not needed
         if "headers" in kwargs:
             headers.update(kwargs.pop("headers"))
-        
+
         retries = 3
         delay = 1
         for i in range(retries):
@@ -178,12 +186,12 @@ class AgentClient:
                 response = requests.get(url, headers=headers)
                 if response.status_code == 404:
                     if i < retries - 1:
-                         time.sleep(delay)
-                         delay *= 2
-                         continue
+                        time.sleep(delay)
+                        delay *= 2
+                        continue
                     else:
                         raise requests.exceptions.HTTPError(f"404 Not Found: {url}")
-                
+
                 response.raise_for_status()
                 data = response.json()
                 if data:
@@ -199,26 +207,26 @@ class AgentClient:
             delay *= 2
         raise RuntimeError("Retries exhausted")
 
-
     # --- Static Utility Methods for Analysis ---
 
     @staticmethod
     def analyze_trace_and_extract_spans(trace_data: List[Dict]) -> List[Dict]:
         """Analyzes raw trace data to build a tree and extract classified information."""
-        
+
         class _SpanNode:
             def __init__(self, span_data):
                 self.data = span_data
-                self.id = span_data.get('span_id')
-                self.parent_id = span_data.get('parent_span_id')
+                self.id = span_data.get("span_id")
+                self.parent_id = span_data.get("parent_span_id")
                 self.children = []
+
             def add_child(self, child_node):
                 self.children.append(child_node)
 
         def build_trace_tree(trace_data):
             span_nodes = {}
             for span in trace_data:
-                span_nodes[span['span_id']] = _SpanNode(span)
+                span_nodes[span["span_id"]] = _SpanNode(span)
             root_nodes = []
             for span_id, node in span_nodes.items():
                 if node.parent_id and node.parent_id in span_nodes:
@@ -229,92 +237,119 @@ class AgentClient:
 
         def extract_span_information(span_node):
             span_data = span_node.data
-            name = span_data.get('name', '')
-            attributes = span_data.get('attributes', {})
-            start_time = span_data.get('start_time', 0)
-            end_time = span_data.get('end_time', 0)
-            duration_ms = (end_time - start_time) / 1_000_000 if start_time and end_time else 0
+            name = span_data.get("name", "")
+            attributes = span_data.get("attributes", {})
+            start_time = span_data.get("start_time", 0)
+            end_time = span_data.get("end_time", 0)
+            duration_ms = (
+                (end_time - start_time) / 1_000_000 if start_time and end_time else 0
+            )
 
             extracted_info = {
-                'name': name,
-                'span_id': span_data.get('span_id'),
-                'parent_span_id': span_data.get('parent_span_id'),
-                'duration_ms': round(duration_ms, 2),
-                'type': 'OTHER',
-                'details': {}
+                "name": name,
+                "span_id": span_data.get("span_id"),
+                "parent_span_id": span_data.get("parent_span_id"),
+                "duration_ms": round(duration_ms, 2),
+                "type": "OTHER",
+                "details": {},
             }
 
-            if 'agent_run' in name or 'invoke_agent' in name:
-                extracted_info['type'] = 'AGENT_RUN'
+            if "agent_run" in name or "invoke_agent" in name:
+                extracted_info["type"] = "AGENT_RUN"
                 try:
                     # Support "agent_run [name]", "agent_run[name]", "invoke_agent name"
-                    if '[' in name and ']' in name:
-                        extracted_info['details']['agent_name'] = re.search(r'\[(.*)\]', name).group(1)
+                    if "[" in name and "]" in name:
+                        extracted_info["details"]["agent_name"] = re.search(
+                            r"\[(.*)\]", name
+                        ).group(1)
                     else:
                         # Assume "invoke_agent name" or similar
                         parts = name.split(maxsplit=1)
                         if len(parts) > 1:
-                             extracted_info['details']['agent_name'] = parts[1].strip()
+                            extracted_info["details"]["agent_name"] = parts[1].strip()
                         else:
-                             extracted_info['details']['agent_name'] = 'unknown'
+                            extracted_info["details"]["agent_name"] = "unknown"
                 except (IndexError, AttributeError):
-                    extracted_info['details']['agent_name'] = 'unknown'
-            elif 'tool_call' in name or 'execute_tool' in name:
-                extracted_info['type'] = 'TOOL_CALL'
-                tool_name = attributes.get('gen_ai.tool.name')
+                    extracted_info["details"]["agent_name"] = "unknown"
+            elif "tool_call" in name or "execute_tool" in name:
+                extracted_info["type"] = "TOOL_CALL"
+                tool_name = attributes.get("gen_ai.tool.name")
                 if not tool_name:
                     try:
-                        tool_name = re.search(r'\[(.*)\]', name).group(1)
+                        tool_name = re.search(r"\[(.*)\]", name).group(1)
                     except (IndexError, AttributeError):
                         # Fallback for "execute_tool name"
-                        tool_name = name.split(' ')[-1] if ' ' in name else 'unknown'
-                
-                extracted_info['details']['tool_name'] = tool_name
-                
-                if 'gcp.vertex.agent.tool_call_args' in attributes:
+                        tool_name = name.split(" ")[-1] if " " in name else "unknown"
+
+                extracted_info["details"]["tool_name"] = tool_name
+
+                if "gcp.vertex.agent.tool_call_args" in attributes:
                     try:
-                        extracted_info['details']['arguments'] = json.loads(attributes['gcp.vertex.agent.tool_call_args'])
+                        extracted_info["details"]["arguments"] = json.loads(
+                            attributes["gcp.vertex.agent.tool_call_args"]
+                        )
                     except (json.JSONDecodeError, TypeError):
-                        extracted_info['details']['arguments'] = attributes['gcp.vertex.agent.tool_call_args']
+                        extracted_info["details"]["arguments"] = attributes[
+                            "gcp.vertex.agent.tool_call_args"
+                        ]
 
             # Check if it's a tool response (sometimes unified in execute_tool span)
-            if 'tool_response' in name or ('execute_tool' in name and 'gcp.vertex.agent.tool_response' in attributes):
-                if extracted_info['type'] == 'OTHER': # Don't overwrite if already classified as call
-                     extracted_info['type'] = 'TOOL_RESPONSE'
-                
-                if 'gcp.vertex.agent.tool_response' in attributes:
-                    try:
-                        tool_response = json.loads(attributes['gcp.vertex.agent.tool_response'])
-                        extracted_info['details']['response'] = tool_response
-                    except (json.JSONDecodeError, TypeError):
-                        extracted_info['details']['raw_response'] = attributes['gcp.vertex.agent.tool_response']
+            if "tool_response" in name or (
+                "execute_tool" in name
+                and "gcp.vertex.agent.tool_response" in attributes
+            ):
+                if (
+                    extracted_info["type"] == "OTHER"
+                ):  # Don't overwrite if already classified as call
+                    extracted_info["type"] = "TOOL_RESPONSE"
 
-            elif name == 'call_llm':
-                extracted_info['type'] = 'LLM_CALL'
-                if 'gen_ai.request.model' in attributes:
-                    extracted_info['details']['model'] = attributes['gen_ai.request.model']
-                if 'gcp.vertex.agent.llm_request' in attributes:
+                if "gcp.vertex.agent.tool_response" in attributes:
                     try:
-                        extracted_info['details']['request'] = json.loads(attributes['gcp.vertex.agent.llm_request'])
+                        tool_response = json.loads(
+                            attributes["gcp.vertex.agent.tool_response"]
+                        )
+                        extracted_info["details"]["response"] = tool_response
+                    except (json.JSONDecodeError, TypeError):
+                        extracted_info["details"]["raw_response"] = attributes[
+                            "gcp.vertex.agent.tool_response"
+                        ]
+
+            elif name == "call_llm":
+                extracted_info["type"] = "LLM_CALL"
+                if "gen_ai.request.model" in attributes:
+                    extracted_info["details"]["model"] = attributes[
+                        "gen_ai.request.model"
+                    ]
+                if "gcp.vertex.agent.llm_request" in attributes:
+                    try:
+                        extracted_info["details"]["request"] = json.loads(
+                            attributes["gcp.vertex.agent.llm_request"]
+                        )
                     except (json.JSONDecodeError, TypeError):
                         pass
-                if 'gcp.vertex.agent.llm_response' in attributes:
+                if "gcp.vertex.agent.llm_response" in attributes:
                     try:
-                        extracted_info['details']['response'] = json.loads(attributes['gcp.vertex.agent.llm_response'])
+                        extracted_info["details"]["response"] = json.loads(
+                            attributes["gcp.vertex.agent.llm_response"]
+                        )
                     except (json.JSONDecodeError, TypeError):
                         pass
 
-            if 'http.method' in attributes:
-                extracted_info['type'] = 'HTTP_REQUEST'
-                extracted_info['details']['method'] = attributes.get('http.method')
-                extracted_info['details']['url'] = attributes.get('http.url')
-                extracted_info['details']['status_code'] = attributes.get('http.status_code')
+            if "http.method" in attributes:
+                extracted_info["type"] = "HTTP_REQUEST"
+                extracted_info["details"]["method"] = attributes.get("http.method")
+                extracted_info["details"]["url"] = attributes.get("http.url")
+                extracted_info["details"]["status_code"] = attributes.get(
+                    "http.status_code"
+                )
 
             return extracted_info
 
         def traverse_and_extract(span_node):
             extracted_info = extract_span_information(span_node)
-            extracted_info['children'] = [traverse_and_extract(child) for child in span_node.children]
+            extracted_info["children"] = [
+                traverse_and_extract(child) for child in span_node.children
+            ]
             return extracted_info
 
         root_nodes = build_trace_tree(trace_data)
@@ -323,24 +358,25 @@ class AgentClient:
     @staticmethod
     def get_latency_from_spans(analyzed_trace: List[Dict]) -> List[Dict]:
         """Extracts latency information from the analyzed trace."""
-        def process_span(span):
-            span_type = span.get('type')
-            name = span.get('name')
 
-            if span_type == 'HTTP_REQUEST':
-                details = span.get('details', {})
-                method = details.get('method', '')
-                url = details.get('url', '')
+        def process_span(span):
+            span_type = span.get("type")
+            name = span.get("name")
+
+            if span_type == "HTTP_REQUEST":
+                details = span.get("details", {})
+                method = details.get("method", "")
+                url = details.get("url", "")
                 name = f"{method} [{url}]"
 
             latency_info = {
                 "name": name,
                 "type": span_type,
-                "duration_seconds": round(span.get('duration_ms', 0) / 1000.0, 4),
+                "duration_seconds": round(span.get("duration_ms", 0) / 1000.0, 4),
             }
-            children = span.get('children')
+            children = span.get("children")
             if children:
-                latency_info['children'] = [process_span(child) for child in children]
+                latency_info["children"] = [process_span(child) for child in children]
             return latency_info
 
         return [process_span(root) for root in analyzed_trace]
@@ -349,22 +385,24 @@ class AgentClient:
     def get_agent_trajectory(analyzed_trace: List[Dict]) -> List[str]:
         """Extracts the sequence of agents invoked."""
         trajectory = []
+
         def traverse(span):
             # Check type first for robustness, rely on previously extracted details
-            if span.get('type') == 'AGENT_RUN':
-                agent_name = span.get('details', {}).get('agent_name')
+            if span.get("type") == "AGENT_RUN":
+                agent_name = span.get("details", {}).get("agent_name")
                 if agent_name:
                     trajectory.append(agent_name)
-            
+
             # Fallback for old traces or unclassified spans (legacy check)
-            elif 'agent_run' in span.get('name', ''):
-                match = re.search(r'\[(.*)\]', span.get('name', ''))
+            elif "agent_run" in span.get("name", ""):
+                match = re.search(r"\[(.*)\]", span.get("name", ""))
                 if match:
                     agent_name = match.group(1)
                     trajectory.append(agent_name)
-                    
-            for child in span.get('children', []):
+
+            for child in span.get("children", []):
                 traverse(child)
+
         for root in analyzed_trace:
             traverse(root)
         return trajectory
@@ -372,14 +410,14 @@ class AgentClient:
     @staticmethod
     def get_state_variable(session_data: Dict, variable: str) -> Any:
         """Extracts a state variable from the session data."""
-        state = session_data.get('state', {})
+        state = session_data.get("state", {})
         return state.get(variable, None)
 
     @staticmethod
     def get_tool_interactions(session_data: Dict) -> List[Dict[str, Any]]:
         """
         Extracts a chronological list of tool interactions (call and response pairs) from the session events.
-        
+
         Returns:
             A list of dictionaries, where each dictionary represents a tool execution:
             {
@@ -389,46 +427,52 @@ class AgentClient:
                 "call_id": str
             }
         """
-        events = session_data.get('events', [])
+        events = session_data.get("events", [])
         interactions = []
-        pending_calls = {} # Map call_id to partial interaction dict
+        pending_calls = {}  # Map call_id to partial interaction dict
 
         for event in events:
-            parts = event.get('content', {}).get('parts', [])
+            parts = event.get("content", {}).get("parts", [])
             for part in parts:
                 # Handle Function Call
-                if 'functionCall' in part:
-                    call = part['functionCall']
-                    call_id = call.get('id')
-                    tool_name = call.get('name')
-                    args = call.get('args')
-                    
+                if "functionCall" in part:
+                    call = part["functionCall"]
+                    call_id = call.get("id")
+                    tool_name = call.get("name")
+                    args = call.get("args")
+
                     if call_id:
                         pending_calls[call_id] = {
                             "tool_name": tool_name,
                             "input_arguments": args,
                             "call_id": call_id,
-                            "output_result": None # Placeholder
+                            "output_result": None,  # Placeholder
                         }
 
                 # Handle Function Response
-                elif 'functionResponse' in part:
-                    response = part['functionResponse']
-                    call_id = response.get('id')
-                    result = response.get('response', {}).get('result') # Assuming standard 'result' key, but grabbing whole response if needed is safer
-                    
-                    if not result and 'response' in response: # Fallback if no 'result' key
-                         result = response['response']
+                elif "functionResponse" in part:
+                    response = part["functionResponse"]
+                    call_id = response.get("id")
+                    result = response.get(
+                        "response", {}
+                    ).get(
+                        "result"
+                    )  # Assuming standard 'result' key, but grabbing whole response if needed is safer
+
+                    if (
+                        not result and "response" in response
+                    ):  # Fallback if no 'result' key
+                        result = response["response"]
 
                     if call_id and call_id in pending_calls:
                         interaction = pending_calls.pop(call_id)
-                        interaction['output_result'] = result
+                        interaction["output_result"] = result
                         interactions.append(interaction)
-        
+
         # Add any calls that didn't get a response (e.g. failed or interrupted)
         for call_id, interaction in pending_calls.items():
-             interaction['status'] = 'no_response'
-             interactions.append(interaction)
+            interaction["status"] = "no_response"
+            interactions.append(interaction)
 
         return interactions
 
@@ -436,7 +480,7 @@ class AgentClient:
     def get_sub_agent_trace(session_data: Dict) -> List[Dict[str, Any]]:
         """
         Extracts the sequence of agent turns and their text responses.
-        
+
         Returns:
             A list of dictionaries, where each dictionary represents an agent's turn:
             {
@@ -445,41 +489,43 @@ class AgentClient:
                 "timestamp": float
             }
         """
-        events = session_data.get('events', [])
+        events = session_data.get("events", [])
         trace = []
-        
+
         for event in events:
-            author = event.get('author')
+            author = event.get("author")
             # Skip user events
-            if author == 'user':
+            if author == "user":
                 continue
-                
-            parts = event.get('content', {}).get('parts', [])
+
+            parts = event.get("content", {}).get("parts", [])
             text_content = []
-            
+
             for part in parts:
-                if 'text' in part:
-                    text_content.append(part['text'])
-            
+                if "text" in part:
+                    text_content.append(part["text"])
+
             if text_content:
-                trace.append({
-                    "agent_name": author,
-                    "text_response": "\n".join(text_content),
-                    "timestamp": event.get('timestamp')
-                })
-                
+                trace.append(
+                    {
+                        "agent_name": author,
+                        "text_response": "\n".join(text_content),
+                        "timestamp": event.get("timestamp"),
+                    }
+                )
+
         return trace
 
     @staticmethod
     def get_final_payload_field(session_data: Dict, field_name: str) -> Any:
         """Extracts a field from the final JSON payload event."""
-        events = session_data.get('events', [])
+        events = session_data.get("events", [])
         for event in reversed(events):
-            content = event.get('content', {})
-            parts = content.get('parts', [])
+            content = event.get("content", {})
+            parts = content.get("parts", [])
             for part in parts:
-                text = part.get('text', '')
-                if text and 'natural_language_response' in text:
+                text = part.get("text", "")
+                if text and "natural_language_response" in text:
                     try:
                         payload = json.loads(text)
                         return payload.get(field_name)

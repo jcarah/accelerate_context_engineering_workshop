@@ -1,8 +1,13 @@
-# Evaluation Pipeline
+# Agent Evaluation Pipeline
 
 This document provides a comprehensive guide to the evaluation pipeline, a multi-step process designed to test, measure, and analyze the performance of ADK agents.
 
-## Overview
+## 🚀 Overview
+
+This pipeline automates the end-to-end evaluation process:
+1.  **Interaction:** Runs a dataset of questions against your agent API (concurrently).
+2.  **Evaluation:** Grades the interactions using both **Deterministic** logic (cost, latency) and **LLM-as-a-Judge** metrics (correctness, tool usage).
+3.  **Analysis:** Generates a human-readable Q&A log and an AI-powered Root Cause Analysis report.
 
 We support two primary workflows for generating evaluation data:
 
@@ -19,7 +24,19 @@ We support two primary workflows for generating evaluation data:
 
 ---
 
-## Workflow: The Simulation Path
+## 📂 Project Structure
+
+| Directory | Purpose |
+| :--- | :--- |
+| **`datasets/`** | Contains the **Golden Datasets** (JSON) defining questions and expected answers. This is your input source. |
+| **`metrics/`** | Contains the **Rubrics** (JSON) for LLM-based grading. Defines what "Success" looks like for your agent. |
+| **`scripts/`** | Contains the core logic for metrics and interactions. `deterministic_metrics.py` lives here. |
+| **`tests/`** | Unit tests for the *evaluation framework itself* (not the agents). Ensures the pipeline is reliable. |
+| **`results/`** | The output directory. See [OUTPUTS.md](OUTPUTS.md) for a detailed breakdown of every generated file. |
+
+---
+
+## Workflow 1: The Simulation Path (Recommended)
 
 ### Step 0: Blueprinting & Scenarios
 Before running anything, we define *what* we want to test. We analyze the agent's code to create "Conversation Scenarios."
@@ -56,7 +73,6 @@ Execute the scenarios using the ADK CLI. This runs the agent locally and perform
 
 ---
 
-
 ### Step 2: Process Simulation Data (The Bridge)
 This step bridges the gap between the ADK Eval's raw history logs and our evaluation pipeline (ADK Eval with User Simulation currently only supports 2 evaluation metrics: hallucination & safety). It converts the simulation traces into a structured, analyzable dataset.
 
@@ -92,9 +108,65 @@ This CSV is the "Golden Record" for analysis.
 | **`session_state`** | **Full Fidelity:** Complete session object. | `{"state": {...}, "events": [...]}` | JSON dump of the entire `session_details` object. |
 | **`session_trace`** | **Synthetic Trace:** OTEL-compatible spans. | `[{"name": "call_llm", "start_time": ...}]` | Synthetic span tree constructed from events for compatibility with trace analyzers. |
 
+---
 
-### Step 3: Deep Metrics Calculation (`02_agent_run_eval.py`)
-Now that we have the `run_<timestamp>.csv`, we can apply advanced Python-based metrics (e.g., business logic validation, complex latency breakdown) that go beyond the basic ADK checks.
+## Workflow 2: The Live/Remote Path
+
+### 🔄 Workflow & Key Files
+
+| Step | Script | Description |
+| :--- | :--- | :--- |
+| **1** | `01_agent_interaction.py` | **Data Collection.** Orchestrates `scripts/run_interactions.py` to hit your agent's API in parallel (`asyncio`). Enriches raw logs with traces and state variables via `scripts/process_interactions.py`. |
+| **2** | `02_agent_run_eval.py` | **Scoring.** Runs the evaluation suite. Uses `ThreadPoolExecutor` to run Vertex AI evaluations in parallel. Manages configuration via `Pydantic`. |
+| **3** | `03_analyze_eval_results.py` | **Insight Generation.** Produces `question_answer_log.md` (readable transcript) and uses Gemini to write `gemini_analysis.md` (technical diagnosis). |
+
+### ⚙️ Configuration
+
+The pipeline uses a **layered configuration** strategy (CLI > Env Vars > Defaults).
+
+#### Environment Variables (`.env`)
+Define these in `evaluation/.env` for infrastructure settings:
+
+```ini
+# Required
+EVAL_GOOGLE_CLOUD_PROJECT=your-project-id
+EVAL_GOOGLE_CLOUD_LOCATION=us-central1
+
+# Performance Tuning
+EVAL_MAX_WORKERS=4          # Number of parallel evaluation threads
+EVAL_MAX_RETRIES=3          # Retries for failed LLM calls
+EVAL_RETRY_DELAY_SECONDS=5  # Base delay for exponential backoff
+```
+
+#### CLI Arguments
+Used for run-specific inputs.
+
+**Step 1: Interaction**
+```bash
+uv run python 01_agent_interaction.py \
+  --app-name customer_service \
+  --base-url http://localhost:8080 \
+  --questions-file datasets/your_data.json
+```
+
+**Step 2: Evaluation**
+```bash
+uv run python 02_agent_run_eval.py \
+  --interaction-results-file results/.../processed_interaction.csv \
+  --metrics-files metrics/metric_definitions_customer_service.json
+```
+
+**Step 3: Analysis**
+```bash
+uv run python 03_analyze_eval_results.py \
+  --results-dir results/customer_service/2026...
+```
+
+---
+
+## Deep Metrics Calculation (`02_agent_run_eval.py`)
+
+Now that we have the `run_<timestamp>.csv` (from Simulation) or `processed_interaction.csv` (from Live/Remote), we can apply advanced Python-based metrics (e.g., business logic validation, complex latency breakdown) that go beyond the basic ADK checks.
 
 **Usage:**
 
@@ -118,37 +190,7 @@ uv run python 02_agent_run_eval.py \
 | `--test-description` | A detailed description of the test scenario. | Standard description. |
 | `--metric-filter` | Filter metrics (e.g., `metric_type:llm` or `agents:customer_service`). | Run all metrics. |
 
-### Deterministic Metrics Explained
-
-These metrics provide objective, reproducible measurements by analyzing execution traces.
-
-*   **`token_usage`**: Calculates the **Estimated Cost in USD** for the session based on model-specific pricing (e.g., Gemini 1.5 Pro).
-*   **`latency_metrics`**: Measures both **Total Session Duration** and **Average Turn Latency** in seconds, breaking down time spent in LLM calls vs tools.
-
 ---
-
-
-## Customizing Metrics
-
-The evaluation framework is designed for extensibility. `02_agent_run_eval.py` dynamically loads metrics from two sources, so you can add or modify them without changing the main script.
-
-### 1. Deterministic Metrics (Python)
-Logic-based metrics are defined in `evaluation/scripts/deterministic_metrics.py`.
-
-*   **How it works:** The script maintains a `DETERMINISTIC_METRICS` registry mapping metric names to Python functions.
-*   **To add a metric:**
-    1.  Define a new function in `deterministic_metrics.py` (e.g., `def calculate_my_metric(...)`).
-    2.  Add it to the `DETERMINISTIC_METRICS` dictionary at the bottom of the file.
-    3.  `02_agent_run_eval.py` will automatically detect and run it if listed in your JSON config or if passed via CLI filters.
-
-### 2. LLM-based Metrics (JSON)
-AI-as-judge metrics are defined in JSON configuration files (e.g., `metrics/metric_definitions_customer_service.json`).
-
-*   **How it works:** These files define the prompt templates and data mapping logic.
-*   **To add a metric:** Simply add a new entry to the `metrics` object in your JSON file. The pipeline reads these files at runtime, so no code changes are needed.
-
----
-
 
 # Metrics Reference
 
@@ -157,17 +199,17 @@ Calculated directly from execution traces without using an LLM.
 
 | Metric | Description | Calculation Logic |
 | :--- | :--- | :--- |
-| **`token_usage`** | Cost & Volume | Sums prompt, completion, and cached tokens from `usage_metadata`. Calculates estimated cost using model-specific pricing (e.g., Gemini 1.5 Pro). |
-| **`latency_metrics`** | Speed | **Total:** Sum of all agent invocation durations (excludes user think time). **Avg Turn:** Mean duration of agent invocations. **LLM/Tool:** Sum of individual span durations. |
-| **`cache_efficiency`** | Optimization | `Cache Hit Rate = Cached Tokens / (Cached + Fresh Prompt Tokens)`. Measures how effectively the Context Cache is being used. |
-| **`thinking_metrics`** | Cognitive Effort | `Reasoning Ratio = Thinking Tokens / Total Output Tokens`. Measures the proportion of output spent on internal reasoning (for Thinking models). |
-| **`tool_utilization`** | Tool Usage | Counts total and unique tool calls. Provides a breakdown of which tools were called how often. |
-| **`tool_success_rate`** | Reliability | `Successful Calls / Total Calls`. Parses tool output JSON to check for `status: "error"` or error messages. |
-| **`grounding_utilization`** | Factuality Proxy | Counts the number of Google Search grounding chunks (citations) present in the LLM response metadata. |
-| **`context_saturation`** | Capacity Planning | Tracks the **Maximum Total Tokens** used in any single turn. Helps identify if the session is nearing the model's context window limit. |
-| **`agent_handoffs`** | Orchestration | Counts the number of times control transferred between agents (`invoke_agent` spans). Validates multi-agent architecture. |
-| **`output_density`** | Conciseness | `Average Output Tokens per LLM Call`. A proxy for the "Reduce" pillar; lower values (for non-generative tasks) often indicate better instruction following. |
-| **`sandbox_usage`** | Offloading | Counts calls to file system tools (`save_artifact`, `read_file`, etc.). Deterministically verifies if state is being offloaded to disk. |
+| **`token_usage`** | Cost & Volume | Sums prompt, completion, and cached tokens from `usage_metadata`. Calculates estimated cost using model-specific pricing. |
+| **`latency_metrics`** | Speed | Measures **Total Session Duration**, **Avg Turn Latency**, and **Time to First Response**. |
+| **`cache_efficiency`** | Optimization | `Cache Hit Rate = Cached Tokens / (Cached + Fresh Prompt Tokens)`. |
+| **`thinking_metrics`** | Cognitive Effort | `Reasoning Ratio = Thinking Tokens / Total Output Tokens`. |
+| **`tool_utilization`** | Tool Usage | Counts total and unique tool calls. |
+| **`tool_success_rate`** | Reliability | `Successful Calls / Total Calls`. Checks for `status: "error"` in tool responses. |
+| **`grounding_utilization`** | Factuality Proxy | Counts the number of Google Search grounding chunks (citations). |
+| **`context_saturation`** | Capacity Planning | Tracks the **Maximum Total Tokens** used in any single turn. |
+| **`agent_handoffs`** | Orchestration | Counts the number of times control transferred between agents (`invoke_agent` spans). |
+| **`output_density`** | Conciseness | `Average Output Tokens per LLM Call`. |
+| **`sandbox_usage`** | Offloading | Counts calls to file system tools (`read_file`, `save_artifact`, etc.). |
 
 ## 2. LLM Metrics (Customer Service)
 Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_customer_service.json`.
@@ -187,32 +229,33 @@ Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_reta
 
 ---
 
+## 📊 Outputs & Artifacts
 
-## Example Evaluation Commands
+All results are saved in `evaluation/results/<app_name>/<timestamp>/`.
 
-### Retail Location Strategy Agent
-```bash
-uv run python 02_agent_run_eval.py \
-  --interaction-results-file results/app/20260110_005102/processed_interaction_format_golden_data.csv \
-  --metrics-files metrics/metric_definitions_retail_location.json \
-  --input-label retail_run_2
-```
+| File | Description |
+| :--- | :--- |
+| `processed_interaction_*.csv` | **Raw Data.** The inputs, agent responses, traces, and state variables used for grading. |
+| `evaluation_results_*.csv` | **Graded Data.** The processed interactions enriched with metric scores and explanations. |
+| `eval_summary.json` | **Aggregated Stats.** Mean scores, costs, latencies, and per-question breakdowns. |
+| `question_answer_log.md` | **Transcript.** A readable Markdown log of every Q&A pair, reference data, and extracted state. |
+| `gemini_analysis.md` | **Diagnosis.** An AI-generated report identifying root causes of failures and performance trends. |
 
-### Customer Service Agent
-```bash
-uv run python 02_agent_run_eval.py \
-  --interaction-results-file results/customer_service/20260110_002956/processed_interaction_format_golden_data.csv \
-  --metrics-files metrics/metric_definitions_customer_service.json \
-  --input-label customer_service_run_3
-```
+For a complete data dictionary, see **[OUTPUTS.md](OUTPUTS.md)**.
 
 ---
 
+## 🛠️ Developer Guide: Adding a New Agent
 
-## Extending the Framework
+To evaluate a new agent (e.g., "Travel Booker"), follow these steps:
 
-### Creating New Evaluation Datasets
-You can create raw datasets using the `adk eval` command. Use `convert_test_to_golden.py` to structure existing turn-based test data:
+### 1. Create a Golden Dataset
+Create a new file in `datasets/travel_booker_golden.json`.
+*   **Format:** List of questions with expected outputs (`reference_data`).
+*   **Key Fields:** `user_inputs`, `reference_tool_interactions`, `metadata`.
+*   **Guide:** See **[DATASETS_GUIDE.md](DATASETS_GUIDE.md)** for the full schema and examples.
+
+Alternatively, convert a test file:
 
 ```bash
 uv run python scripts/convert_test_to_golden.py \
@@ -223,25 +266,12 @@ uv run python scripts/convert_test_to_golden.py \
   --prefix q_prefix
 ```
 
----
+### 2. Define Metrics
+Create a new file in `metrics/metric_definitions_travel_booker.json`.
+*   **Dataset Mapping:** Map your agent's specific state variables (e.g., `extracted_data:booking_details`) to the metric's input variables.
+*   **Rubric:** Define the criteria for `llm` metrics (e.g., "Did the agent capture the correct travel dates?").
+*   **Guide:** See **[METRICS_GUIDE.md](METRICS_GUIDE.md)** for schema details and templates.
 
+### 3. Run the Pipeline
 
-## Maintenance Note (TODO)
-
-The file `02_agent_run_eval.py` currently operates with an older structure and version of the Vertex AI evaluation service. A migration is needed to align with the latest best practices.
-
-**Required Actions:**
-
-1.  **Migrate to Client:** Transition from `EvalTask` to the new `client` method for evaluation.
-    *   Reference: [Define your evaluation metrics | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-overview#define_metrics)
-    *   Alternatively, evaluate if `EvalTask` should be retained but updated to match: [Evaluate Gen AI agents | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluate-gen-ai-agents)
-
-2.  **Refactor Metrics Calculation:**
-    *   Consider using **Autoraters** for more robust evaluation.
-    *   Update `deterministic_metrics.py` to potentially use custom function metrics.
-    *   Validate that Custom metrics definitions remain compatible.
-    *   Explore using **Agentic Pre-written metrics** and **Adaptive rubrics**.
-
-3.  **Explain Metric Mapping:**
-    *   Document the "WHY" behind `metric.json` and its mapping logic.
-    *   Reference: [Details for managed rubric-based metrics | Generative AI on Vertex AI | Google Cloud Documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-rubrics)
+Execute the standard workflow (Live or Simulation) pointing to your new files.

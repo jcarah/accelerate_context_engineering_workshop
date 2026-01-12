@@ -1,0 +1,31 @@
+[
+  {
+    "name": "invocation",
+    "start_time": 1700000000000000000,
+    "end_time": 1700000005000000000,
+    "attributes": {}
+  },
+  {
+    "name": "call_llm",
+    "start_time": 1700000000200000000,
+    "end_time": 1700000002200000000,
+    "attributes": {
+      "gen_ai.request.model": "gemini-1.5-flash",
+      "gcp.vertex.agent.llm_response": {
+        "usage_metadata": {
+          "prompt_token_count": 1000,
+          "candidates_token_count": 50,
+          "total_token_count": 1050
+        }
+      }
+    }
+  },
+  {
+    "name": "execute_tool search_tool",
+    "start_time": 1700000002300000000,
+    "end_time": 1700000003300000000,
+    "attributes": {
+      "gcp.vertex.agent.tool_response": "{\"status\": \"success\", \"data\": \"result\"}"
+    }
+  }
+]

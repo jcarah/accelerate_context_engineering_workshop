@@ -36,7 +36,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, TypedDict, Union
+from typing import Any, Dict, List, Optional, TypedDict
 
 import pandas as pd
 from google import genai
@@ -49,6 +49,7 @@ from evaluation.gemini_prompt_builder import GeminiAnalysisPrompter
 
 class LogEntry(TypedDict):
     """A structured representation of a single question's evaluation results."""
+
     question_id: str
     metadata: Dict[str, Any]
     user_question: str
@@ -61,22 +62,27 @@ class LogEntry(TypedDict):
 def upload_to_gcs(results_dir: Path, bucket_name: str, destination_prefix: str) -> None:
     """
     Placeholder for uploading evaluation artifacts to Google Cloud Storage.
-    
+
     Args:
         results_dir: The local directory containing results.
         bucket_name: The GCS bucket name.
         destination_prefix: The prefix path in the bucket.
     """
-    print(f"\n--- [PLACEHOLDER] Uploading Results to GCS: gs://{bucket_name}/{destination_prefix} ---")
+    print(
+        f"\n--- [PLACEHOLDER] Uploading Results to GCS: gs://{bucket_name}/{destination_prefix} ---"
+    )
     # TODO: Implement GCS upload logic using google-cloud-storage
     pass
 
 
 def robust_json_loads(x: Any) -> Optional[Dict[str, Any]]:
     """Safely load JSON strings, handling various input types."""
-    if x is None: return None
-    if isinstance(x, (dict, list)): return x
-    if not isinstance(x, str) or not x: return None
+    if x is None:
+        return None
+    if isinstance(x, (dict, list)):
+        return x
+    if not isinstance(x, str) or not x:
+        return None
     try:
         return json.loads(x)
     except (json.JSONDecodeError, TypeError):
@@ -100,7 +106,11 @@ def _process_log_row(row: pd.Series, index: int) -> Optional[LogEntry]:
         extracted_data = robust_json_loads(row.get("extracted_data", {})) or {}
 
         agents_evaluated = robust_json_loads(row.get("agents_evaluated", []))
-        agents_list = agents_evaluated if isinstance(agents_evaluated, list) else [agents_evaluated]
+        agents_list = (
+            agents_evaluated
+            if isinstance(agents_evaluated, list)
+            else [agents_evaluated]
+        )
 
         eval_results = robust_json_loads(row.get("eval_results", "{{}}")) or {}
 
@@ -122,7 +132,7 @@ def _format_log_entry_markdown(entry: LogEntry, entry_num: int) -> str:
     """Formats a single log entry into a markdown string."""
     agents = ", ".join(entry["agents_evaluated"])
     metadata_str = ", ".join([f"{k}: {v}" for k, v in entry["metadata"].items()])
-    
+
     header = f"## {entry_num}. {entry['question_id']}\n**Metadata:** {metadata_str}\n**Agents:** {agents}"
 
     # Extract dynamic metric summary
@@ -143,7 +153,7 @@ def _format_log_entry_markdown(entry: LogEntry, entry_num: int) -> str:
     return f"""{header}
 
 ### Question:
-{entry['user_question']}
+{entry["user_question"]}
 
 ### Reference Data (Expected):
 ```json
@@ -216,7 +226,10 @@ def analyze_evaluation_results(
                     and "score" in details
                 ):
                     all_explanations[metric].append(
-                        {"score": details["score"], "explanation": details["explanation"]}
+                        {
+                            "score": details["score"],
+                            "explanation": details["explanation"],
+                        }
                     )
         except (json.JSONDecodeError, TypeError, KeyError):
             continue
@@ -224,13 +237,18 @@ def analyze_evaluation_results(
     output_lines = ["--- Evaluation Analysis ---\n"]
     for metric, mean_score in average_metrics.items():
         output_lines.append(f"\n## Metric: `{metric}`\n")
-        score_str = f"{mean_score:.4f}" if isinstance(mean_score, (int, float)) else str(mean_score)
+        score_str = (
+            f"{mean_score:.4f}"
+            if isinstance(mean_score, (int, float))
+            else str(mean_score)
+        )
         output_lines.append(f"**Average Score:** {score_str}\n")
 
         if explanations := all_explanations.get(metric):
             # Show first 10 explanations as a sample to avoid prompt bloating
             explanation_summary = "\n".join(
-                f"- [Score: {exp['score']}] {exp['explanation']}" for exp in explanations[:10]
+                f"- [Score: {exp['score']}] {exp['explanation']}"
+                for exp in explanations[:10]
             )
             output_lines.append(f"**Sample Explanations:**\n{explanation_summary}\n")
 
@@ -247,7 +265,7 @@ def generate_gemini_analysis(
     # Find relevant context files dynamically
     consolidated_metrics_file = results_dir / "temp_consolidated_metrics.json"
     question_file = results_dir / "temp_consolidated_questions.json"
-    
+
     context_files = {
         str(consolidated_metrics_file),
         "evaluation/scripts/deterministic_metrics.py",
@@ -256,7 +274,7 @@ def generate_gemini_analysis(
         "retail-ai-location-strategy/app/agent.py",
         str(question_file),
     }
-    
+
     context_content = {}
     for file_path in context_files:
         try:
@@ -281,7 +299,9 @@ def generate_gemini_analysis(
     try:
         client = genai.Client(http_options=HttpOptions(api_version="v1"))
         # Using gemini-2.0-flash for faster/cheaper analysis
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash", contents=prompt
+        )
 
         analysis_text = response.text
         output_path.write_text(analysis_text, encoding="utf-8")
@@ -332,14 +352,23 @@ def main():
 
     # 2. Generate Gemini Analysis
     if not args.skip_gemini:
-        summary, analysis_content = analyze_evaluation_results(summary_file, results_file)
+        summary, analysis_content = analyze_evaluation_results(
+            summary_file, results_file
+        )
         if summary and analysis_content:
             analysis_path = args.results_dir / "gemini_analysis.md"
-            generate_gemini_analysis(summary, analysis_content, args.results_dir, analysis_path)
+            generate_gemini_analysis(
+                summary, analysis_content, args.results_dir, analysis_path
+            )
 
     # 3. GCS Upload (Placeholder)
     if args.gcs_bucket:
-        upload_to_gcs(args.results_dir, args.gcs_bucket, f"evaluations/{datetime.now().strftime('%Y%m%d')}")
+        upload_to_gcs(
+            args.results_dir,
+            args.gcs_bucket,
+            f"evaluations/{datetime.now().strftime('%Y%m%d')}",
+        )
+
 
 if __name__ == "__main__":
     main()

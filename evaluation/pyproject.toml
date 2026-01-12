@@ -7,11 +7,12 @@ dependencies = [
     "pandas>=2.0.0",
     "requests>=2.31.0",
     "google-cloud-aiplatform>=1.70.0",
-    "google-cloud-aiplatform[evaluation,agent-engines]~=1.95.1",
+    "google-cloud-aiplatform[evaluation,agent-engines]>=1.132.0",
     "db-dtypes (>=1.4.2,<2.0.0)",
     "google-cloud-bigquery>=3.25.0",
-    "google-adk>=0.1.0",
+    "google-adk>=1.22.0",
     "tqdm>=4.66.0",
+    "pydantic-settings>=2.12.0",
 ]
 
 [build-system]
@@ -20,3 +21,13 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple/"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.11",
+]

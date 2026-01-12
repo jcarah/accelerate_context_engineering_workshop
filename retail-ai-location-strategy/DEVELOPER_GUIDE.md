@@ -400,6 +400,43 @@ The notebook can be run independently in:
 
 ## Troubleshooting
 
+### ⚠️ Critical Configuration & Setup Issues
+
+**1. Do NOT run `npm audit fix --force`**
+> [!WARNING]
+> Running `npm audit fix --force` in the frontend directory will downgrade `@copilotkit/react-ui` to an incompatible version, breaking the UI.
+> Always stick to the explicit versions defined in `package.json`.
+
+**2. Import Error: `LangGraphHttpAgent`**
+If you encounter `ImportError: cannot import name 'LangGraphHttpAgent'`, it is because `@copilotkit/runtime` v0.33+ moved this class.
+**Correct Import:**
+```typescript
+import { LangGraphHttpAgent } from "@copilotkit/runtime/langgraph"; // Correct
+// import { LangGraphHttpAgent } from "@copilotkit/runtime"; // Wrong
+```
+
+**3. Missing Frontend Utility Files**
+If you see build errors related to missing modules in `@/lib/`, ensure the following files exist in `app/frontend/lib/`. If missing, restore them from the source:
+- `types.ts`
+- `summaryHelpers.ts`
+- `parseCodeBlocks.ts`
+
+**4. "Agent Not Found" Runtime Error**
+This error occurs when the agent name configuration is inconsistent across the stack. Ensure the following three values match **exactly** (case-sensitive):
+1.  **Backend (`app/agent.py`):** The `name` attribute of your LangGraph agent.
+2.  **API Route (`app/frontend/app/api/copilotkit/route.ts`):** The key in the `agents` dictionary.
+    ```typescript
+    agents: {
+      retail_agent: ... // This key MUST match
+    }
+    ```
+3.  **Frontend Page (`app/frontend/app/page.tsx`):** The `agent` prop in `useCoAgent`.
+    ```typescript
+    useCoAgent({
+      name: "retail_agent" // MUST match the key above
+    })
+    ```
+
 ### Model Overload (503 errors)
 
 If you encounter `503 UNAVAILABLE - model overloaded` errors:

@@ -14,7 +14,7 @@ install:
 
 ## Run agent locally with ADK web UI
 dev:
-	uv run adk web . --port 8501
+	uv run adk web app --port 8502
 
 ## Alias for dev
 playground: dev
@@ -26,7 +26,7 @@ playground: dev
 ## Install AG-UI frontend dependencies
 ag-ui-install:
 	@echo "Installing AG-UI backend dependencies..."
-	pip3 install -r app/frontend/backend/requirements.txt
+	@echo "Backend dependencies are managed by uv in pyproject.toml. Run 'make install' to sync."
 	@echo "Installing AG-UI frontend dependencies..."
 	cd app/frontend && npm install
 	@if [ ! -f app/frontend/.env.local ]; then \
@@ -42,7 +42,7 @@ ag-ui:
 	@echo "Frontend will run at http://localhost:3000"
 	@echo ""
 	@trap 'kill 0' INT; \
-	(cd app/frontend/backend && python main.py) & \
+	uv run app/frontend/backend/main.py & \
 	(cd app/frontend && npm run dev) & \
 	wait
 
