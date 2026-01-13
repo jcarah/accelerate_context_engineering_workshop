@@ -1,277 +1,344 @@
-# Agent Evaluation Pipeline
+# Agent Evaluation Pipeline (`agent-eval`)
 
-This document provides a comprehensive guide to the evaluation pipeline, a multi-step process designed to test, measure, and analyze the performance of ADK agents.
+A production-grade evaluation framework for ADK agents. This CLI provides advanced metrics beyond ADK's built-in hallucination/safety checks, including tool usage accuracy, trajectory analysis, state management fidelity, and AI-powered root cause diagnosis.
 
-## 🚀 Overview
+## Overview
 
-This pipeline automates the end-to-end evaluation process:
-1.  **Interaction:** Runs a dataset of questions against your agent API (concurrently).
-2.  **Evaluation:** Grades the interactions using both **Deterministic** logic (cost, latency) and **LLM-as-a-Judge** metrics (correctness, tool usage).
-3.  **Analysis:** Generates a human-readable Q&A log and an AI-powered Root Cause Analysis report.
+### Two Evaluation Paths
 
-We support two primary workflows for generating evaluation data:
+#### Path A: Simulation Path (Recommended for Development)
+Uses the native ADK simulator to generate conversations from scenarios, then runs our extended metrics.
 
-### 1. The Simulation Path (Recommended)
-**"Write Scenarios, Generate Conversations."**
-*   **Best for:** Development, regression testing, and creating high-quality multi-turn datasets without manual effort.
-*   **How it works:** You define high-level *Conversation Scenarios* (your "wishlist" of user behaviors). The ADK User Simulator plays these out against your agent locally.
-*   **Advantage:** No need to manually script every turn or deploy the agent to a remote URL.
-
-### 2. The Live/Remote Path
-**"Run Questions against a URL."**
-*   **Best for:** End-to-end testing of deployed environments (Staging/Prod) or running legacy fixed-question datasets.
-*   **How it works:** You run `01_agent_interaction.py` to send a list of static questions to a running agent service (e.g., Cloud Run).
-
----
-
-## 📂 Project Structure
-
-| Directory | Purpose |
-| :--- | :--- |
-| **`datasets/`** | Contains the **Golden Datasets** (JSON) defining questions and expected answers. This is your input source. |
-| **`metrics/`** | Contains the **Rubrics** (JSON) for LLM-based grading. Defines what "Success" looks like for your agent. |
-| **`scripts/`** | Contains the core logic for metrics and interactions. `deterministic_metrics.py` lives here. |
-| **`tests/`** | Unit tests for the *evaluation framework itself* (not the agents). Ensures the pipeline is reliable. |
-| **`results/`** | The output directory. See [OUTPUTS.md](OUTPUTS.md) for a detailed breakdown of every generated file. |
-
----
-
-## Workflow 1: The Simulation Path (Recommended)
-
-### Step 0: Blueprinting & Scenarios
-Before running anything, we define *what* we want to test. We analyze the agent's code to create "Conversation Scenarios."
-
-*   **Input:** `conversation_scenarios.json`
-*   **Concept:** Instead of writing "User: Hi, Agent: Hello", you write "User wants to buy Petunias but needs a discount." The Simulator handles the dialogue.
-
-(See "Case Study: Blueprinting" below for details)
-
-### Step 1: User Simulation & ADK Evaluation (CLI)
-Execute the scenarios using the ADK CLI. This runs the agent locally and performs initial safety checks.
-
-**Prerequisites:**
-1. `cd customer-service` (or your agent directory)
-2. `gcloud auth application-default login`
-
-**Commands:**
-1.  **Create Eval Set:** `uv run adk eval_set create customer_service eval_set_with_scenarios`
-2.  **Add Scenarios:**
-    ```bash
-    uv run adk eval_set add_eval_case customer_service eval_set_with_scenarios \
-      --scenarios_file customer_service/conversation_scenarios.json \
-      --session_input_file customer_service/session_input.json
-    ```
-3.  **Run Simulation:**
-    ```bash
-    uv run adk eval customer_service \
-      --config_file_path customer_service/eval_config.json \
-      eval_set_with_scenarios \
-      --print_detailed_results
-    ```
-
-**Output:** Trace files generated in `.adk/eval_history`.
-
----
-
-### Step 2: Process Simulation Data (The Bridge)
-This step bridges the gap between the ADK Eval's raw history logs and our evaluation pipeline (ADK Eval with User Simulation currently only supports 2 evaluation metrics: hallucination & safety). It converts the simulation traces into a structured, analyzable dataset.
-
-**Usage:**
-```bash
-cd evaluation && uv run python scripts/convert_adk_history_to_dataset.py \
-  --agent-dir customer-service/customer_service
+```
+adk eval (native)  →  agent-eval convert  →  agent-eval evaluate  →  agent-eval analyze
+      ↓                      ↓                    ↓                    ↓
+.adk/eval_history/    results/<timestamp>/   (same folder)       (same folder)
+                      └── raw/               └── eval_summary.json  └── question_answer_log.md
+                          └── processed_*.csv   └── raw/              └── gemini_analysis.md
+                                                    └── evaluation_*.csv
 ```
 
-**Output:** `customer-service/eval/eval_data/interactions/run_<timestamp>.csv`
+#### Path B: Live/Remote Path (For Deployed Agents)
+Sends questions from a Golden Dataset to a running agent endpoint, then runs metrics.
 
-#### Dataset Reference (`run_<timestamp>.csv`)
-
-This CSV is the "Golden Record" for analysis.
-
-| Column | Description | Detailed Example | Source/Logic |
-| :--- | :--- | :--- | :--- |
-| **`eval_id`** | Unique ID for the specific test case. | `68e57b06` | ADK Eval History |
-| **`session_id`** | Unique ID for the conversation session. | `___eval___session___700c...` | `session_details.id` |
-| **`agent_name`** | Internal name of the agent. | `customer_service` | `session_details.app_name` |
-| **`score.hallucinations_v1`** | **Quality Metric:** Pass/Fail score (0-1) for hallucination. | `1.0` (Pass) | Extracted from `eval_metric_results` in ADK history. |
-| **`score.safety_v1`** | **Quality Metric:** Pass/Fail score (0-1) for safety. | `0.0` (Fail) | Extracted from `eval_metric_results`. |
-| **`metric.duration_sec`** | **Perf Metric:** Total wall-clock time of the session. | `18.47` | `last_event.timestamp - first_event.timestamp` |
-| **`metric.total_tokens`** | **Cost Metric:** Total tokens consumed (Prompt + Completion). | `17045` | Sum of `usage_metadata.total_token_count` across all turns. |
-| **`metric.cache_hit_rate`** | **Optimization:** Efficiency of Context Caching. | `0.41` (41%) | `cached_tokens / (input_tokens + epsilon)` |
-| **`metric.turn_count`** | **Behavior:** Length of conversation. | `3` | Count of user messages. |
-| **`metric.tool_calls`** | **Behavior:** Number of tools invoked. | `5` | Count of `functionCall` events. |
-| **`metric.tool_errors`** | **Reliability:** Number of failed tool calls. | `0` | Count of `functionResponse` where `status='error'`. |
-| **`metric.unique_tools`** | **Behavior:** Which tools were actually used. | `["generate_qr_code", "search"]` | Set of unique tool names used. |
-| **`final_response`** | The final answer given to the user. | "I have scheduled your appointment..." | Text from the last model turn. |
-| **`system_instructions`** | **Context:** The system prompt used. | "You are Project Pro..." | Extracted from `app_details`. |
-| **`custom_extract`** | **Deep Analysis Log:** Rich list of turns. | `[{"turn":1, "role":"user", "tokens":{...}, "tool_calls":[...]}]` | Custom parsing containing tokens, models, timestamps, and tool I/O per turn. |
-| **`session_state`** | **Full Fidelity:** Complete session object. | `{"state": {...}, "events": [...]}` | JSON dump of the entire `session_details` object. |
-| **`session_trace`** | **Synthetic Trace:** OTEL-compatible spans. | `[{"name": "call_llm", "start_time": ...}]` | Synthetic span tree constructed from events for compatibility with trace analyzers. |
+```
+agent-eval interact  →  agent-eval evaluate  →  agent-eval analyze
+         ↓                    ↓                       ↓
+results/<timestamp>/      (same folder)          (same folder)
+└── raw/                  └── eval_summary.json  └── question_answer_log.md
+    └── processed_*.csv       └── raw/               └── gemini_analysis.md
+                                  └── evaluation_*.csv
+```
 
 ---
 
-## Workflow 2: The Live/Remote Path
+## Quick Start: Simulation Path (Customer Service Agent)
 
-### 🔄 Workflow & Key Files
+### Prerequisites
 
-| Step | Script | Description |
-| :--- | :--- | :--- |
-| **1** | `01_agent_interaction.py` | **Data Collection.** Orchestrates `scripts/run_interactions.py` to hit your agent's API in parallel (`asyncio`). Enriches raw logs with traces and state variables via `scripts/process_interactions.py`. |
-| **2** | `02_agent_run_eval.py` | **Scoring.** Runs the evaluation suite. Uses `ThreadPoolExecutor` to run Vertex AI evaluations in parallel. Manages configuration via `Pydantic`. |
-| **3** | `03_analyze_eval_results.py` | **Insight Generation.** Produces `question_answer_log.md` (readable transcript) and uses Gemini to write `gemini_analysis.md` (technical diagnosis). |
+```bash
+# 1. Install the evaluation CLI
+cd evaluation
+uv sync
 
-### ⚙️ Configuration
-
-The pipeline uses a **layered configuration** strategy (CLI > Env Vars > Defaults).
-
-#### Environment Variables (`.env`)
-Define these in `evaluation/.env` for infrastructure settings:
-
-```ini
-# Required
-EVAL_GOOGLE_CLOUD_PROJECT=your-project-id
-EVAL_GOOGLE_CLOUD_LOCATION=us-central1
-
-# Performance Tuning
-EVAL_MAX_WORKERS=4          # Number of parallel evaluation threads
-EVAL_MAX_RETRIES=3          # Retries for failed LLM calls
-EVAL_RETRY_DELAY_SECONDS=5  # Base delay for exponential backoff
+# 2. Set up Google Cloud authentication
+gcloud auth application-default login
+export GOOGLE_CLOUD_PROJECT=your-project-id
 ```
 
-#### CLI Arguments
-Used for run-specific inputs.
+---
 
-**Step 1: Interaction**
+### Step 1: Run the ADK Simulator
+
+Generate agent interactions using the native ADK simulator. Simulation scenarios are defined in `eval/scenarios/`.
+
+> **📚 Learn More:** See the [ADK User Simulation Documentation](https://google.github.io/adk-docs/evaluate/user-sim/) for details on scenario format and configuration.
+
 ```bash
-uv run python 01_agent_interaction.py \
+cd customer-service
+
+# IMPORTANT: Clear previous eval history before each baseline run
+rm -rf customer_service/.adk/eval_history/*
+
+# Run the ADK evaluation (scenarios are in eval/scenarios/)
+uv run adk eval customer_service \
+  --config_file_path eval/scenarios/eval_config.json \
+  eval_set_with_scenarios \
+  --print_detailed_results
+```
+
+**Output:** Trace files in `customer_service/.adk/eval_history/`
+
+**Simulation Files:**
+```
+eval/scenarios/
+├── conversation_scenarios.json    # Multi-turn conversation plans
+├── eval_config.json               # Evaluation criteria (hallucination, safety)
+├── eval_set_with_scenarios.evalset.json  # Eval set definition
+└── session_input.json             # Initial session state
+```
+
+> **Why Clear `.adk/eval_history/`?**
+>
+> The ADK simulator accumulates traces from ALL evaluation runs in this folder.
+> The `convert` command processes ALL files in this directory. If you don't clear it
+> before running a new evaluation, your results will include stale data from previous
+> runs, corrupting your baseline comparison.
+
+---
+
+### Step 2: Convert ADK Traces
+
+Convert the ADK simulator output to our evaluation format.
+
+```bash
+cd ../evaluation
+
+uv run agent-eval convert \
+  --agent-dir ../customer-service/customer_service \
+  --output-dir ../customer-service/eval/results
+```
+
+**Output:** Creates `eval/results/<timestamp>/raw/processed_interaction_sim.csv`
+
+---
+
+### Step 3: Run Evaluation Metrics
+
+Apply deterministic metrics (latency, cost) and LLM-as-Judge metrics (correctness, tool usage).
+
+```bash
+# Use the timestamp folder from Step 2
+RUN_DIR=../customer-service/eval/results/<timestamp>
+
+uv run agent-eval evaluate \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.csv \
+  --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
+  --results-dir $RUN_DIR \
+  --input-label baseline \
+  --test-description "Customer Service Agent Baseline"
+```
+
+**Output:** Adds to the same folder:
+```
+<timestamp>/
+├── eval_summary.json              # NEW: Aggregated metrics
+└── raw/
+    ├── processed_interaction_sim.csv  # From Step 2
+    └── evaluation_results_*.csv       # NEW: Full results
+```
+
+---
+
+### Step 4: Analyze Results
+
+Generate human-readable reports and AI-powered root cause analysis.
+
+```bash
+# Use the same timestamp folder
+uv run agent-eval analyze \
+  --results-dir $RUN_DIR \
+  --agent-dir ../customer-service
+```
+
+**Output:** Adds analysis reports to the same folder:
+```
+<timestamp>/
+├── eval_summary.json              # From Step 3
+├── question_answer_log.md         # NEW: Detailed Q&A with all metrics
+├── gemini_analysis.md             # NEW: AI root cause analysis
+└── raw/
+    ├── processed_interaction_sim.csv
+    ├── evaluation_results_*.csv
+    └── gemini_prompt.txt          # NEW: Debug prompt sent to Gemini
+```
+
+---
+
+## Quick Start: Live/Remote Path
+
+For evaluating a deployed agent or running against localhost.
+
+### Step 1: Prepare a Golden Dataset
+
+If you have ADK test data (like `full_conversation.test.json`), convert it:
+
+```bash
+uv run agent-eval create-dataset \
+  --input ../customer-service/eval/eval_data/full_conversation.test.json \
+  --output ../customer-service/eval/datasets/golden_dataset.json \
+  --agent-name customer_service
+```
+
+Or use an existing Golden Dataset (JSON with `user_inputs` and `reference_data`).
+
+### Step 2: Run Interactions
+
+```bash
+# Start your agent first (e.g., make playground in another terminal)
+
+uv run agent-eval interact \
   --app-name customer_service \
+  --questions-file ../customer-service/eval/datasets/golden_dataset.json \
   --base-url http://localhost:8080 \
-  --questions-file datasets/your_data.json
+  --results-dir ../customer-service/eval/results
 ```
 
-**Step 2: Evaluation**
-```bash
-uv run python 02_agent_run_eval.py \
-  --interaction-results-file results/.../processed_interaction.csv \
-  --metrics-files metrics/metric_definitions_customer_service.json
+**Output:** Creates `eval/results/<timestamp>/raw/processed_interaction_customer_service.csv`
+
+The CLI prints the next command to run. Example:
+```
+Run folder: ../customer-service/eval/results/20260112_143022
+
+To evaluate, run:
+agent-eval evaluate --interaction-file .../raw/processed_interaction_customer_service.csv --metrics-files <metrics.json> --results-dir .../20260112_143022
 ```
 
-**Step 3: Analysis**
+### Step 3-4: Evaluate and Analyze
+
+Same as Simulation Path Steps 3-4 - pass the timestamp folder as `--results-dir`.
+
+---
+
+## CLI Reference
+
+### Getting Help
+
+Use `--help` to see all available options for any command:
+
 ```bash
-uv run python 03_analyze_eval_results.py \
-  --results-dir results/customer_service/2026...
+# See all commands
+uv run agent-eval --help
+
+# See options for a specific command
+uv run agent-eval interact --help
+uv run agent-eval evaluate --help
+uv run agent-eval analyze --help
+uv run agent-eval convert --help
+uv run agent-eval create-dataset --help
+```
+
+### `agent-eval convert`
+
+Converts ADK simulator history (`.adk/eval_history/`) to evaluation format.
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `--agent-dir` | Agent module directory containing `.adk/eval_history/` | Yes |
+| `--output-dir` | Output directory for CSV | No (default: results/) |
+| `--questions-file` | Golden dataset for merging reference data | No |
+
+### `agent-eval create-dataset`
+
+Converts ADK test files to Golden Dataset format (for use with `interact` command).
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `--input` | Path to ADK test JSON (list of turns) | Yes |
+| `--output` | Path for output Golden Dataset | Yes |
+| `--agent-name` | Agent name | Yes |
+| `--metadata key:value` | Add metadata tags | No |
+
+### `agent-eval interact`
+
+Runs interactions against a live agent endpoint.
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `--app-name` | Agent application name | Yes |
+| `--questions-file` | Golden Dataset JSON | Yes |
+| `--base-url` | Agent API URL | No (default: localhost:8080) |
+| `--results-dir` | Output directory | No |
+
+### `agent-eval evaluate`
+
+Runs evaluation metrics on processed interactions.
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `--interaction-file` | Path to processed_interaction CSV | Yes |
+| `--metrics-files` | Metric definition JSON files | Yes |
+| `--results-dir` | Output directory | Yes |
+| `--input-label` | Run label (e.g., baseline, v2) | No |
+| `--test-description` | Description for this run | No |
+
+### `agent-eval analyze`
+
+Generates analysis reports from evaluation results.
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `--results-dir` | Directory containing eval results | Yes |
+| `--agent-dir` | Agent source (adds context to AI analysis) | No |
+| `--model` | Gemini model (default: gemini-2.5-pro) | No |
+| `--skip-gemini` | Skip AI analysis (Q&A log only) | No |
+
+---
+
+## Output Folder Structure
+
+Each evaluation run creates a single timestamped folder. All commands add to this folder:
+
+```
+eval/results/
+├── 20260112_143022/                          # Baseline run
+│   ├── eval_summary.json                     # Aggregated metrics (from evaluate)
+│   ├── question_answer_log.md                # Q&A transcript (from analyze)
+│   ├── gemini_analysis.md                    # AI root cause analysis (from analyze)
+│   └── raw/
+│       ├── processed_interaction_*.csv       # Interaction data (from interact/convert)
+│       ├── evaluation_results_*.csv          # Full eval results (from evaluate)
+│       └── gemini_prompt.txt                 # Debug: prompt for AI analysis
+│
+└── 20260112_160045/                          # After optimization
+    └── ...
 ```
 
 ---
 
-## Deep Metrics Calculation (`02_agent_run_eval.py`)
+## Metrics Reference
 
-Now that we have the `run_<timestamp>.csv` (from Simulation) or `processed_interaction.csv` (from Live/Remote), we can apply advanced Python-based metrics (e.g., business logic validation, complex latency breakdown) that go beyond the basic ADK checks.
+### Deterministic Metrics
 
-**Usage:**
+| Metric | Description |
+|--------|-------------|
+| `latency_metrics` | Total duration, avg turn latency, time to first response |
+| `cache_efficiency` | KV-cache hit rate, cached vs fresh tokens |
+| `thinking_metrics` | Reasoning ratio (thinking / output tokens) |
+| `tool_utilization` | Total and unique tool calls |
+| `tool_success_rate` | Successful calls / total calls |
+| `context_saturation` | Max tokens in any single turn |
+| `agent_handoffs` | Control transfers between agents |
 
-```bash
-uv run python 02_agent_run_eval.py \
-  --interaction-results-file <path_to_step2_csv> \
-  --metrics-files <path_to_metrics.json> \
-  [--input-label <run_label>] \
-  [--test-description <description>] \
-  [--metric-filter key:value]
-```
+### LLM-as-Judge Metrics
 
-### Arguments
-
-| Argument | Description | Default |
-|---|---|---|
-| `--interaction-results-file` | Path to the CSV file generated by Step 2. **(Required)** | N/A |
-| `--metrics-files` | One or more paths to JSON files containing metric definitions. **(Required)** | N/A |
-| `--results-dir` | Directory to save evaluation results. | Parent of input file. |
-| `--input-label` | A short label for the run (e.g., `baseline`, `exp_v2`). | `manual` |
-| `--test-description` | A detailed description of the test scenario. | Standard description. |
-| `--metric-filter` | Filter metrics (e.g., `metric_type:llm` or `agents:customer_service`). | Run all metrics. |
+| Metric | Scale | Description |
+|--------|-------|-------------|
+| `trajectory_accuracy` | 0-5 | Did agent follow expected task sequence? |
+| `response_correctness` | 0-5 | Is final answer accurate and relevant? |
+| `tool_usage_accuracy` | 0-5 | Correct tools with correct arguments? |
+| `state_management_fidelity` | 0-5 | Correct entity extraction and storage? |
 
 ---
 
-# Metrics Reference
+## Troubleshooting
 
-## 1. Deterministic Metrics
-Calculated directly from execution traces without using an LLM.
+### "No .adk/eval_history found"
+- Run `adk eval` first (native ADK command)
+- Check path: history is in `[agent_module]/.adk/eval_history/`
 
-| Metric | Description | Calculation Logic |
-| :--- | :--- | :--- |
-| **`token_usage`** | Cost & Volume | Sums prompt, completion, and cached tokens from `usage_metadata`. Calculates estimated cost using model-specific pricing. |
-| **`latency_metrics`** | Speed | Measures **Total Session Duration**, **Avg Turn Latency**, and **Time to First Response**. |
-| **`cache_efficiency`** | Optimization | `Cache Hit Rate = Cached Tokens / (Cached + Fresh Prompt Tokens)`. |
-| **`thinking_metrics`** | Cognitive Effort | `Reasoning Ratio = Thinking Tokens / Total Output Tokens`. |
-| **`tool_utilization`** | Tool Usage | Counts total and unique tool calls. |
-| **`tool_success_rate`** | Reliability | `Successful Calls / Total Calls`. Checks for `status: "error"` in tool responses. |
-| **`grounding_utilization`** | Factuality Proxy | Counts the number of Google Search grounding chunks (citations). |
-| **`context_saturation`** | Capacity Planning | Tracks the **Maximum Total Tokens** used in any single turn. |
-| **`agent_handoffs`** | Orchestration | Counts the number of times control transferred between agents (`invoke_agent` spans). |
-| **`output_density`** | Conciseness | `Average Output Tokens per LLM Call`. |
-| **`sandbox_usage`** | Offloading | Counts calls to file system tools (`read_file`, `save_artifact`, etc.). |
+### Stale data in evaluations
+- **Always clear `.adk/eval_history/` before each new baseline**
+- `rm -rf [agent_module]/.adk/eval_history/*`
 
-## 2. LLM Metrics (Customer Service)
-Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_customer_service.json`.
-
-*   **`trajectory_accuracy` (0-5):** Did the agent follow the expected sequence of sub-tasks? Compares actual agent order vs. reference trajectory.
-*   **`response_correctness` (0-5):** Is the final answer relevant, accurate, and consistent with tool outputs?
-*   **`tool_usage_accuracy` (0-5):** Did the agent pick the right tools and use the correct arguments (e.g., correct `customer_id`)?
-*   **`state_management_fidelity` (0-5):** Did the agent correctly extract entities from the conversation and update its internal session state variables?
-
-## 3. LLM Metrics (Retail Location Strategy)
-Evaluated by Gemini 1.5 Pro using the rubric in `metrics/metric_definitions_retail_location.json`.
-
-*   **`state_variable_fidelity` (0-5):** Checks if complex artifacts (Market Research, Gap Analysis) were correctly stored in the session state.
-*   **`market_research_depth` (0-5):** Evaluates the quality of the gathered data. Does it cover demographics and specific competitors? Is it synthesized well?
-*   **`strategic_recommendation_quality` (0-5):** Assesses the business logic. Is the recommendation evidence-based? Are risks acknowledged? Are next steps actionable?
-*   **`tool_usage_effectiveness` (0-5):** Did the agent perform a comprehensive search (coverage)? Did it successfully generate the final HTML/Infographic artifacts?
+### "No evaluation results found" in analyze
+- Run `agent-eval evaluate` first
+- Analyzer looks for `eval_summary.json`
 
 ---
 
-## 📊 Outputs & Artifacts
+## Additional Documentation
 
-All results are saved in `evaluation/results/<app_name>/<timestamp>/`.
-
-| File | Description |
-| :--- | :--- |
-| `processed_interaction_*.csv` | **Raw Data.** The inputs, agent responses, traces, and state variables used for grading. |
-| `evaluation_results_*.csv` | **Graded Data.** The processed interactions enriched with metric scores and explanations. |
-| `eval_summary.json` | **Aggregated Stats.** Mean scores, costs, latencies, and per-question breakdowns. |
-| `question_answer_log.md` | **Transcript.** A readable Markdown log of every Q&A pair, reference data, and extracted state. |
-| `gemini_analysis.md` | **Diagnosis.** An AI-generated report identifying root causes of failures and performance trends. |
-
-For a complete data dictionary, see **[OUTPUTS.md](OUTPUTS.md)**.
-
----
-
-## 🛠️ Developer Guide: Adding a New Agent
-
-To evaluate a new agent (e.g., "Travel Booker"), follow these steps:
-
-### 1. Create a Golden Dataset
-Create a new file in `datasets/travel_booker_golden.json`.
-*   **Format:** List of questions with expected outputs (`reference_data`).
-*   **Key Fields:** `user_inputs`, `reference_tool_interactions`, `metadata`.
-*   **Guide:** See **[DATASETS_GUIDE.md](DATASETS_GUIDE.md)** for the full schema and examples.
-
-Alternatively, convert a test file:
-
-```bash
-uv run python scripts/convert_test_to_golden.py \
-  --input path/to/your/test_data.json \
-  --output datasets/your_new_golden_data.json \
-  --agent <agent_app_name> \
-  --metadata "complexity:easy" \
-  --prefix q_prefix
-```
-
-### 2. Define Metrics
-Create a new file in `metrics/metric_definitions_travel_booker.json`.
-*   **Dataset Mapping:** Map your agent's specific state variables (e.g., `extracted_data:booking_details`) to the metric's input variables.
-*   **Rubric:** Define the criteria for `llm` metrics (e.g., "Did the agent capture the correct travel dates?").
-*   **Guide:** See **[METRICS_GUIDE.md](METRICS_GUIDE.md)** for schema details and templates.
-
-### 3. Run the Pipeline
-
-Execute the standard workflow (Live or Simulation) pointing to your new files.
+- [DATASETS_GUIDE.md](DATASETS_GUIDE.md) - Golden dataset schema
+- [METRICS_GUIDE.md](METRICS_GUIDE.md) - Metric definition schema
+- [OUTPUTS.md](OUTPUTS.md) - Output file reference
