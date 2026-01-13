@@ -1,6 +1,0 @@
-pandas
-google-cloud-aiplatform[evaluation]
-pytest
-python-dotenv
-mock
-tqdm

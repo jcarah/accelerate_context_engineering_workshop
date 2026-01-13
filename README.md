@@ -1,9 +1,7 @@
 # Agent Optimization & Evaluation Workshop (Accelerate '26)
 
-> **\[WORKSHOP NOTE:** This repository is currently under active development. The Evaluation Framework is being transitioned to a CLI tool (`adk-eval`). The documentation below reflects the *current stable state* using Python scripts, but mockups of the future CLI experience are included for preview.
-
-**Status:** Implementation Guide  
-**Focus:** Context Engineering & Quantitative Evaluation  
+**Status:** Implementation Guide
+**Focus:** Context Engineering & Quantitative Evaluation
 **Target Audience:** Technical GTM Practitioners
 
 ---
@@ -57,61 +55,80 @@ We use two distinct agents to demonstrate different classes of problems.
 Instead of simple "print statement" debugging, we have built a custom, reusable evaluation pipeline located in `evaluation/`. This serves as a reference architecture for how you might implement CI/CD for agents in the real world.
 
 > **👉 GO DEEPER:** Check out the **[Evaluation README](evaluation/README.md)**.
-> It covers advanced topics like the **Simulation Strategy** (how to run offline evaluations without a live server using ADK history), the schema for Golden Datasets, and how to define custom LLM-as-a-Judge metrics.
+> It covers the full CLI reference, both evaluation paths (Simulation vs Live), and how to define custom LLM-as-a-Judge metrics.
 
 **Key Components:**
-*   **Golden Datasets:** Standardized JSON test cases (Questions + Reference Answers) located in `[agent]/eval/datasets/`.
-*   **LLM Judges:** Custom rubrics (e.g., "Did the agent use the correct tool?") located in `[agent]/eval/metrics/`.
-*   **Pipeline:** Scripts to run the agent, calculate scores, and generate reports.
+*   **Simulation Scenarios:** Test scenarios for ADK simulator in `[agent]/eval/scenarios/` ([ADK User Simulation Docs](https://google.github.io/adk-docs/evaluate/user-sim/))
+*   **Metric Definitions:** Custom rubrics (e.g., "Did the agent use the correct tool?") in `[agent]/eval/metrics/`
+*   **CLI Tool (`agent-eval`):** Unified commands for convert, evaluate, and analyze (use `--help` for options)
 
-### 000 Future State: CLI Experience (Preview)
-We are actively refactoring this pipeline into a unified CLI tool: `adk-eval`.
-> **Mockup:** In the future, you will simply run:
-> ```bash
-> uv run adk-eval run --app-name customer_service --questions-file ...
-> uv run adk-eval evaluate --metrics-files ...
-> uv run adk-eval analyze ...
-> ```
+### Running a Baseline Evaluation (Customer Service)
 
-### 000 Current State: Running Evaluations (Workshop Guide)
+Follow these steps to establish a baseline before making optimizations.
 
-For now, we use the stable Python scripts. Follow these steps to evaluate your agent.
+#### Step 1: Run ADK Simulator
 
-#### Step 1: Run Interactions (Data Collection)
-This sends your test questions to the running agent and records the logs.
+Generate agent interactions using the native ADK simulator.
 
-*   **Mockup Goal:** `adk-eval run`
-*   **Actual Command:**
-    ```bash
-    # Ensure your agent is running on localhost:8080 first!
-    uv run python evaluation/01_agent_interaction.py \
-      --app-name customer_service \
-      --base-url http://localhost:8080 \
-      --questions-file customer-service/eval/datasets/golden_dataset.json \
-      --results-dir customer-service/eval/results/baseline
-    ```
+```bash
+cd customer-service
 
-#### Step 2: Calculate Metrics (Scoring)
-This runs the Deterministic (latency, cost) and LLM-based (quality) graders.
+# IMPORTANT: Clear previous eval history before each baseline
+rm -rf customer_service/.adk/eval_history/*
 
-*   **Mockup Goal:** `adk-eval evaluate`
-*   **Actual Command:**
-    ```bash
-    uv run python evaluation/02_agent_run_eval.py \
-      --interaction-results-file customer-service/eval/results/baseline/processed_interaction_customer_service.csv \
-      --metrics-files customer-service/eval/metrics/metric_definitions.json \
-      --results-dir customer-service/eval/results/baseline
-    ```
+# Run the simulation (scenarios are in eval/scenarios/)
+uv run adk eval customer_service \
+  --config_file_path eval/scenarios/eval_config.json \
+  eval_set_with_scenarios \
+  --print_detailed_results
+```
 
-#### Step 3: Analyze Results (Reporting)
-This generates a human-readable Markdown report and an AI-powered root cause analysis.
+> **Why clear `.adk/eval_history/`?** The simulator accumulates traces from ALL runs.
+> Without clearing, your new baseline will include stale data from previous runs.
 
-*   **Mockup Goal:** `adk-eval analyze`
-*   **Actual Command:**
-    ```bash
-    uv run python evaluation/03_analyze_eval_results.py \
-      --results-dir customer-service/eval/results/baseline
-    ```
+#### Step 2: Convert Traces & Run Evaluation
+
+```bash
+cd ../evaluation
+uv sync  # First time only
+
+# Convert ADK traces to evaluation format (creates timestamp folder)
+uv run agent-eval convert \
+  --agent-dir ../customer-service/customer_service \
+  --output-dir ../customer-service/eval/results
+
+# The CLI prints the next command. Use the timestamp folder:
+RUN_DIR=../customer-service/eval/results/<timestamp>
+
+# Run metrics (deterministic + LLM-as-Judge)
+uv run agent-eval evaluate \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.csv \
+  --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
+  --results-dir $RUN_DIR \
+  --input-label baseline \
+  --test-description "Customer Service Baseline"
+```
+
+#### Step 3: Analyze Results
+
+Generate human-readable reports and AI-powered root cause analysis.
+
+```bash
+uv run agent-eval analyze \
+  --results-dir $RUN_DIR \
+  --agent-dir ../customer-service
+```
+
+**Output:** Results in `customer-service/eval/results/<timestamp>/`
+```
+<timestamp>/
+├── eval_summary.json           # Aggregated metrics
+├── question_answer_log.md      # Detailed Q&A transcript
+├── gemini_analysis.md          # AI root cause diagnosis
+└── raw/
+    ├── processed_interaction_sim.csv
+    └── evaluation_results_*.csv
+```
 
 ---
 
@@ -123,12 +140,28 @@ We will follow a strict **Signal-Driven Engineering** loop:
 3.  **Optimize:** Apply a specific Context Engineering pattern.
 4.  **Verify:** Re-run evals to prove the lift.
 
+### Branch Strategy: Branch-per-Optimization
+
+Each optimization is isolated in its own branch, driven by a specific failure signal, and verified by a specific metric:
+
+| Branch | Optimization | Target Metric |
+| :--- | :--- | :--- |
+| `main` | Baseline ("Naive Monolith") | Establish baseline scores |
+| `optimizations/01-tool-definition` | Tool Schema Hardening | `tool_usage_accuracy` > 95% |
+| `optimizations/02-context-compaction` | Context Compaction | Reduce "Context Rot" |
+| `optimizations/03-code-execution` | Offload to Python Sandbox | `input_tokens` < 4000/turn |
+| `optimizations/04-functional-isolation` | Split into Sub-Agents | `trajectory_accuracy` = 5/5 |
+| `optimizations/05-prefix-caching` | Prefix Caching | `cache_hit_rate` > 75% |
+
 ---
 
 ### Phase 1: Fixing Reliability (Customer Service)
 
 #### Step 1: The "Hallucinating Helper" (Tool Hardening)
 **Context:** The agent keeps failing to update the shopping cart because it sends string descriptions instead of integer IDs to the API.
+
+*   **Baseline Metrics:** `tool_usage_accuracy: 0.6`, `state_management_fidelity: 0.6`
+*   **ADK Sample:** `tool_functions_config`
 
 > **\[WORKSHOP TASK:**
 > 1.  Run the baseline evaluation (see Section 3).
@@ -139,6 +172,9 @@ We will follow a strict **Signal-Driven Engineering** loop:
 #### Step 2: The "Overwhelmed Generalist" (Functional Isolation)
 **Context:** The agent gets distracted. When asked to "Approve a discount", it hallucinates checking "Plant Pathology Rules" because all instructions are in one massive prompt.
 
+*   **Baseline Metrics:** `trajectory_accuracy: 1.6`, `unique_agents_count: 1`
+*   **ADK Sample:** `workflow_triage`
+
 > **\[WORKSHOP TASK:**
 > 1.  Run the `analyze` script and check `gemini_analysis.md`.
 > 2.  Note the finding: "*Trajectory Noise: Agent introduces irrelevant steps.*"
@@ -146,6 +182,9 @@ We will follow a strict **Signal-Driven Engineering** loop:
 
 #### Step 3: The "Drifting Planner" (Recitation)
 **Context:** In long conversations (e.g., scheduling a delivery), the agent forgets the original goal (applying the discount) because it gets "Lost in the Middle" of the context window.
+
+*   **Baseline Metrics:** Task completion drops significantly after turn 8
+*   **ADK Sample:** `memory_checkpoint`
 
 > **\[WORKSHOP TASK:**
 > 1.  **Refactor:** Implement **Attention Structuring**. Inject a dynamic `todo.md` block at the *end* of the prompt every turn, forcing the agent to "recite" its remaining tasks before acting.
@@ -157,6 +196,9 @@ We will follow a strict **Signal-Driven Engineering** loop:
 #### Step 4: The "Context Dumper" (Offload & Reduce)
 **Context:** The `CompetitorMappingAgent` finds 50 coffee shops and dumps the entire raw JSON response (100k+ tokens) into the chat history. The agent crashes or hallucinates simple math.
 
+*   **Baseline Metrics:** `input_tokens: >100k/turn`, `Context Efficiency Ratio: <10:1`
+*   **ADK Sample:** `code_execution_sandbox`
+
 > **\[WORKSHOP TASK:**
 > 1.  Run a heavy query: "Analyze saturation in Austin, TX".
 > 2.  Check `token_usage` metrics. Observe >100k input tokens per turn.
@@ -164,6 +206,8 @@ We will follow a strict **Signal-Driven Engineering** loop:
 
 #### Step 5: The "Expensive Executive" (Prefix Caching)
 **Context:** The agent works, but it's slow (8s latency) and expensive because we re-send the same massive system instructions every turn.
+
+*   **Baseline Metrics:** `cache_hit_rate: ~36%`, `time_to_first_response: >1s`
 
 > **\[WORKSHOP TASK:**
 > 1.  **Refactor:** Implement **Prefix Caching**. Structure the prompt to keep static content (Persona, Tools) at the *start* (Prefix) and dynamic content at the *end*.

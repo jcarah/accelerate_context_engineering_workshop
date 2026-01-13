@@ -1,0 +1,149 @@
+{
+    "experiment_id": "eval-20260112_231336",
+    "run_type": "manual",
+    "test_description": "Automated evaluation",
+    "interaction_datetime": "2026-01-12T23:13:36.744636",
+    "overall_summary": {
+        "deterministic_metrics": {
+            "token_usage.llm_calls": 3.0,
+            "token_usage.total_tokens": 11979.0,
+            "token_usage.prompt_tokens": 11841.0,
+            "token_usage.completion_tokens": 83.0,
+            "token_usage.cached_tokens": 10064.0,
+            "token_usage.estimated_cost_usd": 0.0037597999999999993,
+            "latency_metrics.total_latency_seconds": 6.7895,
+            "latency_metrics.average_turn_latency_seconds": 3.39475,
+            "latency_metrics.llm_latency_seconds": 6.768750273,
+            "latency_metrics.tool_latency_seconds": 0.00251726,
+            "latency_metrics.time_to_first_response_seconds": 2.210426764,
+            "cache_efficiency.cache_hit_rate": 0.4594384843643004,
+            "cache_efficiency.total_cached_tokens": 10064.0,
+            "cache_efficiency.total_fresh_prompt_tokens": 11841.0,
+            "cache_efficiency.total_input_tokens": 21905.0,
+            "thinking_metrics.reasoning_ratio": 0.39855072463768115,
+            "thinking_metrics.total_thinking_tokens": 55.0,
+            "thinking_metrics.total_candidate_tokens": 83.0,
+            "thinking_metrics.total_output_tokens": 138.0,
+            "thinking_metrics.turns_with_thinking": 1.0,
+            "tool_utilization.total_tool_calls": 1.0,
+            "tool_utilization.unique_tools_used": 1.0,
+            "tool_success_rate.tool_success_rate": 1.0,
+            "tool_success_rate.total_tool_calls": 1.0,
+            "tool_success_rate.failed_tool_calls": 0.0,
+            "grounding_utilization.total_grounding_chunks": 0.0,
+            "grounding_utilization.total_grounded_responses": 0.0,
+            "grounding_utilization.total_llm_responses": 4.0,
+            "context_saturation.max_total_tokens": 4077.0,
+            "agent_handoffs.total_handoffs": 2.0,
+            "agent_handoffs.unique_agents_count": 1.0,
+            "output_density.average_output_tokens": 27.666666666666668,
+            "output_density.total_output_tokens": 83.0,
+            "output_density.llm_calls_count": 3.0,
+            "sandbox_usage.total_sandbox_ops": 0.0,
+            "sandbox_usage.unique_ops_used": 0.0
+        },
+        "llm_based_metrics": {
+            "state_management_fidelity": 1.0,
+            "tool_usage_accuracy": 5.0,
+            "response_correctness": 0.4,
+            "trajectory_accuracy": 1.0
+        }
+    },
+    "per_question_summary": [
+        {
+            "question_id": "q_0be40e50",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": {
+                    "llm_calls": 3,
+                    "models_used": [
+                        "gemini-2.5-flash"
+                    ],
+                    "total_tokens": 11979,
+                    "prompt_tokens": 11841,
+                    "completion_tokens": 83,
+                    "cached_tokens": 10064,
+                    "estimated_cost_usd": 0.0037597999999999993
+                },
+                "latency_metrics": {
+                    "total_latency_seconds": 6.7895,
+                    "average_turn_latency_seconds": 3.39475,
+                    "llm_latency_seconds": 6.768750273,
+                    "tool_latency_seconds": 0.00251726,
+                    "time_to_first_response_seconds": 2.210426764
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.4594384843643004,
+                    "total_cached_tokens": 10064,
+                    "total_fresh_prompt_tokens": 11841,
+                    "total_input_tokens": 21905
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.39855072463768115,
+                    "total_thinking_tokens": 55,
+                    "total_candidate_tokens": 83,
+                    "total_output_tokens": 138,
+                    "turns_with_thinking": 1
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 1,
+                    "unique_tools_used": 1,
+                    "tool_counts": {
+                        "access_cart_information": 1
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 1,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 4
+                },
+                "context_saturation": {
+                    "max_total_tokens": 4077,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 2,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service_agent"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 27.666666666666668,
+                    "total_output_tokens": 83,
+                    "llm_calls_count": 3
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "state_management_fidelity": {
+                    "score": 1.0,
+                    "explanation": "The AI failed to extract the user's intent to inquire about their 'cart' and did not provide any information related to the cart. Instead, it returned a general customer profile and system variables, which are largely irrelevant to the specific user request, indicating major errors in state capture related to the user's prompt."
+                },
+                "tool_usage_accuracy": {
+                    "score": 5.0,
+                    "explanation": "The agent correctly understood the user's intent to inquire about their cart, implicitly called a tool to retrieve cart contents (or similar function), and effectively presented the information to the user, directly answering the prompt. The outcome was perfect for the user's request."
+                },
+                "response_correctness": {
+                    "score": 0.4,
+                    "explanation": ""
+                },
+                "trajectory_accuracy": {
+                    "score": 1.0,
+                    "explanation": "The agent failed to identify and call the appropriate sub-agent or tool to directly retrieve cart contents. Instead, it invoked a 'customer_service_agent', indicating a failure to handle the request directly. The invocation of 'customer_service_agent' twice is redundant and introduces noise into the trajectory, representing a major deviation from an expected trajectory that would directly address the user's prompt about their cart."
+                }
+            },
+            "source_file": "simple.test.json"
+        }
+    ]
+}
