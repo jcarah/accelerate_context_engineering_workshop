@@ -383,22 +383,52 @@ class AgentClient:
 
     @staticmethod
     def get_agent_trajectory(analyzed_trace: List[Dict]) -> List[str]:
-        """Extracts the sequence of agents invoked."""
+        """
+        Extracts the sequence of agents and tools invoked.
+
+        Captures:
+        - AGENT_RUN spans (direct agent invocations)
+        - TOOL_CALL spans (tools and sub-agents called as tools)
+        - Legacy span naming patterns
+
+        Returns a deduplicated list showing the execution flow.
+        """
         trajectory = []
+        seen = set()  # Track seen items to avoid duplicates from parallel spans
 
         def traverse(span):
-            # Check type first for robustness, rely on previously extracted details
-            if span.get("type") == "AGENT_RUN":
-                agent_name = span.get("details", {}).get("agent_name")
-                if agent_name:
-                    trajectory.append(agent_name)
+            span_type = span.get("type", "")
+            details = span.get("details", {})
+            name = span.get("name", "")
 
-            # Fallback for old traces or unclassified spans (legacy check)
-            elif "agent_run" in span.get("name", ""):
-                match = re.search(r"\[(.*)\]", span.get("name", ""))
+            item = None
+
+            # 1. AGENT_RUN spans - direct agent invocations
+            if span_type == "AGENT_RUN":
+                agent_name = details.get("agent_name")
+                if agent_name:
+                    item = f"agent:{agent_name}"
+
+            # 2. TOOL_CALL spans - tools and sub-agents called as tools
+            elif span_type == "TOOL_CALL":
+                tool_name = details.get("tool_name")
+                if tool_name:
+                    # Check if it looks like a sub-agent (typically PascalCase with "Agent" suffix)
+                    if tool_name.endswith("Agent") or tool_name == "transfer_to_agent":
+                        item = f"sub-agent:{tool_name}"
+                    else:
+                        item = f"tool:{tool_name}"
+
+            # 3. Fallback for old traces or unclassified spans (legacy check)
+            elif "agent_run" in name.lower():
+                match = re.search(r"\[(.*)\]", name)
                 if match:
-                    agent_name = match.group(1)
-                    trajectory.append(agent_name)
+                    item = f"agent:{match.group(1)}"
+
+            # Add to trajectory if not a duplicate
+            if item and item not in seen:
+                seen.add(item)
+                trajectory.append(item)
 
             for child in span.get("children", []):
                 traverse(child)

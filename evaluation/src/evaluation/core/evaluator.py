@@ -28,11 +28,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger("agent_eval")
 
+def serialize_rubric_verdicts(rubric_verdicts: Any) -> Optional[List[Dict]]:
+    """Serialize rubric verdicts to JSON-compatible format."""
+    if not rubric_verdicts:
+        return None
+    try:
+        verdicts = []
+        for verdict in rubric_verdicts:
+            if hasattr(verdict, "model_dump"):
+                verdicts.append(verdict.model_dump(mode="json", exclude_none=True))
+            elif isinstance(verdict, dict):
+                verdicts.append(verdict)
+            else:
+                verdicts.append(str(verdict))
+        return verdicts if verdicts else None
+    except Exception:
+        return None
+
+
 def parse_eval_result(
     result: Any, metric_name: str, metric_df: pd.DataFrame
 ) -> pd.DataFrame:
     """
     Standardizes result parsing across different Vertex AI SDK versions.
+    Now captures rubric_verdicts for managed rubric-based metrics.
     """
     rows = []
 
@@ -80,25 +99,33 @@ def parse_eval_result(
             if val is None:
                 val = getattr(case_result, "metrics", {}).get(found_key)
 
-            rows.append(
-                {
-                    "original_index": original_idx,
-                    f"{metric_name}/score": getattr(val, "score", None)
-                    if val
-                    else None,
-                    f"{metric_name}/explanation": getattr(val, "explanation", None)
-                    if val
-                    else None,
-                }
-            )
+            row_data = {
+                "original_index": original_idx,
+                f"{metric_name}/score": getattr(val, "score", None) if val else None,
+                f"{metric_name}/explanation": getattr(val, "explanation", None) if val else None,
+            }
+
+            # Capture rubric_verdicts for managed rubric-based metrics
+            if val and hasattr(val, "rubric_verdicts") and val.rubric_verdicts:
+                row_data[f"{metric_name}/rubric_verdicts"] = serialize_rubric_verdicts(val.rubric_verdicts)
+
+            # Capture error_message if present
+            if val and hasattr(val, "error_message") and val.error_message:
+                row_data[f"{metric_name}/error"] = val.error_message
+
+            rows.append(row_data)
 
     return pd.DataFrame(rows)
 
 
 def run_single_metric_evaluation(
     task_args: Tuple,
-) -> Tuple[Optional[pd.DataFrame], str]:
-    """Worker function for parallel evaluation."""
+) -> Tuple[Optional[pd.DataFrame], str, Optional[pd.DataFrame]]:
+    """Worker function for parallel evaluation.
+
+    Returns:
+        Tuple of (parsed_results_df, metric_name, input_dataset_df)
+    """
     eval_dataset, metric_obj, metric_df, metric_name, client, retries, delay = task_args
 
     for attempt in range(retries):
@@ -107,7 +134,8 @@ def run_single_metric_evaluation(
             result = client.evals.evaluate(dataset=eval_dataset, metrics=[metric_obj])
             parsed_df = parse_eval_result(result, metric_name, metric_df)
             logger.info(f"Finished evaluation: {metric_name}")
-            return parsed_df, metric_name
+            # Return input dataset along with results for full traceability
+            return parsed_df, metric_name, eval_dataset
         except Exception as e:
             logger.error(f"Failed '{metric_name}': {e}")
             if attempt < retries - 1:
@@ -115,7 +143,7 @@ def run_single_metric_evaluation(
             else:
                 logger.critical(f"'{metric_name}' exhausted retries.")
 
-    return None, metric_name
+    return None, metric_name, None
 
 
 def load_and_consolidate_metrics(metric_files: List[str]) -> Dict[str, Any]:
@@ -129,6 +157,9 @@ def load_and_consolidate_metrics(metric_files: List[str]) -> Dict[str, Any]:
                 prefix = data.get("metric_prefix", "").lstrip("_")
                 metrics = data.get("metrics", {})
                 for name, definition in metrics.items():
+                    # Skip comment entries (strings starting with _comment)
+                    if name.startswith("_comment") or not isinstance(definition, dict):
+                        continue
                     full_name = f"{prefix}_{name}".lstrip("_")
                     consolidated[full_name] = definition
         except Exception as e:
@@ -177,9 +208,18 @@ def save_metrics_summary(
     experiment_id: str,
     run_type: str,
     test_description: str,
+    metric_definitions: Dict[str, Any] = None,
 ) -> None:
-    """Calculate and save a summary of metrics and latency."""
+    """Calculate and save a comprehensive summary of metrics including full input/output."""
     logger.info("--- Generating Metrics Summary ---")
+
+    # Build score_range lookup from metric definitions
+    score_ranges = {}
+    if metric_definitions:
+        for name, info in metric_definitions.items():
+            if isinstance(info, dict) and "score_range" in info:
+                score_ranges[name] = info["score_range"]
+
     grouped = df.groupby("question_id")
     all_question_summaries = []
     per_metric_scores = defaultdict(list)
@@ -212,9 +252,29 @@ def save_metrics_summary(
                 if is_det:
                     det_metrics[metric] = val.get("details") or val.get("score")
                 else:
-                    llm_metrics[metric] = {
-                        k: val[k] for k in ["score", "explanation"] if k in val
-                    }
+                    # Include all available fields for LLM metrics (full input/output)
+                    llm_metric_data = {}
+
+                    # Core output fields
+                    if "score" in val:
+                        llm_metric_data["score"] = val["score"]
+                    if "explanation" in val:
+                        llm_metric_data["explanation"] = val["explanation"]
+
+                    # Rubric verdicts for managed rubric-based metrics
+                    if "rubric_verdicts" in val:
+                        llm_metric_data["rubric_verdicts"] = val["rubric_verdicts"]
+
+                    # Error if present
+                    if "error" in val:
+                        llm_metric_data["error"] = val["error"]
+
+                    # Input data for full traceability
+                    if "input" in val:
+                        llm_metric_data["input"] = val["input"]
+
+                    llm_metrics[metric] = llm_metric_data
+
         metadata = robust_json_loads(group.iloc[0].get("question_metadata", "{}")) or {}
         summary = {
             "question_id": question_id,
@@ -235,7 +295,11 @@ def save_metrics_summary(
         elif metric in DETERMINISTIC_METRICS:
             continue
         else:
-            llm_summary[metric] = avg
+            # Include score_range if available
+            metric_data = {"average": avg}
+            if metric in score_ranges:
+                metric_data["score_range"] = score_ranges[metric]
+            llm_summary[metric] = metric_data
 
     output = {
         "experiment_id": experiment_id,
@@ -249,7 +313,7 @@ def save_metrics_summary(
         "per_question_summary": all_question_summaries,
     }
     with open(results_dir / "eval_summary.json", "w") as f:
-        json.dump(output, f, indent=4)
+        json.dump(output, f, indent=4, default=str)
     logger.info(f"Metrics summary saved to {results_dir / 'eval_summary.json'}")
 
 
@@ -327,6 +391,9 @@ class Evaluator:
         
         metrics_by_agent = defaultdict(list)
         for name, info in metric_definitions.items():
+            # Skip comment entries (strings) and non-dict entries
+            if not isinstance(info, dict):
+                continue
             for agent in info.get("agents", ["data_explorer_agent"]):
                 metrics_by_agent[agent].append((name, info))
 
@@ -368,13 +435,15 @@ class Evaluator:
                         metric=metric_name, metric_prompt_template=info.get("template", "")
                     )
                 else:
+                    # Use template directly for custom LLM metrics
+                    # The SDK will substitute placeholders from dataset columns
+                    template = info.get("template", "")
+                    if not template:
+                        logger.warning(f"Metric '{metric_name}' has no template defined, skipping")
+                        continue
                     metric_obj = types.LLMMetric(
                         name=metric_name,
-                        prompt_template=types.MetricPromptBuilder(
-                            instruction=info.get("instruction", ""),
-                            criteria=info.get("criteria", {}),
-                            rating_scores=info.get("rating_scores", {}),
-                        ),
+                        prompt_template=template,
                     )
 
                 eval_tasks.append((
@@ -389,9 +458,9 @@ class Evaluator:
                 for t in eval_tasks
             }
             for future in concurrent.futures.as_completed(future_to_metric):
-                res, m_name = future.result()
+                res, m_name, input_df = future.result()
                 if res is not None:
-                    all_llm_results.append((res, m_name))
+                    all_llm_results.append((res, m_name, input_df))
 
         # --- Consolidate Results ---
         final_df = original_df.copy()
@@ -402,17 +471,91 @@ class Evaluator:
             if index < len(eval_results_list):
                 eval_results_list[index].update(results)
 
-        # Add LLM
-        for result_df, metric_name in all_llm_results:
-            for _, row in result_df.iterrows():
+        # Add LLM with full input/output traceability
+        for result_df, metric_name, input_df in all_llm_results:
+            for result_idx, row in result_df.iterrows():
                 idx = int(row["original_index"])
                 if idx < len(eval_results_list):
-                    eval_results_list[idx][metric_name] = {
-                        "score": row[f"{metric_name}/score"],
-                        "explanation": row[f"{metric_name}/explanation"],
-                    }
+                    # Get score, handling NaN
+                    score = row.get(f"{metric_name}/score")
+                    try:
+                        if pd.isna(score):
+                            score = None
+                    except (ValueError, TypeError):
+                        pass
 
-        final_df["eval_results"] = [json.dumps(r) for r in eval_results_list]
+                    # Build comprehensive metric result with full output
+                    metric_result = {"score": score}
+
+                    # Only include explanation if it has actual content
+                    explanation = row.get(f"{metric_name}/explanation")
+                    if explanation is not None:
+                        try:
+                            if pd.isna(explanation):
+                                explanation = None
+                        except (ValueError, TypeError):
+                            pass
+                    # Skip empty string explanations (some metrics don't return explanations)
+                    if explanation and explanation != "":
+                        # Try to parse JSON explanations (HALLUCINATION, GROUNDING return JSON strings)
+                        if isinstance(explanation, str) and explanation.startswith("["):
+                            try:
+                                explanation = json.loads(explanation)
+                            except (json.JSONDecodeError, TypeError):
+                                pass
+                        metric_result["explanation"] = explanation
+
+                    # Include rubric_verdicts if present (managed rubric metrics)
+                    rubric_verdicts_key = f"{metric_name}/rubric_verdicts"
+                    if rubric_verdicts_key in row and row[rubric_verdicts_key] is not None:
+                        metric_result["rubric_verdicts"] = row[rubric_verdicts_key]
+
+                    # Include error if present (check for NaN)
+                    error_key = f"{metric_name}/error"
+                    if error_key in row:
+                        error_val = row[error_key]
+                        try:
+                            if error_val is not None and not pd.isna(error_val):
+                                metric_result["error"] = str(error_val)
+                        except (ValueError, TypeError):
+                            if error_val is not None:
+                                metric_result["error"] = str(error_val)
+
+                    # Include input data for full traceability
+                    if isinstance(input_df, pd.DataFrame) and result_idx < len(input_df):
+                        input_row = input_df.iloc[result_idx]
+                        input_data = {}
+                        for col in input_df.columns:
+                            val = input_row[col]
+                            # Truncate long strings for summary (keep first 500 chars)
+                            if isinstance(val, str) and len(val) > 500:
+                                input_data[col] = val[:500] + "... [truncated]"
+                            elif isinstance(val, (list, dict)):
+                                # Handle lists and dicts directly
+                                input_data[col] = val
+                            elif val is not None:
+                                # Use try/except for pd.isna since it can fail on complex types
+                                try:
+                                    if not pd.isna(val):
+                                        input_data[col] = val
+                                except (ValueError, TypeError):
+                                    input_data[col] = val
+                        if input_data:
+                            metric_result["input"] = input_data
+
+                    eval_results_list[idx][metric_name] = metric_result
+
+        def json_serializer(obj):
+            """Custom serializer that handles NaN, numpy types, and other edge cases."""
+            if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+                return None
+            if hasattr(obj, 'tolist'):  # numpy arrays
+                return obj.tolist()
+            if hasattr(obj, 'item'):  # numpy scalars
+                return obj.item()
+            return str(obj)
+
+        final_df["eval_results"] = [json.dumps(r, default=json_serializer) for r in eval_results_list]
 
         # Use the provided results_dir directly (folder was created by run/convert)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -430,7 +573,8 @@ class Evaluator:
             results_dir,
             f"eval-{timestamp}",
             self.config.get("input_label", "manual"),
-            self.config.get("test_description", "Automated run")
+            self.config.get("test_description", "Automated run"),
+            metric_definitions=metric_definitions,
         )
 
         logger.info(f"Run folder: {results_dir}")
