@@ -36,6 +36,14 @@ def convert_interactions_to_events(val: Any) -> List[types.evals.Event]:
         args = item.get("input_arguments", {})
         response = item.get("output_result", {})
 
+        # Ensure args is a dict (SDK requirement)
+        if not isinstance(args, dict):
+            args = {"value": args} if args else {}
+
+        # Ensure response is a dict (SDK requirement)
+        if not isinstance(response, dict):
+            response = {"result": response} if response else {}
+
         # 1. Tool Call Event (Model generated)
         fc_part = genai_types.Part.from_function_call(name=tool_name, args=args)
         model_content = genai_types.Content(role="model", parts=[fc_part])
@@ -82,29 +90,30 @@ def map_dataset_columns(
     """
     Maps columns from the raw agent DataFrame to the evaluation dataset based on the metric config.
     Handles nested JSON lookups and template formatting.
+
+    Always adds default prompt/response columns if not explicitly mapped (SDK requires these).
+    Additional columns from dataset_mapping are added for custom placeholders.
     """
     eval_dataset = pd.DataFrame(index=agent_df.index)
 
-    # 0. Always include standard columns with smart defaults
-    # Vertex AI EvalTask for DataFrames works best with strings for prompt/response.
-    # We use user_inputs as prompt and trace_summary as response if not explicitly mapped.
+    # Add default prompt/response for ALL LLM metrics
+    # The SDK expects these standard columns to be present
+    # Add 'prompt' if not explicitly mapped
+    if "prompt" not in mapping:
+        if "user_inputs" in agent_df.columns:
+            inputs = agent_df["user_inputs"]
+            # Normalize multi-turn lists into a single context string.
+            eval_dataset["prompt"] = inputs.apply(
+                lambda x: "\n".join(x)
+                if isinstance(x, list)
+                else str(x)
+                if x is not None
+                else ""
+            )
+        else:
+            eval_dataset["prompt"] = ""
 
-    if "user_inputs" in agent_df.columns:
-        inputs = agent_df["user_inputs"]
-        # Normalize multi-turn lists into a single context string.
-        # This avoids 'got multiple values for keyword argument conversation_history' SDK bugs.
-        eval_dataset["prompt"] = inputs.apply(
-            lambda x: "\n".join(x)
-            if isinstance(x, list)
-            else str(x)
-            if x is not None
-            else ""
-        )
-    else:
-        eval_dataset["prompt"] = ""
-
-    # 3. Handle 'response' (Standard default)
-    # Priority: final_response (actual agent text) > response > trace_summary (agent names only)
+    # Add 'response' if not explicitly mapped
     if "response" not in mapping:
         if "final_response" in agent_df.columns:
             eval_dataset["response"] = agent_df["final_response"].fillna("")
@@ -139,13 +148,23 @@ def map_dataset_columns(
                         lambda x: get_nested_value(robust_json_loads(x), col_path)
                     )
 
+            # Get default value if column not found
+            default_value = details.get("default", "")
+
             if val_series is not None:
                 # Special Case: Tool Interactions to Events
-                # We use metric_name passed from 02_agent_run_eval.py (which is the managed name if applicable)
-                is_tool_metric = metric_name == metric_tool_use_name
+                # Agent metrics that require intermediate_events in Event format
+                AGENT_METRICS_REQUIRING_EVENTS = {
+                    "TOOL_USE_QUALITY", "FINAL_RESPONSE_QUALITY", "HALLUCINATION",
+                    "tool_use_quality", "final_response_quality", "hallucination",
+                    "agent_tool_use_quality", "agent_hallucination"
+                }
+                is_agent_metric = metric_name.upper().replace("AGENT_", "") in {
+                    m.upper().replace("AGENT_", "") for m in AGENT_METRICS_REQUIRING_EVENTS
+                }
                 is_event_col = placeholder in ["intermediate_events", "tool_usage"]
 
-                if is_tool_metric and is_event_col:
+                if is_agent_metric and is_event_col:
                     eval_dataset[placeholder] = val_series.apply(
                         convert_interactions_to_events
                     )
@@ -154,7 +173,7 @@ def map_dataset_columns(
                     def normalize_input(x):
                         if isinstance(x, list):
                             try:
-                                return "\n".join(x) if x else ""
+                                return "\n".join(str(item) for item in x) if x else ""
                             except TypeError:
                                 return json.dumps(x)
                         elif isinstance(x, dict):
@@ -163,7 +182,9 @@ def map_dataset_columns(
 
                     eval_dataset[placeholder] = val_series.apply(normalize_input)
             else:
-                eval_dataset[placeholder] = ""
+                # Column not found - use default value
+                logger.debug(f"Column '{col_path}' not found for placeholder '{placeholder}', using default: '{default_value}'")
+                eval_dataset[placeholder] = default_value
 
         elif "template" in details:
 

@@ -1,111 +1,236 @@
 {
-    "metrics": {
-        "trajectory_accuracy": {
-            "description": "Evaluates how closely the actual agent execution path matched the expected sequence of sub-agents.",
-            "instruction": "Evaluate the agent's execution trajectory against the expected reference.",
-            "criteria": {
-                "Sequence": "Did the agent call the sub-agents/tools in the correct order?",
-                "Completeness": "Were any required steps missed?",
-                "Noise": "Were there unnecessary or hallucinated steps?"
-            },
-            "rating_scores": {
-                "0": "The trajectory is completely different or empty.",
-                "1": "Major deviations; key sub-agents were skipped or invoked in the wrong order.",
-                "2": "Some correct sub-agents, but significant ordering issues or extra steps.",
-                "3": "Mostly correct trajectory with minor deviations (e.g., one extra step or slight reordering).",
-                "4": "The trajectory is logically equivalent to the reference, achieving the same outcome.",
-                "5": "Perfect match with the expected reference trajectory."
-            },
-            "metric_type": "llm",
-            "is_managed": false,
-            "agents": ["customer_service"],
-            "dataset_mapping": {
-                "prompt": {
-                    "source_column": "user_inputs"
-                },
-                "reference": {
-                    "source_column": "reference_data:reference_trajectory"
-                },
-                "response": {
-                    "source_column": "trace_summary"
-                }
-            }
+  "metrics": {
+    "trajectory_accuracy": {
+      "metric_type": "llm",
+      "agents": ["customer_service", "app"],
+      "score_range": {"min": 0, "max": 5, "description": "0=Completely wrong, 5=Perfect trajectory"},
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
         },
-        "response_correctness": {
-            "description": "Assess if the final response directly addresses the user's intent and is factually consistent with the tool outputs.",
-            "is_managed": true,
-            "managed_metric_name": "GENERAL_QUALITY",
-            "agents": ["customer_service"],
-            "dataset_mapping": {
-                "prompt": {
-                    "source_column": "user_inputs"
-                },
-                "response": {
-                    "source_column": "final_response"
-                }
-            }
-        },
-        "tool_usage_accuracy": {
-            "description": "Evaluates if the agent used the correct tools with the correct arguments to fulfill the user's request.",
-            "instruction": "Assess whether the tool calls made by the agent were necessary, correct, and effective.",
-            "criteria": {
-                "Selection": "Did the agent choose the right tool for the task?",
-                "Arguments": "Were the input arguments correct and complete?",
-                "Outcome": "Did the tool call contribute to solving the user's problem?"
-            },
-            "rating_scores": {
-                "0": "No tools used when needed, or completely wrong tools used.",
-                "1": "Tool selection was wrong, or arguments were critically flawed.",
-                "2": "Correct tool, but arguments had errors causing failure.",
-                "3": "Correct tool and arguments, but minor efficiency issues.",
-                "4": "Effective tool usage that moved the conversation forward.",
-                "5": "Perfect tool usage with optimal arguments and flow."
-            },
-            "metric_type": "llm",
-            "is_managed": false,
-            "agents": ["customer_service"],
-            "dataset_mapping": {
-                "prompt": {
-                    "source_column": "user_inputs"
-                },
-                "response": {
-                    "source_column": "extracted_data:sub_agent_trace"
-                },
-                "tool_usage": {
-                    "source_column": "extracted_data:tool_interactions"
-                }
-            }
-        },
-        "state_management_fidelity": {
-            "description": "Checks if the agent correctly updated its internal state (e.g., customer profile) based on the interaction.",
-            "instruction": "Check if the agent correctly parsed and stored information into its session state variables.",
-            "criteria": {
-                "Extraction": "Did the agent correctly extract entities (e.g., 'Tomato', '123') from the user input?",
-                "Mapping": "Are these values mapped to the correct state keys?",
-                "Accuracy": "Do the values match the expected reference state?"
-            },
-            "rating_scores": {
-                "0": "State is empty or completely unrelated to the interaction.",
-                "1": "Major errors in state capture; wrong entities or values.",
-                "2": "Some correct state variables, but significant omissions.",
-                "3": "Key variables captured correctly, but some minor details missed.",
-                "4": "All critical state variables present and correct.",
-                "5": "Perfect state capture, including nuances and optional fields."
-            },
-            "metric_type": "llm",
-            "is_managed": false,
-            "agents": ["customer_service"],
-            "dataset_mapping": {
-                "prompt": {
-                    "source_column": "user_inputs"
-                },
-                "reference": {
-                    "source_column": "reference_data:reference_state_variables"
-                },
-                "response": {
-                    "source_column": "extracted_data:state_variables"
-                }
-            }
+        "response": {
+          "source_column": "trace_summary"
         }
+      },
+      "template": "You are evaluating the execution trajectory of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Agent Execution Trajectory:**\n{response}\n\n**Evaluation Criteria:**\n1. **Sequence:** Did the agent call the sub-agents/tools in a logical order?\n2. **Completeness:** Were any required steps missed?\n3. **Noise:** Were there unnecessary or hallucinated steps?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect trajectory - logical order, all required steps, no unnecessary steps\n- 4: Trajectory is logically equivalent, achieving the same outcome with minor variations\n- 3: Mostly correct trajectory with minor deviations (e.g., one extra step or slight reordering)\n- 2: Some correct sub-agents, but significant ordering issues or extra steps\n- 1: Major deviations; key sub-agents were skipped or invoked in the wrong order\n- 0: The trajectory is completely different or empty\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
+    },
+    "tool_usage_accuracy": {
+      "metric_type": "llm",
+      "agents": ["customer_service", "app"],
+      "score_range": {"min": 0, "max": 5, "description": "0=Complete failure, 5=Perfect tool usage"},
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "extracted_data:tool_interactions"
+        }
+      },
+      "template": "You are evaluating the tool usage of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Tool Interactions:**\n{response}\n\n**Evaluation Criteria:**\n1. **Selection:** Did the agent choose the right tool for the task?\n2. **Arguments:** Were the input arguments correct and complete?\n3. **Outcome:** Did the tool call contribute to solving the user's problem?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect tool usage with optimal arguments and flow\n- 4: Effective tool usage that moved the conversation forward\n- 3: Correct tool and arguments, but minor efficiency issues\n- 2: Correct tool, but arguments had errors causing failure\n- 1: Tool selection was wrong, or arguments were critically flawed\n- 0: No tools used when needed, or completely wrong tools used\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
+    },
+    "state_management_fidelity": {
+      "metric_type": "llm",
+      "agents": ["customer_service", "app"],
+      "score_range": {"min": 0, "max": 5, "description": "0=Empty/unrelated state, 5=Perfect state capture"},
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "template": "Customer ID: {extracted_data_customer_id}\nOrder ID: {extracted_data_order_id}\nIssue Type: {extracted_data_issue_type}\nResolution Status: {extracted_data_resolution_status}",
+          "source_columns": ["extracted_data:customer_id", "extracted_data:order_id", "extracted_data:issue_type", "extracted_data:resolution_status"]
+        }
+      },
+      "template": "You are evaluating the state management of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Extracted State Variables:**\n{response}\n\n**Evaluation Criteria:**\n1. **Extraction:** Did the agent correctly extract entities (customer_id, order_id) from the user input or context?\n2. **Mapping:** Are values mapped to the correct state keys?\n3. **Accuracy:** Do the extracted values match what was mentioned in the conversation?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect state capture with all relevant entities extracted\n- 4: All critical state variables present and correct\n- 3: Key variables captured correctly, but some details missed\n- 2: Some correct state variables, but significant omissions\n- 1: Major errors in state capture; wrong entities or values\n- 0: State is empty or completely unrelated to the interaction\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
+    },
+
+    "_comment_managed_basic": "=== BASIC MANAGED METRICS (require only prompt + response) ===",
+
+    "general_conversation_quality": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "GENERAL_QUALITY",
+      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
+      "description": "Comprehensive adaptive rubrics metric that evaluates overall quality. Generates and assesses criteria based on prompt content. Returns score (passing rate) and rubric verdicts.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        }
+      }
+    },
+    "text_quality": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "TEXT_QUALITY",
+      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
+      "description": "Evaluates linguistic quality: fluency, coherence, and grammar. Returns score (passing rate) and rubric verdicts.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        }
+      }
+    },
+    "instruction_following": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "INSTRUCTION_FOLLOWING",
+      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
+      "description": "Measures how well the response adheres to specific constraints and instructions in the prompt. Returns score (passing rate) and rubric verdicts.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        }
+      }
+    },
+    "safety": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "SAFETY",
+      "score_range": {"min": 0, "max": 1, "description": "Binary: 0=unsafe, 1=safe"},
+      "description": "Assesses whether response violates policies: PII, Hate Speech, Dangerous Content, Harassment, Sexually Explicit.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        }
+      }
+    },
+
+    "_comment_managed_agent": "=== AGENT-SPECIFIC MANAGED METRICS (require tool_declarations, intermediate_events) ===",
+
+    "final_response_quality": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "FINAL_RESPONSE_QUALITY",
+      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
+      "description": "Comprehensive agent quality metric. Evaluates based on agent config (developer_instruction, tool_declarations), tool usage in intermediate_events, and final answer. Returns score (passing rate) and rubric verdicts.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        },
+        "developer_instruction": {
+          "source_column": "extracted_data:system_instruction",
+          "default": ""
+        },
+        "tool_declarations": {
+          "source_column": "extracted_data:tool_declarations",
+          "default": "[]"
+        },
+        "intermediate_events": {
+          "source_column": "extracted_data:tool_interactions"
+        }
+      }
+    },
+    "agent_hallucination": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "HALLUCINATION",
+      "score_range": {"min": 0, "max": 1, "description": "Rate of supported claims: 0=all claims hallucinated, 1=all claims supported"},
+      "description": "Checks factuality by segmenting response into atomic claims and verifying against tool usage in intermediate_events.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "response": {
+          "source_column": "final_response"
+        },
+        "developer_instruction": {
+          "source_column": "extracted_data:system_instruction",
+          "default": ""
+        },
+        "tool_declarations": {
+          "source_column": "extracted_data:tool_declarations",
+          "default": "[]"
+        },
+        "intermediate_events": {
+          "source_column": "extracted_data:tool_interactions"
+        }
+      }
+    },
+    "agent_tool_use_quality": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "TOOL_USE_QUALITY",
+      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
+      "description": "Evaluates tool selection, correct parameter usage, and adherence to specified operation sequence. Returns score (passing rate) and rubric verdicts.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "developer_instruction": {
+          "source_column": "extracted_data:system_instruction",
+          "default": ""
+        },
+        "tool_declarations": {
+          "source_column": "extracted_data:tool_declarations",
+          "default": "[]"
+        },
+        "intermediate_events": {
+          "source_column": "extracted_data:tool_interactions"
+        }
+      }
+    },
+
+    "_comment_managed_reference": "=== REFERENCE-BASED MANAGED METRICS (require reference/ground truth) ===",
+
+    "final_response_match": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "FINAL_RESPONSE_MATCH",
+      "score_range": {"min": 0, "max": 1, "description": "Binary: 0=no match, 1=match"},
+      "description": "Compares agent's final answer to reference (ground truth). Requires golden dataset with expected_response.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        },
+        "reference": {
+          "source_column": "reference_data:expected_response"
+        }
+      }
+    },
+
+    "_comment_managed_context": "=== CONTEXT-BASED MANAGED METRICS (require context for grounding) ===",
+
+    "grounding": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "GROUNDING",
+      "score_range": {"min": 0, "max": 1, "description": "Rate of grounded claims: 0=all claims ungrounded, 1=all claims grounded"},
+      "description": "Checks factuality and consistency by verifying response is grounded in provided context.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        },
+        "context": {
+          "source_column": "extracted_data:tool_interactions"
+        }
+      }
     }
+  }
 }

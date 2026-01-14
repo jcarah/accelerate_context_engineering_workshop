@@ -551,6 +551,10 @@ def calculate_agent_handoffs(
     """
     Count the number of agent handoffs/invocations in the session.
     Returns total handoff events as the score.
+
+    Captures:
+    - Direct agent invocations (invoke_agent, agent_run)
+    - Sub-agents called as tools (execute_tool *Agent, transfer_to_agent)
     """
     handoff_count = 0
     agents_invoked = set()
@@ -561,15 +565,21 @@ def calculate_agent_handoffs(
     for span in session_trace:
         name = span.get("name", "")
 
-        # Check for agent invocations
+        # Check for direct agent invocations
         if name.startswith("invoke_agent ") or name.startswith("agent_run "):
             agent_name = (
                 name.replace("invoke_agent ", "").replace("agent_run ", "").strip()
             )
-
-            # Optionally filter out the root agent if we knew its name, but raw count is safer
             handoff_count += 1
             agents_invoked.add(agent_name)
+
+        # Check for sub-agents called as tools (e.g., "execute_tool IntakeAgent")
+        elif name.startswith("execute_tool "):
+            tool_name = name.replace("execute_tool ", "").strip()
+            # Sub-agents typically end with "Agent" or are transfer_to_agent
+            if tool_name.endswith("Agent") or tool_name == "transfer_to_agent":
+                handoff_count += 1
+                agents_invoked.add(tool_name)
 
     explanation = (
         f"Total Handoffs: {handoff_count}. "
