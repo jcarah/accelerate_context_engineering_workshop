@@ -53,8 +53,9 @@ def calculate_token_usage(
     for span in session_trace:
         attributes = span.get("attributes", {})
 
-        # Identify model
-        model_name = attributes.get("gen_ai.request.model", "default").lower()
+        # Identify model (handle None values)
+        model_name = attributes.get("gen_ai.request.model") or "default"
+        model_name = model_name.lower() if isinstance(model_name, str) else "default"
 
         # Check for LLM response with usage metadata
         llm_response = attributes.get("gcp.vertex.agent.llm_response")
