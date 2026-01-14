@@ -104,11 +104,14 @@ def map_dataset_columns(
         eval_dataset["prompt"] = ""
 
     # 3. Handle 'response' (Standard default)
+    # Priority: final_response (actual agent text) > response > trace_summary (agent names only)
     if "response" not in mapping:
-        if "trace_summary" in agent_df.columns:
-            eval_dataset["response"] = agent_df["trace_summary"].fillna("")
+        if "final_response" in agent_df.columns:
+            eval_dataset["response"] = agent_df["final_response"].fillna("")
         elif "response" in agent_df.columns:
             eval_dataset["response"] = agent_df["response"].fillna("")
+        elif "trace_summary" in agent_df.columns:
+            eval_dataset["response"] = agent_df["trace_summary"].fillna("")
         else:
             eval_dataset["response"] = ""
 
