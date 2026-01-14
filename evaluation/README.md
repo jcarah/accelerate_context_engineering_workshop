@@ -71,10 +71,12 @@ uv run adk eval customer_service \
 
 **Simulation Files:**
 ```
+customer_service/
+└── eval_set_with_scenarios.evalset.json  # Eval set definition (ADK expects this here)
+
 eval/scenarios/
 ├── conversation_scenarios.json    # Multi-turn conversation plans
 ├── eval_config.json               # Evaluation criteria (hallucination, safety)
-├── eval_set_with_scenarios.evalset.json  # Eval set definition
 └── session_input.json             # Initial session state
 ```
 
