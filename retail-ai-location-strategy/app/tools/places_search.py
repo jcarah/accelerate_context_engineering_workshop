@@ -15,20 +15,15 @@
 """Google Maps Places API search tool for competitor mapping."""
 
 import os
-import json
-import uuid
-from google.adk.tools import ToolContext, FunctionTool
-from google.adk.models.llm_request import LlmRequest
-from google.genai import types as genai_types
-from typing_extensions import override
+from google.adk.tools import ToolContext
 
 
-async def search_places(query: str, tool_context: ToolContext) -> dict:
+def search_places(query: str, tool_context: ToolContext) -> dict:
     """Search for places using Google Maps Places API.
 
     This tool searches for businesses/places matching the query using the
-    Google Maps Places API. It saves the results to a JSON file and returns
-    the file name.
+    Google Maps Places API. It returns real competitor data including names,
+    addresses, ratings, and other relevant information.
 
     Args:
         query: Search query combining business type and location.
@@ -37,30 +32,34 @@ async def search_places(query: str, tool_context: ToolContext) -> dict:
     Returns:
         dict: A dictionary containing:
             - status: "success" or "error"
-            - file_name: Name of the JSON file with place details
+            - results: List of places found with details
             - count: Number of results found
             - error_message: Error details if status is "error"
     """
     try:
         import googlemaps
 
-        maps_api_key = tool_context.state.get("maps_api_key", "") or os.environ.get(
-            "MAPS_API_KEY", ""
-        )
+        # Get API key from session state first, then fall back to environment variable
+        maps_api_key = tool_context.state.get("maps_api_key", "") or os.environ.get("MAPS_API_KEY", "")
 
         if not maps_api_key:
             return {
                 "status": "error",
                 "error_message": "Maps API key not found. Set MAPS_API_KEY environment variable or 'maps_api_key' in session state.",
-                "file_name": None,
+                "results": [],
                 "count": 0,
             }
 
+        # Initialize Google Maps client
         gmaps = googlemaps.Client(key=maps_api_key)
+
+        # Perform places search
         result = gmaps.places(query)
 
-        places = [
-            {
+        # Extract and format results
+        places = []
+        for place in result.get("results", []):
+            places.append({
                 "name": place.get("name", "Unknown"),
                 "address": place.get("formatted_address", place.get("vicinity", "N/A")),
                 "rating": place.get("rating", 0),
@@ -73,33 +72,19 @@ async def search_places(query: str, tool_context: ToolContext) -> dict:
                     "lng": place.get("geometry", {}).get("location", {}).get("lng"),
                 },
                 "place_id": place.get("place_id", ""),
-            }
-            for place in result.get("results", [])
-        ]
-
-        file_name = f"competitor_data_{uuid.uuid4()}.json"
-        artifact_data = json.dumps({"results": places}, indent=2)
-        await tool_context.save_artifact(
-            file_name, genai_types.Part.from_text(artifact_data),
-            custom_metadata={"summary": f"Competitor data for query: {query}"}
-        )
+            })
 
         return {
             "status": "success",
-            "file_name": file_name,
+            "results": places,
             "count": len(places),
+            "next_page_token": result.get("next_page_token"),
         }
 
     except Exception as e:
         return {
             "status": "error",
             "error_message": str(e),
-            "file_name": None,
+            "results": [],
             "count": 0,
         }
-
-
-class SearchPlacesTool(FunctionTool):
-    def __init__(self):
-        super().__init__(search_places)
-
