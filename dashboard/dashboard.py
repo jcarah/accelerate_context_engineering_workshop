@@ -4,13 +4,29 @@ import json
 import os
 from datetime import datetime
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import math
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple, Union
+
+# --- Configuration ---
+
+DEFAULT_METRICS_CONFIG = {
+    "general_conversation_quality.average": "Quality",
+    "safety.average": "Safety",
+    "token_usage.prompt_tokens": "Prompt Tokens",
+    "tool_success_rate.tool_success_rate": "Tool Success",
+    "latency_metrics.total_latency_seconds": "Latency"
+}
+
+METRIC_DIRECTIONS = {
+    "general_conversation_quality.average": "higher",
+    "safety.average": "higher",
+    "token_usage.prompt_tokens": "lower",
+    "tool_success_rate.tool_success_rate": "higher",
+    "latency_metrics.total_latency_seconds": "lower"
+}
 
 # --- Data Processing Functions ---
 
-def flatten_json(y: Dict[str, Any]) -> Dict[str, Any]:
+def flatten_json(nested_dict: Dict[str, Any]) -> Dict[str, Any]:
     """
     Recursively flattens a nested dictionary.
     Keys are joined by dots (e.g., 'level1.level2.key').
@@ -18,16 +34,16 @@ def flatten_json(y: Dict[str, Any]) -> Dict[str, Any]:
     out = {}
 
     def flatten(x: Any, name: str = ''):
-        if type(x) is dict:
+        if isinstance(x, dict):
             for a in x:
                 flatten(x[a], name + a + '.')
-        elif type(x) is list:
+        elif isinstance(x, list):
             # We generally skip lists in this simple flattener unless they are simple numeric lists
             pass
         else:
             out[name[:-1]] = x
 
-    flatten(y)
+    flatten(nested_dict)
     return out
 
 def parse_metric_from_file(file_path: str) -> Optional[Dict[str, Any]]:
@@ -110,45 +126,147 @@ def load_data_from_directory(directory: str) -> Tuple[pd.DataFrame, int]:
     df = df.sort_values(by="datetime").reset_index(drop=True)
     return df, skipped_files
 
+# --- Visualization Helper Functions ---
+
+def _get_color(experiment_id: str, baseline_id: str) -> str:
+    """Returns the color for a given experiment (Gray for baseline, Blue for others)."""
+    return '#5F6368' if experiment_id == baseline_id else '#1A73E8'
+
+def _calculate_max_values(df: pd.DataFrame, metrics: List[str]) -> Dict[str, float]:
+    """Calculates max values for normalization, preventing division by zero."""
+    max_values = {}
+    for metric in metrics:
+        max_val = df[metric].max()
+        max_values[metric] = max_val if max_val and max_val > 0 else 1.0
+    return max_values
+
+def _generate_scorecard_html(df: pd.DataFrame, baseline_id: str, candidate_ids: List[str]) -> str:
+    """Generates the HTML for the Delta Metrics Scorecards."""
+    delta_metrics = [m for m in DEFAULT_METRICS_CONFIG.keys() if m in df.columns]
+    
+    if df.empty or not baseline_id or not candidate_ids or not delta_metrics:
+        return ""
+
+    baseline_rows = df[df['experiment_id'] == baseline_id]
+    if baseline_rows.empty:
+        return ""
+        
+    baseline_row = baseline_rows.iloc[0]
+    
+    # Find the latest candidate run based on datetime
+    candidate_rows = df[df['experiment_id'].isin(candidate_ids)].sort_values(by='datetime', ascending=False)
+    
+    if candidate_rows.empty:
+        return ""
+
+    latest_cand_row = candidate_rows.iloc[0]
+    cards_html = ""
+    
+    for metric in delta_metrics:
+        display_name = DEFAULT_METRICS_CONFIG.get(metric, metric)
+        direction = METRIC_DIRECTIONS.get(metric, "higher")
+        b_val = baseline_row.get(metric, 0)
+        c_val = latest_cand_row.get(metric, 0)
+        
+        if b_val == 0:
+            pct_change = 0
+            delta_str = "N/A"
+            color = "#5F6368" # Neutral
+        else:
+            pct_change = ((c_val - b_val) / b_val) * 100
+            delta_str = f"{pct_change:+.1f}%"
+            
+            # Determine color based on direction
+            if pct_change == 0:
+                color = "#5F6368"
+            elif (direction == "higher" and pct_change > 0) or (direction == "lower" and pct_change < 0):
+                color = "#188038" # Green (Good)
+            else:
+                color = "#D93025" # Red (Bad)
+
+        cards_html += f"""
+        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; flex: 1; min-width: 200px; background: white; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);">
+            <div style="font-size: 12px; color: #5f6368; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">{display_name}</div>
+            <div style="font-size: 24px; color: {color}; margin: 8px 0; font-weight: bold;">{delta_str}</div>
+            <div style="font-size: 12px; color: #70757a;">vs Baseline</div>
+        </div>
+        """
+    
+    if not cards_html:
+        return ""
+        
+    return f"<div style='display: flex; flex-wrap: wrap; gap: 16px; width: 100%; margin-bottom: 20px;'>{cards_html}</div>"
+
 # --- Gradio Controller Functions ---
 
-def update_file_and_metric_lists(directory: str) -> Tuple[gr.update, gr.update, gr.update, pd.DataFrame]:
+def update_file_and_metric_lists(directory_input: str) -> Tuple[gr.update, gr.update, gr.update, gr.update, pd.DataFrame]:
     """
-    Loads data from the specified directory, updates UI selectors,
+    Loads data from the specified directory or directories, updates UI selectors,
     and returns messages and the loaded DataFrame.
     """
-    if not directory or not os.path.isdir(directory):
-        error_message = "### <span style='color:red'>Error: The specified path is not a valid directory.</span>"
-        return gr.update(visible=True, value=error_message), gr.update(choices=[], value=[]), gr.update(choices=[], value=[]), pd.DataFrame()
+    if not directory_input:
+         error_message = "### <span style='color:red'>Error: Please provide at least one directory path.</span>"
+         return gr.update(visible=True, value=error_message), gr.update(choices=[], value=None), gr.update(choices=[], value=[]), gr.update(choices=[], value=[]), pd.DataFrame()
+
+    # Split input by comma or newline to support multiple directories
+    raw_directories = [d.strip() for d in directory_input.replace('\n', ',').split(',') if d.strip()]
     
-    df, skipped_files = load_data_from_directory(directory)
+    all_dfs = []
+    total_skipped_files = 0
+    loaded_directories = []
+    
+    for directory in raw_directories:
+        directory = directory.strip().strip('"').strip("'")
+        directory = os.path.expanduser(directory)
+        
+        # Fallback: If path doesn't exist, try relative to home
+        if not os.path.exists(directory):
+             home_path = os.path.join(os.path.expanduser("~"), directory)
+             if os.path.exists(home_path):
+                 directory = home_path
+
+        # If the user provided a full file path, use its parent directory
+        if directory and os.path.isfile(directory):
+            directory = os.path.dirname(directory)
+
+        if directory and os.path.isdir(directory):
+            df, skipped = load_data_from_directory(directory)
+            if not df.empty:
+                all_dfs.append(df)
+                loaded_directories.append(directory)
+            total_skipped_files += skipped
+
+    if not all_dfs:
+        error_message = "### <span style='color:red'>Error: No valid directories with JSON logs found.</span>"
+        return gr.update(visible=True, value=error_message), gr.update(choices=[], value=None), gr.update(choices=[], value=[]), gr.update(choices=[], value=[]), pd.DataFrame()
+    
+    # Combine all dataframes
+    final_df = pd.concat(all_dfs, ignore_index=True)
+    # Deduplicate based on experiment_id to avoid duplicates if directories overlap or are repeated
+    final_df = final_df.drop_duplicates(subset=['experiment_id'])
+    final_df = final_df.sort_values(by="datetime").reset_index(drop=True)
     
     message = ""
-    if skipped_files > 0:
-        message += f"### <span style='color:orange'>Warning: Skipped {skipped_files} corrupt or malformed JSON file(s).</span>\n"
+    if total_skipped_files > 0:
+        message += f"### <span style='color:orange'>Warning: Skipped {total_skipped_files} corrupt or malformed JSON file(s).</span>\n"
 
-    if df.empty:
-        message += "### <span style='color:blue'>Info: No valid JSON files with metrics found in this directory."
-        return gr.update(visible=True, value=message), gr.update(choices=[], value=[]), gr.update(choices=[], value=[]), pd.DataFrame()
-    
-    files = df["experiment_id"].tolist()
+    files = final_df["experiment_id"].tolist()
     # Filter columns to only those that are likely metrics (numeric) and not metadata
-    metrics = [col for col in df.columns if col not in ['experiment_id', 'datetime']]
+    metrics = [col for col in final_df.columns if col not in ['experiment_id', 'datetime']]
     metrics.sort()
     
-    message += f"### <span style='color:green'>Success: Loaded {len(df)} experiment(s).</span>"
+    message += f"### <span style='color:green'>Success: Loaded {len(final_df)} experiment(s) from {len(loaded_directories)} directory(ies).</span>"
     # For multiselect Dropdown, the value should be an empty list []
-    return gr.update(visible=True, value=message), gr.update(choices=files, value=[]), gr.update(choices=metrics, value=[]), df
+    return gr.update(visible=True, value=message), gr.update(choices=files, value=None), gr.update(choices=files, value=[]), gr.update(choices=metrics, value=[]), final_df
 
-def generate_dashboard(df: pd.DataFrame, selected_exp_ids: List[str], selected_metrics: List[str]) -> go.Figure:
+def generate_bar_chart(df: pd.DataFrame, baseline_id: str, candidate_ids: List[str], selected_metrics: List[str], normalize: bool) -> go.Figure:
     """
-    Generates a dynamic Plotly figure with vertically stacked subplots.
+    Generates a grouped bar chart to compare metrics.
     """
-    if df.empty or not selected_exp_ids or not selected_metrics:
-        # Return an empty figure with a message if nothing is selected
+    if df.empty or not baseline_id or not selected_metrics:
         fig = go.Figure()
         fig.update_layout(
-            title="Please select a directory, experiments, and metrics to generate plots.",
+            title="Please select a baseline, metrics, and optionally candidates to generate plots.",
             xaxis={"visible": False},
             yaxis={"visible": False},
             annotations=[{
@@ -161,64 +279,99 @@ def generate_dashboard(df: pd.DataFrame, selected_exp_ids: List[str], selected_m
         )
         return fig
 
+    selected_exp_ids = [baseline_id]
+    if candidate_ids:
+        selected_exp_ids.extend(candidate_ids)
+
     filtered_df = df[df['experiment_id'].isin(selected_exp_ids)]
-    # Sort by datetime so lines connect logically over time/order
-    sorted_filtered_df = filtered_df.sort_values('datetime')
-
-    num_metrics = len(selected_metrics)
     
-    # Vertical stack layout (1 column) to give each chart maximum space
-    rows = num_metrics
-    cols = 1
+    # Split into baseline and candidates to ensure baseline is always first
+    baseline_data = filtered_df[filtered_df['experiment_id'] == baseline_id]
+    candidates_data = filtered_df[filtered_df['experiment_id'] != baseline_id]
+    
+    # Sort candidates by datetime, then concatenate with baseline at the front
+    sorted_filtered_df = pd.concat([baseline_data, candidates_data.sort_values('datetime')])
 
-    fig = make_subplots(
-        rows=rows, 
-        cols=cols, 
-        subplot_titles=selected_metrics,
-        vertical_spacing=0.08  # Spacing between rows
-    )
+    # Calculate max values for normalization
+    max_metric_values = _calculate_max_values(sorted_filtered_df, selected_metrics) if normalize else {}
 
-    for i, metric in enumerate(selected_metrics):
-        row = i + 1
-        col = 1
+    fig = go.Figure()
 
-        if metric not in sorted_filtered_df.columns:
-            continue
-
-        # Plot a single continuous line for the metric across all selected experiments
-        # Using a consistent Google Blue for a clean "internal tool" aesthetic
-        fig.add_trace(
-            go.Scatter(
-                x=sorted_filtered_df['experiment_id'],
-                y=sorted_filtered_df[metric],
-                mode='lines+markers',
-                name=metric,
-                showlegend=False, # Hiding legend as titles explain the metric
-                line=dict(width=3, color='#1A73E8'),
-                marker=dict(size=10),
-                hovertemplate=f"<b>Exp:</b> %{{x}}<br><b>{metric}:</b> %{{y}}<extra></extra>"
-            ),
-            row=row,
-            col=col
-        )
+    for index, row in sorted_filtered_df.iterrows():
+        exp_id = row['experiment_id']
         
-        # Update axis labels
-        fig.update_xaxes(title_text="Experiment ID", row=row, col=col)
-        fig.update_yaxes(title_text="Value", row=row, col=col)
-
-    # Update overall layout
-    # Allocate 500px per chart for a spacious, clean view
-    height_per_row = 500
-    total_height = max(600, rows * height_per_row)
+        # Prepare data for this experiment
+        original_values = [row.get(metric, 0) for metric in selected_metrics]
+        if normalize:
+            y_values = []
+            for val, metric in zip(original_values, selected_metrics):
+                max_val = max_metric_values.get(metric, 1.0)
+                y_values.append(val / max_val if max_val != 0 else 0)
+            hovertemplate = "<b>%{x}</b><br>Normalized: %{y:.2f}<br>Original: %{text}<extra></extra>"
+        else:
+            y_values = original_values
+            hovertemplate = "<b>%{x}</b><br>Value: %{y}<extra></extra>"
+        
+        # Color logic: Red for baseline, Blue for candidates
+        color = _get_color(exp_id, baseline_id)
+        
+        fig.add_trace(go.Bar(
+            name=exp_id,
+            x=selected_metrics,
+            y=y_values,
+            marker_color=color,
+            text=[f"{v:.2f}" if isinstance(v, float) else v for v in original_values],
+            textposition='auto',
+            hovertemplate=hovertemplate
+        ))
 
     fig.update_layout(
-        title_text="Metric Comparison Trends",
-        height=total_height,
+        barmode='group',
+        title_text="Metric Comparison (Normalized)" if normalize else "Metric Comparison (Absolute)",
+        xaxis_title="Metrics",
+        yaxis_title="Normalized Score (0-1)" if normalize else "Value",
         template="plotly_white",
-        margin=dict(l=50, r=50, t=80, b=100)
+        margin=dict(l=50, r=50, t=80, b=100),
+        height=600
     )
 
     return fig
+
+def generate_dashboard_view(df: pd.DataFrame, baseline_id: str, candidate_ids: List[str], pinned_metrics: List[str], normalize: bool):
+    """
+    Generates the bar chart and raw data table.
+    """
+    # Generate charts using pinned metrics
+    bar_fig = generate_bar_chart(df, baseline_id, candidate_ids, pinned_metrics, normalize)
+    
+    # Generate raw data table with ALL metrics for the selected experiments
+    if df.empty or not baseline_id:
+        table_df = pd.DataFrame()
+    else:
+        selected_exp_ids = [baseline_id]
+        if candidate_ids:
+            selected_exp_ids.extend(candidate_ids)
+        
+        table_df = df[df['experiment_id'].isin(selected_exp_ids)]
+        
+        # Ensure readable column order
+        cols = table_df.columns.tolist()
+        priority_cols = ['experiment_id', 'datetime']
+        for col in reversed(priority_cols):
+            if col in cols:
+                cols.insert(0, cols.pop(cols.index(col)))
+        table_df = table_df[cols]
+
+        # Format numeric columns to 2 decimal places for better readability
+        numeric_cols = table_df.select_dtypes(include=['number']).columns
+        for col in numeric_cols:
+            if col != 'experiment_id':
+                table_df[col] = table_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
+
+    # Generate Delta Metrics HTML Scorecards
+    delta_html = _generate_scorecard_html(df, baseline_id, candidate_ids)
+
+    return delta_html, bar_fig, table_df
 
 # --- UI and Application Main ---
 
@@ -236,8 +389,8 @@ def main():
 
         with gr.Row():
             directory_input = gr.Textbox(
-                label="Directory Path", 
-                placeholder="/path/to/json/logs", 
+                label="Directory Path(s)", 
+                placeholder="/path/to/json/logs (comma or newline separated)", 
                 scale=4,
                 container=False 
             )
@@ -246,26 +399,32 @@ def main():
         message_area = gr.Markdown(visible=False)
 
         with gr.Row():
-            file_selector = gr.Dropdown(label="Select Experiments", info="Choose runs to compare", multiselect=True)
-            metric_selector = gr.Dropdown(label="Select Metrics", info="Choose metrics to visualize", multiselect=True)
+            baseline_selector = gr.Dropdown(label="Select Baseline", info="Choose the baseline experiment", multiselect=False)
+            candidate_selector = gr.Dropdown(label="Select Candidate(s)", info="Choose experiments to compare against baseline", multiselect=True)
+            metric_selector = gr.Dropdown(label="Pin Metrics (Charts)", info="Choose key metrics for visual comparison", multiselect=True, scale=1)
+            normalize_checkbox = gr.Checkbox(label="Normalize Data (0-1)", value=True, info="Scale metrics to 0-1 range for easier comparison")
             
         generate_button = gr.Button("Generate Dashboard", variant="primary")
         
+        # Scorecards at the top
+        delta_html = gr.HTML(label="Scorecard")
+        
         # A single Plot component that holds the dynamic subplots below the controls
-        dashboard_plot = gr.Plot(label="Analysis Dashboard")
+        bar_plot = gr.Plot(label="Metric Comparison (Bar)")
+        raw_data_table = gr.Dataframe(label="Raw Data (All Metrics)", interactive=False)
 
         # --- Event Handlers ---
 
         update_button.click(
             fn=update_file_and_metric_lists,
             inputs=[directory_input],
-            outputs=[message_area, file_selector, metric_selector, df_state]
+            outputs=[message_area, baseline_selector, candidate_selector, metric_selector, df_state]
         )
 
         generate_button.click(
-            fn=generate_dashboard,
-            inputs=[df_state, file_selector, metric_selector],
-            outputs=[dashboard_plot]
+            fn=generate_dashboard_view,
+            inputs=[df_state, baseline_selector, candidate_selector, metric_selector, normalize_checkbox],
+            outputs=[delta_html, bar_plot, raw_data_table]
         )
 
     # Launch configuration
