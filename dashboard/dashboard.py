@@ -9,19 +9,11 @@ from typing import Dict, List, Any, Optional, Tuple, Union
 # --- Configuration ---
 
 DEFAULT_METRICS_CONFIG = {
-    "general_conversation_quality.average": "Quality",
-    "safety.average": "Safety",
-    "token_usage.prompt_tokens": "Prompt Tokens",
-    "tool_success_rate.tool_success_rate": "Tool Success",
-    "latency_metrics.total_latency_seconds": "Latency"
-}
-
-METRIC_DIRECTIONS = {
-    "general_conversation_quality.average": "higher",
-    "safety.average": "higher",
-    "token_usage.prompt_tokens": "lower",
-    "tool_success_rate.tool_success_rate": "higher",
-    "latency_metrics.total_latency_seconds": "lower"
+    "general_conversation_quality.average": {"name": "Quality", "direction": "higher"},
+    "safety.average": {"name": "Safety", "direction": "higher"},
+    "token_usage.prompt_tokens": {"name": "Prompt Tokens", "direction": "lower"},
+    "tool_success_rate.tool_success_rate": {"name": "Tool Success", "direction": "higher"},
+    "latency_metrics.total_latency_seconds": {"name": "Latency", "direction": "lower"}
 }
 
 # --- Data Processing Functions ---
@@ -163,8 +155,9 @@ def _generate_scorecard_html(df: pd.DataFrame, baseline_id: str, candidate_ids: 
     cards_html = ""
     
     for metric in delta_metrics:
-        display_name = DEFAULT_METRICS_CONFIG.get(metric, metric)
-        direction = METRIC_DIRECTIONS.get(metric, "higher")
+        config = DEFAULT_METRICS_CONFIG.get(metric, {})
+        display_name = config.get("name", metric)
+        direction = config.get("direction", "higher")
         b_val = baseline_row.get(metric, 0)
         c_val = latest_cand_row.get(metric, 0)
         
