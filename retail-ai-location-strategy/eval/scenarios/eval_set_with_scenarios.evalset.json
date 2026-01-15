@@ -3,29 +3,125 @@
   "name": "eval_set_with_scenarios",
   "eval_cases": [
     {
-      "eval_id": "d85689dc",
+      "eval_id": "aada7ace",
       "conversation_scenario": {
-        "starting_prompt": "I want to open a coffee shop in Indiranagar, Bangalore. Can you analyze this location for me?",
-        "conversation_plan": "Just wait for the agent to complete its 7-stage pipeline analysis and provide the final strategic recommendation."
+        "starting_prompt": "I want to open a coffee shop. Compare Indiranagar, Koramangala, and HSR Layout in Bangalore simultaneously.",
+        "conversation_plan": "Request a comparison of three specific neighborhoods. Expect the agent to analyze all three and provide a comparative summary."
       },
       "session_input": {
-        "app_name": "app",
+        "app_name": "retail_location_strategy",
         "user_id": "eval_user"
       },
-      "creation_timestamp": 1768151544.822822
+      "creation_timestamp": 1768516684.663815
     },
     {
-      "eval_id": "13fc6434",
+      "eval_id": "f37308a6",
       "conversation_scenario": {
-        "starting_prompt": "Where should I open a fitness studio in Austin, Texas?",
-        "conversation_plan": "Ask the agent to research Austin, map competitors, and give a recommendation for the best neighborhood."
+        "starting_prompt": "I want to open a generic retail store in Manhattan, NY. I need you to find at least 50 specific competitors, list their exact addresses and ratings, and then calculate the average rating of the top 10 versus the bottom 10.",
+        "conversation_plan": "Ask for a deep dive into Manhattan competitors, specifically requesting a list of 50+ items. Expect the agent to process this large dataset and provide the calculated rating comparison."
       },
       "session_input": {
-        "app_name": "app",
+        "app_name": "retail_location_strategy",
         "user_id": "eval_user"
       },
-      "creation_timestamp": 1768151544.823611
+      "creation_timestamp": 1768516684.664835
+    },
+    {
+      "eval_id": "efb78d8b",
+      "conversation_scenario": {
+        "starting_prompt": "Find a location for a vegan bakery in Berlin. CRITICAL CONSTRAINT: The location must have a 'Viability Score' above 85 AND be within 1km of a university. If the first location you find doesn't match this, you MUST keep searching until you find one that does.",
+        "conversation_plan": "Request a location for a vegan bakery with a strict viability score constraint (>85). If the agent's first finding is lower, expect it to search again until a suitable location is found."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.666845
+    },
+    {
+      "eval_id": "1b9401de",
+      "conversation_scenario": {
+        "starting_prompt": "I have a prime spot in Austin, Texas. Run a full feasibility study for four completely different concepts: a High-End Gym, a Drive-Thru Coffee Stand, a Pet Grooming Salon, and a Vintage Clothing Store. I need a decision by 5 PM.",
+        "conversation_plan": "Ask for a feasibility study of four distinct business concepts in Austin. Expect the agent to analyze each concept independently and provide a recommendation by the requested deadline."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.668602
+    },
+    {
+      "eval_id": "cc60c11e",
+      "conversation_scenario": {
+        "starting_prompt": "Okay, focusing on Indiranagar: what are the demographic trends there?",
+        "conversation_plan": "Follow up on the previous Indiranagar analysis by asking specifically for demographic trends. Expect the agent to answer using context from the prior turn."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.669892
+    },
+    {
+      "eval_id": "c13dd393",
+      "conversation_scenario": {
+        "starting_prompt": "I want to open a shop.",
+        "conversation_plan": "State a vague intent to 'open a shop'. Expect the agent to ask clarifying questions about location and business type before proceeding."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.67199
+    },
+    {
+      "eval_id": "8d23f146",
+      "conversation_scenario": {
+        "starting_prompt": "Generate an infographic for a high-end luxury watch store in Zurich. I want the data to include specific foot traffic numbers and competitor revenue estimates.",
+        "conversation_plan": "Request an infographic for a luxury watch store in Zurich, specifying data points to include. Expect the agent to generate an image that visualizes this data."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.67303
+    },
+    {
+      "eval_id": "70a45563",
+      "conversation_scenario": {
+        "starting_prompt": "Analyze a 'Quiet Library' in the middle of Times Square, NY.",
+        "conversation_plan": "Ask to analyze a 'Quiet Library' in Times Square. Expect the agent to identify the conflict between the business type and the location's noise level."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.674951
+    },
+    {
+      "eval_id": "4bf9dd55",
+      "conversation_scenario": {
+        "starting_prompt": "Act as a brutally honest financial risk assessor. Analyze a bubble tea shop in a saturated market like Taipei.",
+        "conversation_plan": "Instruct the agent to adopt a 'brutally honest financial risk assessor' persona for a saturated market. Expect the analysis to be critical and focused on risk factors."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.676406
+    },
+    {
+      "eval_id": "559f1cda",
+      "conversation_scenario": {
+        "starting_prompt": "Analyze a store in Atlantis, Ocean.",
+        "conversation_plan": "Request an analysis for a non-existent location 'Atlantis, Ocean'. Expect the agent to handle the failure gracefully and ask for a valid location."
+      },
+      "session_input": {
+        "app_name": "retail_location_strategy",
+        "user_id": "eval_user"
+      },
+      "creation_timestamp": 1768516684.678104
     }
   ],
-  "creation_timestamp": 1768151120.5290823
+  "creation_timestamp": 1768516667.6698346
 }
