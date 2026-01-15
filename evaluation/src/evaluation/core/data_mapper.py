@@ -22,9 +22,14 @@ def robust_json_loads(x: Any) -> Optional[Union[Dict, List, str]]:
         return x
 
 
-def convert_interactions_to_events(val: Any) -> List[types.evals.Event]:
+def convert_interactions_to_events(val: Any) -> List[Dict]:
     """
-    Converts a list of tool interactions into Vertex AI SDK Event objects.
+    Converts a list of tool interactions into Vertex AI SDK Event dictionaries.
+
+    Returns dictionaries instead of Event objects because:
+    1. Pandas DataFrames serialize Event objects to __repr__ strings when passed to SDK
+    2. The SDK's _FlattenEvalDataConverter validates dicts via Event.model_validate()
+    3. This ensures proper Event reconstruction on the SDK side
     """
     interactions = robust_json_loads(val)
     if not isinstance(interactions, list):
@@ -44,17 +49,19 @@ def convert_interactions_to_events(val: Any) -> List[types.evals.Event]:
         if not isinstance(response, dict):
             response = {"result": response} if response else {}
 
-        # 1. Tool Call Event (Model generated)
+        # 1. Tool Call Event (Model generated) - as dict for SDK validation
         fc_part = genai_types.Part.from_function_call(name=tool_name, args=args)
         model_content = genai_types.Content(role="model", parts=[fc_part])
-        events.append(types.evals.Event(content=model_content, author="model"))
+        model_event = types.evals.Event(content=model_content, author="model")
+        events.append(model_event.model_dump(mode="json", exclude_none=True))
 
-        # 2. Tool Response Event (System provided)
+        # 2. Tool Response Event (System provided) - as dict for SDK validation
         fr_part = genai_types.Part.from_function_response(
             name=tool_name, response=response
         )
         tool_content = genai_types.Content(role="tool", parts=[fr_part])
-        events.append(types.evals.Event(content=tool_content, author="tool"))
+        tool_event = types.evals.Event(content=tool_content, author="tool")
+        events.append(tool_event.model_dump(mode="json", exclude_none=True))
 
     return events
 
@@ -170,11 +177,25 @@ def map_dataset_columns(
                     )
                 else:
                     # Robust Flattening for custom placeholders (Templates need strings)
+                    # For grounding context, SDK expects valid JSON - use array format
+                    is_grounding_context = placeholder == "context"
+
                     def normalize_input(x):
                         if isinstance(x, list):
+                            # For grounding context, convert to JSON array (not newline-separated)
+                            # SDK's grounding API fails with "Extra data" on multiple JSON objects
+                            if is_grounding_context:
+                                return json.dumps(x)
+                            # For other list fields, convert each item to JSON string
                             try:
-                                return "\n".join(str(item) for item in x) if x else ""
-                            except TypeError:
+                                json_items = []
+                                for item in x:
+                                    if isinstance(item, dict):
+                                        json_items.append(json.dumps(item))
+                                    else:
+                                        json_items.append(str(item))
+                                return "\n".join(json_items) if json_items else ""
+                            except (TypeError, ValueError):
                                 return json.dumps(x)
                         elif isinstance(x, dict):
                             return json.dumps(x)
