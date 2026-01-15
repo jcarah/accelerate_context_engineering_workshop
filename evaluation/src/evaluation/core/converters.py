@@ -219,11 +219,33 @@ class AdkHistoryConverter:
             # Use AgentClient helpers to ensure consistency
             tool_interactions = AgentClient.get_tool_interactions(final_session_state)
             sub_agent_trace = AgentClient.get_sub_agent_trace(final_session_state)
-            
+
+            # 4a. Generate tool_declarations from tools found in events
+            # SDK format: [{"function_declarations": [{"name": "tool_name", ...}]}]
+            tool_names = set()
+            for ti in tool_interactions:
+                if isinstance(ti, dict) and "tool_name" in ti:
+                    tool_names.add(ti["tool_name"])
+
+            tool_declarations = []
+            for tool_name in sorted(tool_names):
+                tool_declarations.append({
+                    "function_declarations": [{
+                        "name": tool_name,
+                        "description": f"Tool: {tool_name}"
+                    }]
+                })
+
+            # 4b. Generate system_instruction from app_name
+            # In a full implementation, this would come from the agent definition
+            system_instruction = f"You are the {app_name} agent."
+
             extracted_data = {
                 "state_variables": state,
                 "tool_interactions": tool_interactions,
-                "sub_agent_trace": sub_agent_trace
+                "sub_agent_trace": sub_agent_trace,
+                "tool_declarations": tool_declarations,
+                "system_instruction": system_instruction
             }
             # Flatten state for legacy support if needed, but keeping clean is better.
             # Live path flattens it, so we should too for consistency.
