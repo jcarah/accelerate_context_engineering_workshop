@@ -77,6 +77,22 @@
         }
       }
     },
+        "multiturn_general_conversation_quality": {
+      "metric_type": "llm",
+      "is_managed": true,
+      "managed_metric_name": "MULTI_TURN_GENERAL_QUALITY",
+      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
+      "description": "An adaptive rubrics metric that evaluates the overall quality of a model's response within the context of a multi-turn dialogue.",
+      "agents": ["customer_service", "app"],
+      "dataset_mapping": {
+        "prompt": {
+          "source_column": "user_inputs"
+        },
+        "response": {
+          "source_column": "final_response"
+        }
+      }
+    },
     "instruction_following": {
       "metric_type": "llm",
       "is_managed": true,
