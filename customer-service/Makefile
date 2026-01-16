@@ -22,6 +22,9 @@ playground:
 	@echo "==============================================================================="
 	uv run adk web . --port 8501 --reload_agents
 
+# Alias for 'make playground' for consistency with retail agent
+dev: playground
+
 # ==============================================================================
 # Backend Deployment Targets
 # ==============================================================================
