@@ -155,12 +155,13 @@ uv run agent-eval analyze --results-dir ../your-agent/eval/results/<timestamp> -
 
 ## Evaluating External Project Agents
 
-If your agent project is located outside of this repository (e.g., `~/code/my-new-agent`), you can still use the `agent-eval` tool. You simply keep the tool here and point the command-line arguments to your external project paths.
+To evaluate an agent located in a separate repository (e.g., `~/code/my-new-agent`), you should clone this repository to access the `agent-eval` tool. You will run commands from this `evaluation/` directory, pointing the arguments to your external project.
 
 ### 1. Setup (In this repository)
-Ensure the tool is installed:
+Clone this repository and install the tool:
 ```bash
-cd evaluation
+git clone https://github.com/jcarah/accelerate_context_engineering_workshop.git
+cd accelerate_context_engineering_workshop/evaluation
 uv sync
 ```
 
