@@ -5,8 +5,8 @@ A production-grade evaluation framework for ADK agents. This CLI provides advanc
 ## Quick Links
 
 - [Evaluation Paths Overview](#evaluation-paths-overview)
-- [Quick Start: Path A (Simulation)](#path-a-simulation-recommended-for-development)
-- [Quick Start: Path B (Live API)](#path-b-live-api-deployed-agents)
+- [Quick Start: Path A (Simulation)](#path-a-simulation-recommended-for-development) — *Development Agent, User Simulation*
+- [Quick Start: Path B (Live API)](#path-b-live-api-deployed-agents) — *Deployed Agent, Direct Access*
 - [Evaluating External Projects](#evaluating-external-project-agents)
 - [Opinionated Metric Definition Rules](#opinionated-metric-definition-rules)
 - [Metric Definition & Strategies](#metric-definition--strategies)
