@@ -42,6 +42,7 @@ We use two distinct agents to demonstrate different classes of problems.
 *   **The Fix:** We will use this agent to practice **Scale Optimizations** (Offloading state to files, Code Execution, Prefix Caching).
 *   **Setup:**
     ```bash
+    # Open another Terminal
     cd retail-ai-location-strategy
     make ag-ui-install # or make install
     make ag-ui # or make dev
@@ -93,12 +94,11 @@ cd ../evaluation
 uv sync  # First time only
 
 # Convert ADK traces to evaluation format (creates timestamp folder)
-uv run agent-eval convert \
+RUN_DIR=$(uv run agent-eval convert \
   --agent-dir ../customer-service/customer_service \
-  --output-dir ../customer-service/eval/results
+  --output-dir ../customer-service/eval/results \
+  | awk -F': ' '/^Run folder:/ {print $2}')
 
-# The CLI prints the next command. Use the timestamp folder:
-RUN_DIR=../customer-service/eval/results/<timestamp>
 
 # Run metrics (deterministic + LLM-as-Judge)
 uv run agent-eval evaluate \
