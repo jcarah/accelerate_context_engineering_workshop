@@ -131,15 +131,71 @@ uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timest
 
 **Step 4: Diagnose (Analyze)**
 Generate the AI root cause analysis report based on the live API results.
-```bash
-uv run agent-eval analyze --results-dir ../your-agent/eval/results/<timestamp> --agent-dir ../your-agent
-```
 *   **Output**:
     ```text
     your_agent/eval/results/<timestamp>/
     ├── ...
     └── gemini_analysis.md
     ```
+```bash
+uv run agent-eval analyze --results-dir ../your-agent/eval/results/<timestamp> --agent-dir ../your-agent
+```
+
+---
+
+## Evaluating External Project Agents
+
+If your agent project is located outside of this repository (e.g., `~/code/my-new-agent`), you can still use the `agent-eval` tool. You simply keep the tool here and point the command-line arguments to your external project paths.
+
+### 1. Setup (In this repository)
+Ensure the tool is installed:
+```bash
+cd evaluation
+uv sync
+```
+
+### 2. Scaffold (In your external project)
+Create the required folder structure in your external agent project directory:
+```bash
+# In ~/code/my-new-agent
+mkdir -p eval/metrics eval/datasets eval/results
+```
+*   **Add `eval/metrics/metric_definitions.json`**: Define your grading criteria using [Binary Decomposition](#opinionated-metric-definition-rules).
+*   **Add `eval/test.json`**: Create a simple list of test queries.
+
+### 3. Run Path B (Live API)
+This is the easiest method for external projects as it only requires an HTTP connection.
+
+**A. Start your external agent server** (e.g., port 8080).
+
+**B. Run Pipeline** (From the `evaluation/` folder in **this** repo):
+```bash
+# 1. Create Golden Dataset
+uv run agent-eval create-dataset --input ~/code/my-new-agent/eval/test.json --output ~/code/my-new-agent/eval/datasets/golden.json --agent-name my_agent
+
+# 2. Interact (Talk to Live API)
+uv run agent-eval interact --app-name my_agent --questions-file ~/code/my-new-agent/eval/datasets/golden.json --base-url http://localhost:8080
+
+# 3. Grade (Evaluate)
+uv run agent-eval evaluate --interaction-file ~/code/my-new-agent/eval/results/<timestamp>/raw/processed_interaction_live.csv --metrics-files ~/code/my-new-agent/eval/metrics/metric_definitions.json --results-dir ~/code/my-new-agent/eval/results/<timestamp>
+```
+
+### 4. Run Path A (Simulation)
+*Note: This specifically requires the external agent to be built with the Google GenAI ADK.*
+
+**A. Run Simulation** (Inside your external project):
+```bash
+cd ~/code/my-new-agent
+uv run adk eval . --config_file_path eval/scenarios/eval_config.json conversation_scenarios
+```
+
+**B. Convert & Grade** (From the `evaluation/` folder in **this** repo):
+```bash
+# Point --agent-dir to your external project root
+uv run agent-eval convert --agent-dir ~/code/my-new-agent --output-dir ~/code/my-new-agent/eval/results
+
+# Then proceed with 'evaluate' and 'analyze' pointing to the new results path.
+```
 
 ---
 
