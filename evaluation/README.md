@@ -2,6 +2,16 @@
 
 A production-grade evaluation framework for ADK agents. This CLI provides advanced metrics beyond ADK's built-in checks, including tool usage accuracy, trajectory analysis, state management fidelity, and AI-powered root cause diagnosis.
 
+## Quick Links
+
+- [Evaluation Paths Overview](#evaluation-paths-overview)
+- [Quick Start: Path A (Simulation)](#path-a-simulation-recommended-for-development)
+- [Quick Start: Path B (Live API)](#path-b-live-api-deployed-agents)
+- [Evaluating External Projects](#evaluating-external-project-agents)
+- [Opinionated Metric Definition Rules](#opinionated-metric-definition-rules)
+- [Metric Definition & Strategies](#metric-definition--strategies)
+- [Output Structure](#output-structure)
+
 ## Evaluation Paths Overview
 
 There are two primary ways to evaluate your agent. Choose the one that fits your current development stage:
