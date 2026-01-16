@@ -66,14 +66,14 @@ uv run agent-eval interact --app-name your_agent \
 
 ## Documentation
 
-| Guide | Description |
-|-------|-------------|
-| [01-GETTING-STARTED.md](docs/01-GETTING-STARTED.md) | Prerequisites, installation, first run |
-| [02-EVALUATION-PATHS.md](docs/02-EVALUATION-PATHS.md) | Scenarios vs Golden Datasets explained |
-| [03-METRICS-GUIDE.md](docs/03-METRICS-GUIDE.md) | Defining custom and managed metrics |
-| [04-CLI-REFERENCE.md](docs/04-CLI-REFERENCE.md) | Complete command reference |
-| [05-OUTPUT-FILES.md](docs/05-OUTPUT-FILES.md) | Understanding output files |
-| [99-DEVELOPMENT.md](docs/99-DEVELOPMENT.md) | For contributors and maintainers |
+| Guide | Description | Key Topics |
+|-------|-------------|------------|
+| [01-GETTING-STARTED.md](docs/01-GETTING-STARTED.md) | Prerequisites and first run | Installation, GCloud auth, quick start for both paths, agent directory structure |
+| [02-EVALUATION-PATHS.md](docs/02-EVALUATION-PATHS.md) | Scenarios vs Golden Datasets | ADK User Simulation setup, scenario files, symlinks, Golden Dataset format, when to use each path |
+| [03-METRICS-GUIDE.md](docs/03-METRICS-GUIDE.md) | Defining evaluation metrics | Custom LLM metrics, Vertex AI managed metrics, dataset mapping syntax, available columns reference, score ranges, troubleshooting |
+| [04-CLI-REFERENCE.md](docs/04-CLI-REFERENCE.md) | Complete command reference | All commands (`convert`, `create-dataset`, `interact`, `evaluate`, `analyze`) with arguments and examples |
+| [05-OUTPUT-FILES.md](docs/05-OUTPUT-FILES.md) | Understanding output files | CSV columns, eval_summary.json structure, deterministic metrics, Q&A log format, file relationships |
+| [99-DEVELOPMENT.md](docs/99-DEVELOPMENT.md) | For contributors | Project structure, running tests, adding commands/metrics, code style, release process |
 
 ## Output Structure
 

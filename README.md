@@ -213,16 +213,17 @@ For convenience, we include pre-computed baseline results in `[agent]/eval/resul
 - Cache hit rate: 27%
 - Unique tools used: 5
 - Agent handoffs: 5
+- Total tool calls: 15
 
 #### Customer Service Baseline
 
 | Metric | Score | Range | Description |
 |--------|-------|-------|-------------|
-| `tool_usage_accuracy` | 4.6 | 0-5 | Effective tool usage |
-| `trajectory_accuracy` | 3.0 | 0-5 | Mostly correct |
-| `state_management_fidelity` | 0.4 | 0-5 | Needs improvement |
-| `general_conversation_quality` | 0.79 | 0-1 | Good quality |
-| `instruction_following` | 0.74 | 0-1 | Good adherence |
+| `tool_usage_accuracy` | 3.6 | 0-5 | Moderate tool usage |
+| `trajectory_accuracy` | 2.6 | 0-5 | Needs improvement |
+| `state_management_fidelity` | 0.8 | 0-5 | Limited state capture |
+| `general_conversation_quality` | 0.80 | 0-1 | Good quality |
+| `instruction_following` | 0.62 | 0-1 | Moderate adherence |
 | `agent_hallucination` | 0.86 | 0-1 | Mostly supported |
 | `safety` | 1.0 | 0-1 | Safe |
 
@@ -231,6 +232,7 @@ For convenience, we include pre-computed baseline results in `[agent]/eval/resul
 - Cache hit rate: 41%
 - Total tool calls: 4
 - Agent handoffs: 4
+- Unique tools used: 2
 
 ---
 

@@ -37,11 +37,10 @@
           "source_column": "user_inputs"
         },
         "response": {
-          "template": "Customer ID: {extracted_data_customer_id}\nOrder ID: {extracted_data_order_id}\nIssue Type: {extracted_data_issue_type}\nResolution Status: {extracted_data_resolution_status}",
-          "source_columns": ["extracted_data:customer_id", "extracted_data:order_id", "extracted_data:issue_type", "extracted_data:resolution_status"]
+          "source_column": "extracted_data:state_variables"
         }
       },
-      "template": "You are evaluating the state management of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Extracted State Variables:**\n{response}\n\n**Evaluation Criteria:**\n1. **Extraction:** Did the agent correctly extract entities (customer_id, order_id) from the user input or context?\n2. **Mapping:** Are values mapped to the correct state keys?\n3. **Accuracy:** Do the extracted values match what was mentioned in the conversation?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect state capture with all relevant entities extracted\n- 4: All critical state variables present and correct\n- 3: Key variables captured correctly, but some details missed\n- 2: Some correct state variables, but significant omissions\n- 1: Major errors in state capture; wrong entities or values\n- 0: State is empty or completely unrelated to the interaction\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
+      "template": "You are evaluating the state management of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Final Session State Variables:**\n{response}\n\n**Evaluation Criteria:**\n1. **Relevance:** Does the state contain variables relevant to the user's request?\n2. **Completeness:** Are key entities (customer info, request details, resolution status) captured?\n3. **Accuracy:** Do the state values accurately reflect the conversation context?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect state capture with all relevant entities extracted and correctly mapped\n- 4: All critical state variables present and correct\n- 3: Key variables captured correctly, but some details missed\n- 2: Some correct state variables, but significant omissions or errors\n- 1: Major errors in state capture; wrong entities or values\n- 0: State is empty or completely unrelated to the interaction\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
     },
 
     "_comment_managed_basic": "=== BASIC MANAGED METRICS (require only prompt + response) ===",
