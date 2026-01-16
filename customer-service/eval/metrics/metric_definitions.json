@@ -3,7 +3,7 @@
     "trajectory_accuracy": {
       "metric_type": "llm",
       "agents": ["customer_service", "app"],
-      "score_range": {"min": 0, "max": 1, "description": "0=Completely wrong, 1=Perfect trajectory"},
+      "score_range": {"min": 0, "max": 5, "description": "0=Completely wrong, 5=Perfect trajectory"},
       "dataset_mapping": {
         "prompt": {
           "source_column": "user_inputs"
@@ -17,7 +17,7 @@
     "tool_usage_accuracy": {
       "metric_type": "llm",
       "agents": ["customer_service", "app"],
-      "score_range": {"min": 0, "max": 1, "description": "0=Complete failure, 1=Perfect tool usage"},
+      "score_range": {"min": 0, "max": 5, "description": "0=Complete failure, 5=Perfect tool usage"},
       "dataset_mapping": {
         "prompt": {
           "source_column": "user_inputs"
@@ -31,7 +31,7 @@
     "state_management_fidelity": {
       "metric_type": "llm",
       "agents": ["customer_service", "app"],
-      "score_range": {"min": 0, "max": 1, "description": "0=Empty/unrelated state, 1=Perfect state capture"},
+      "score_range": {"min": 0, "max": 5, "description": "0=Empty/unrelated state, 5=Perfect state capture"},
       "dataset_mapping": {
         "prompt": {
           "source_column": "user_inputs"
@@ -190,27 +190,8 @@
 
     "_comment_managed_reference": "=== REFERENCE-BASED MANAGED METRICS (require reference/ground truth) ===",
 
-    "final_response_match": {
-      "metric_type": "llm",
-      "is_managed": true,
-      "managed_metric_name": "FINAL_RESPONSE_MATCH",
-      "score_range": {"min": 0, "max": 1, "description": "Binary: 0=no match, 1=match"},
-      "description": "Compares agent's final answer to reference (ground truth). Requires golden dataset with expected_response.",
-      "agents": ["customer_service", "app"],
-      "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "final_response"
-        },
-        "reference": {
-          "source_column": "reference_data:expected_response"
-        }
-      }
-    },
-
     "_comment_managed_context": "=== CONTEXT-BASED MANAGED METRICS (require context for grounding) ===",
+
 
     "grounding": {
       "metric_type": "llm",
