@@ -6,7 +6,7 @@ A production-grade evaluation framework for ADK agents. This CLI provides advanc
 
 - [Evaluation Paths Overview](#evaluation-paths-overview)
 - [Quick Start: Path A - Development Agent (User Simulation)](#path-a-development-agent-user-simulation)
-- [Quick Start: Path B - Deployed Agent (Direct Access)](#path-b-deployed-agent-direct-access)
+- [Quick Start: Path B - Deployed Agent (Direct Interaction)](#path-b-deployed-agent-direct-interaction)
 - [Evaluating External Projects](#evaluating-external-project-agents)
 - [Opinionated Metric Definition Rules](#opinionated-metric-definition-rules)
 - [Metric Definition & Strategies](#metric-definition--strategies)
@@ -19,7 +19,7 @@ There are two primary ways to evaluate your agent. Choose the one that fits your
 | Path | Name | Best For | Description |
 |------|------|----------|-------------|
 | **Path A** | **Development Agent** (User Simulation) | Rapid iteration, robustness | Uses **Scenario Plans** (`conversation_scenarios.json`) to guide a simulated user in the ADK environment. |
-| **Path B** | **Deployed Agent** (Direct Access) | Regression testing, stability | Runs fixed **Golden Dataset** queries against your running HTTP server. |
+| **Path B** | **Deployed Agent** (Direct Interaction) | Regression testing, stability | Runs fixed **Golden Dataset** queries against your running HTTP server. |
 
 ---
 
@@ -95,7 +95,7 @@ uv run agent-eval analyze --results-dir ../your-agent/eval/results/<timestamp> -
     └── gemini_analysis.md
     ```
 
-### Path B: Deployed Agent (Direct Access)
+### Path B: Deployed Agent (Direct Interaction)
 
 **Step 1: Create Golden Dataset**
 Transform your queries (e.g., `eval/eval_data/test.json`) into a structured dataset.
@@ -140,7 +140,7 @@ uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timest
     ```
 
 **Step 4: Diagnose (Analyze)**
-Generate the AI root cause analysis report based on the Direct Access results.
+Generate the AI root cause analysis report based on the Direct Interaction results.
 ```bash
 uv run agent-eval analyze --results-dir ../your-agent/eval/results/<timestamp> --agent-dir ../your-agent
 ```
@@ -173,7 +173,7 @@ mkdir -p eval/metrics eval/datasets eval/results
 *   **Add `eval/metrics/metric_definitions.json`**: Define your grading criteria using [Binary Decomposition](#opinionated-metric-definition-rules).
 *   **Add `eval/test.json`**: Create a simple list of test queries.
 
-### 3. Run Path B - Deployed Agent (Direct Access)
+### 3. Run Path B - Deployed Agent (Direct Interaction)
 This is the easiest method for external projects as it only requires an HTTP connection.
 
 **A. Start your external agent server** (e.g., port 8080).
@@ -245,7 +245,7 @@ uv run agent-eval convert --agent-dir ~/code/my-new-agent --output-dir ~/code/my
         └── gemini_analysis.md
         ```
 
-### 2. Deployed Agent Evaluation (Path B - Direct Access)
+### 2. Deployed Agent Evaluation (Path B - Direct Interaction)
 *Best for: Testing fixed scripts, regression testing, and ensuring stability.*
 
 **The Workflow:**
