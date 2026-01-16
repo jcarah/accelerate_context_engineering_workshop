@@ -2,27 +2,26 @@
 
 A production-grade evaluation framework for ADK agents. This CLI provides advanced metrics beyond ADK's built-in checks, including tool usage accuracy, trajectory analysis, state management fidelity, and AI-powered root cause diagnosis.
 
-## Two Evaluation Paths
+## Quick Links
 
-```
-PATH A: SIMULATION (Development)
-================================
-eval/scenarios/ ──> adk eval ──> agent-eval convert ──> agent-eval evaluate ──> agent-eval analyze
-                         │                                       │
-                  .adk/eval_history/                    eval_summary.json
-                                                        gemini_analysis.md
+- [Evaluation Paths Overview](#evaluation-paths-overview)
+- [Quick Start: Path A - Development Agent (User Simulation)](#path-a-development-agent-user-simulation)
+- [Quick Start: Path B - Deployed Agent (Direct Interaction)](#path-b-deployed-agent-direct-interaction)
+- [Evaluating External Projects](#evaluating-external-project-agents)
+- [Opinionated Metric Definition Rules](#opinionated-metric-definition-rules)
+- [Metric Definition & Strategies](#metric-definition--strategies)
+- [Output Structure](#output-structure)
 
-PATH B: LIVE API (Deployed Agents)
-==================================
-eval/eval_data/ ──> agent-eval create-dataset ──> agent-eval interact ──> agent-eval evaluate ──> agent-eval analyze
-                              │                            │                        │
-                     golden_dataset.json           processed_*.csv          eval_summary.json
-```
+## Evaluation Paths Overview
 
-| Path | Best For | Input Format |
-|------|----------|--------------|
-| **Path A** | Development, rapid iteration | Scenario files (conversation plans) |
-| **Path B** | Testing deployed agents | Golden Dataset (expected answers) |
+There are two primary ways to evaluate your agent. Choose the one that fits your current development stage:
+
+| Path | Name | Best For | Description |
+|------|------|----------|-------------|
+| **Path A** | **Development Agent** (User Simulation) | Rapid iteration, robustness | Uses **Scenario Plans** (`conversation_scenarios.json`) to guide a simulated user in the ADK environment. |
+| **Path B** | **Deployed Agent** (Direct Interaction) | Regression testing, stability | Runs fixed **Golden Dataset** queries against your running HTTP server. |
+
+---
 
 ## Quick Start
 
@@ -35,33 +34,308 @@ gcloud auth application-default login
 export GOOGLE_CLOUD_PROJECT=your-project-id
 ```
 
-### Path A: Simulation (Recommended for Development)
+### Path A: Development Agent (User Simulation)
 
+**Step 1: Define & Run Simulation**
+Write your conversation "plans" in `eval/scenarios/conversation_scenarios.json`. Run the ADK simulator to generate raw interaction logs.
+
+**IMPORTANT**: You must clear the `.adk/eval_history/` directory before each run so that the converter only processes the current simulation (see `rm` command below).
 ```bash
-# 1. Run ADK simulator
 cd your-agent
 rm -rf your_agent/.adk/eval_history/*
 uv run adk eval your_agent --config_file_path eval/scenarios/eval_config.json eval_set_with_scenarios
+```
+*   **Output**:
+    ```text
+    your_agent/
+    └── .adk/
+        └── eval_history/
+            └── <run_id>.json
+    ```
 
-# 2. Convert and evaluate
+**Step 2: Convert History to CSV**
+Transform the raw simulation logs into a flat CSV format.
+```bash
 cd ../evaluation
 uv run agent-eval convert --agent-dir ../your-agent/your_agent --output-dir ../your-agent/eval/results
+```
+*   **Output**:
+    ```text
+    your_agent/eval/results/<timestamp>/  # Format: YYYYMMDD_HHMMSS
+    └── raw/
+        └── processed_interaction_sim.csv
+    ```
+
+**Step 3: Grade (Evaluate)**
+Run your metrics against the CSV generated in Step 2. (See: [custom metric definition](#metric-definition--strategies))
+```bash
 uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_sim.csv \
   --metrics-files ../your-agent/eval/metrics/metric_definitions.json \
   --results-dir ../your-agent/eval/results/<timestamp>
+```
+*   **Output**:
+    ```text
+    your_agent/eval/results/<timestamp>/
+    ├── eval_summary.json
+    ├── question_answer_log.md
+    └── raw/
+        ├── processed_interaction_sim.csv
+        └── evaluation_results_*.csv
+    ```
+
+**Step 4: Diagnose (Analyze)**
+Generate a detailed AI-powered root cause analysis report.
+```bash
 uv run agent-eval analyze --results-dir ../your-agent/eval/results/<timestamp> --agent-dir ../your-agent
 ```
+*   **Output**:
+    ```text
+    your_agent/eval/results/<timestamp>/
+    ├── ...
+    └── gemini_analysis.md
+    ```
 
-### Path B: Live API
+### Path B: Deployed Agent (Direct Interaction)
 
+**Step 1: Create Golden Dataset**
+Transform your queries (e.g., `eval/eval_data/test.json`) into a structured dataset.
 ```bash
-# 1. Create golden dataset and run interactions
 uv run agent-eval create-dataset --input ../your-agent/eval/eval_data/test.json \
   --output ../your-agent/eval/datasets/golden.json --agent-name your_agent
+```
+*   **Output**:
+    ```text
+    your_agent/eval/datasets/
+    └── golden.json
+    ```
+
+**Step 2: Run Live Interactions**
+Send queries from your Golden Dataset to your agent API.
+```bash
 uv run agent-eval interact --app-name your_agent \
   --questions-file ../your-agent/eval/datasets/golden.json --base-url http://localhost:8080
+```
+*   **Output**:
+    ```text
+    your_agent/eval/results/<timestamp>/  # Format: YYYYMMDD_HHMMSS
+    └── raw/
+        └── processed_interaction_live.csv
+    ```
 
-# 2. Evaluate and analyze (same as Path A steps 2-3)
+**Step 3: Grade (Evaluate)**
+Execute metrics against the live interaction CSV. (See: [custom metric definition](#metric-definition--strategies))
+```bash
+uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_live.csv \
+  --metrics-files ../your-agent/eval/metrics/metric_definitions.json \
+  --results-dir ../your-agent/eval/results/<timestamp>
+```
+*   **Output**:
+    ```text
+    your_agent/eval/results/<timestamp>/
+    ├── eval_summary.json
+    ├── question_answer_log.md
+    └── raw/
+        ├── processed_interaction_live.csv
+        └── evaluation_results_*.csv
+    ```
+
+**Step 4: Diagnose (Analyze)**
+Generate the AI root cause analysis report based on the Direct Interaction results.
+```bash
+uv run agent-eval analyze --results-dir ../your-agent/eval/results/<timestamp> --agent-dir ../your-agent
+```
+*   **Output**:
+    ```text
+    your_agent/eval/results/<timestamp>/
+    ├── ...
+    └── gemini_analysis.md
+    ```
+
+---
+
+## Evaluating External Project Agents
+
+To evaluate an agent located in a separate repository (e.g., `~/code/my-new-agent`), you should clone this repository to access the `agent-eval` tool. You will run commands from this `evaluation/` directory, pointing the arguments to your external project.
+
+### 1. Setup (In this repository)
+Clone this repository and install the tool:
+```bash
+git clone https://github.com/jcarah/accelerate_context_engineering_workshop.git
+cd accelerate_context_engineering_workshop/evaluation
+uv sync
+```
+
+### 2. Scaffold (In your external project)
+Create the required folder structure in your external agent project directory:
+```bash
+# In ~/code/my-new-agent
+mkdir -p eval/metrics eval/datasets eval/results
+```
+*   **Add `eval/metrics/metric_definitions.json`**: Define your grading criteria using [Binary Decomposition](#opinionated-metric-definition-rules).
+*   **Add `eval/test.json`**: Create a simple list of test queries.
+
+### 3. Run Path B - Deployed Agent (Direct Interaction)
+This is the easiest method for external projects as it only requires an HTTP connection.
+
+**A. Start your external agent server** (e.g., port 8080).
+
+**B. Run Pipeline** (From the `evaluation/` folder in **this** repo):
+```bash
+# 1. Create Golden Dataset
+uv run agent-eval create-dataset --input ~/code/my-new-agent/eval/test.json --output ~/code/my-new-agent/eval/datasets/golden.json --agent-name my_agent
+
+# 2. Interact (Talk to Deployed Agent)
+uv run agent-eval interact --app-name my_agent --questions-file ~/code/my-new-agent/eval/datasets/golden.json --base-url http://localhost:8080
+
+# 3. Grade (Evaluate)
+uv run agent-eval evaluate --interaction-file ~/code/my-new-agent/eval/results/<timestamp>/raw/processed_interaction_live.csv --metrics-files ~/code/my-new-agent/eval/metrics/metric_definitions.json --results-dir ~/code/my-new-agent/eval/results/<timestamp>
+```
+
+### 4. Run Path A - Development Agent (User Simulation)
+*Note: This specifically requires the external agent to be built with the Google GenAI ADK.*
+
+**A. Run Simulation** (Inside your external project):
+```bash
+cd ~/code/my-new-agent
+uv run adk eval . --config_file_path eval/scenarios/eval_config.json conversation_scenarios
+```
+
+**B. Convert & Grade** (From the `evaluation/` folder in **this** repo):
+```bash
+# Point --agent-dir to your external project root
+uv run agent-eval convert --agent-dir ~/code/my-new-agent --output-dir ~/code/my-new-agent/eval/results
+
+# Then proceed with 'evaluate' and 'analyze' pointing to the new results path.
+```
+
+---
+
+## Detailed Methodologies
+
+### 1. Development Agent Evaluation (Path A - User Simulation)
+*Best for: Rapid iteration, testing how the agent handles unpredictable users, and robust coverage.*
+
+**The Workflow:**
+1.  **Define Scenarios**: Write conversation "plans" (e.g., `eval/scenarios/conversation_scenarios.json`).
+2.  **Run Simulation** (`adk eval`): Runs agent code directly to simulate conversation.
+    *   **Caveat**: Always clear `.adk/eval_history/` before running to ensure only the current session is converted.
+    *   **Result**:
+        ```text
+        .adk/eval_history/*.json
+        ```
+3.  **Convert History** (`convert`): Converts raw logs into a flat CSV.
+    *   **Result**:
+        ```text
+        eval/results/<timestamp>/
+        └── raw/
+            └── processed_interaction_sim.csv
+        ```
+4.  **Grade** (`evaluate`): 🏁 **Convergence Point**. Runs metrics against the CSV.
+    *   **Result**:
+        ```text
+        eval/results/<timestamp>/
+        ├── eval_summary.json
+        ├── question_answer_log.md
+        └── raw/
+            └── evaluation_results_*.csv
+        ```
+5.  **Diagnose** (`analyze`): Generates a root-cause report.
+    *   **Result**:
+        ```text
+        eval/results/<timestamp>/
+        └── gemini_analysis.md
+        ```
+
+### 2. Deployed Agent Evaluation (Path B - Direct Interaction)
+*Best for: Testing fixed scripts, regression testing, and ensuring stability.*
+
+**The Workflow:**
+1.  **Define Turns**: Write a simple JSON list of queries (e.g., `test.json`).
+2.  **Create Dataset** (`create-dataset`): Adds IDs and metadata tags.
+    *   **Result**:
+        ```text
+        eval/datasets/golden.json
+        ```
+3.  **Run Interactions** (`interact`): Sends HTTP requests to your agent API.
+    *   **Result**:
+        ```text
+        eval/results/<timestamp>/
+        └── raw/
+            └── processed_interaction_live.csv
+        ```
+4.  **Grade** (`evaluate`): 🏁 **Convergence Point**. Runs metrics against the CSV.
+    *   **Result**:
+        ```text
+        eval/results/<timestamp>/
+        ├── eval_summary.json
+        ├── question_answer_log.md
+        └── raw/
+            └── evaluation_results_*.csv
+        ```
+5.  **Diagnose** (`analyze`): Gemini analyzes why the live agent failed or passed.
+    *   **Result**:
+        ```text
+        eval/results/<timestamp>/
+        └── gemini_analysis.md
+        ```
+
+## Opinionated Metric Definition Rules
+
+This pipeline follows a strict rule of **Binary Decomposition**. Instead of asking an LLM for a vague "Quality" score (1-5), break requirements down into specific True/False assertions.
+
+### 1. Decompose into Binary Assertions
+*   **Vague**: "Is the response helpful?"
+*   **Binary Decomposition**:
+    *   Did the agent provide a direct answer? (Yes/No)
+    *   Did the agent mention the user's specific product? (Yes/No)
+    *   Did the agent provide a 'next step'? (Yes/No)
+
+### 2. Map the Evidence
+Identify exactly which data columns prove or disprove your binary assertions.
+*   `user_query` -> `user_inputs`
+*   `agent_reply` -> `final_response`
+*   `product_context` -> `state_variables:product_name`
+
+### 3. Construct the "Summation" Prompt
+Write the prompt to act as a calculator, not a critic. Instruct the LLM to iterate through your assertions, mark them `[x]` or `[ ]`, and then sum the result.
+
+### 4. Enforce "Show Your Work"
+To ensure the score is grounded in fact, force the LLM to output the checklist itself in the explanation. This makes the result auditable.
+
+## Metric Definition & Strategies
+
+Metrics are defined in JSON files (e.g., `customer-service/eval/metrics/metric_definitions.json`).
+
+### Standard Metric Types
+*   **Quantitative**: Latency, Token Usage, Text Created (Rouge/Bleu).
+*   **Qualitative (LLM)**: Binary checklists informed by customer needs (e.g., Agent Routing, Tool Routing, State Storage, Answer Generation).
+
+### Split Strategy
+It is recommended to split your metric definitions based on your evaluation path:
+*   **`metrics_sim.json` (for Path A)**: Focus on trajectory accuracy, goal completion, safety, and instruction following.
+    *   *Goal*: "Is the agent behaving smartly in complex, undefined situations?"
+*   **`metrics_live.json` (for Path B)**: Focus on final response matching, tool usage fidelity, and latency.
+    *   *Goal*: "Is the deployed agent accurate and fast?"
+
+### How to Add a New Metric
+1.  **Open the File**: e.g., `customer-service/eval/metrics/metric_definitions.json`.
+2.  **Paste Your Metric**: Use the template below. (See: [Full Metrics Guide](docs/03-METRICS-GUIDE.md))
+
+**Template:**
+```json
+"my_binary_checklist": {
+  "metric_type": "llm",
+  "score_range": {
+    "min": 0,
+    "max": 3,
+    "description": "Sum of 3 binary checks: Greeting, Solution, Closing"
+  },
+  "dataset_mapping": {
+    "prompt": { "source_column": "user_inputs" },
+    "response": { "source_column": "final_response" }
+  },
+  "template": "Evaluate the response.\n\nUser: {prompt}\nAgent: {response}\n\nChecklist:\n1. Greeting? (Yes/No)\n2. Solution? (Yes/No)\n3. Closing? (Yes/No)\n\nScore 1 point for each Yes.\n\nResponse Format:\nScore: [Sum]\nExplanation: [Checklist]"
+}
 ```
 
 ## Documentation
@@ -77,7 +351,7 @@ uv run agent-eval interact --app-name your_agent \
 
 ## Output Structure
 
-Each run creates a timestamped folder:
+Each run creates a folder named with a timestamp in the format `YYYYMMDD_HHMMSS` (e.g., `20260114_143022`):
 
 ```
 eval/results/20260114_143022/
@@ -87,29 +361,4 @@ eval/results/20260114_143022/
 └── raw/
     ├── processed_interaction_*.csv
     └── evaluation_results_*.csv
-```
-
-## Metrics
-
-### Deterministic (Calculated Automatically)
-
-| Metric | Description |
-|--------|-------------|
-| `latency_metrics` | Total duration, time to first response |
-| `cache_efficiency` | KV-cache hit rate |
-| `tool_success_rate` | Successful tool calls / total calls |
-| `agent_handoffs` | Control transfers between agents |
-
-### LLM-as-Judge (Defined in metrics.json)
-
-| Type | Examples |
-|------|----------|
-| **Custom** | `response_correctness`, `tool_usage_accuracy` |
-| **Managed (Vertex AI)** | `GENERAL_QUALITY`, `TOOL_USE_QUALITY`, `SAFETY` |
-
-## Help
-
-```bash
-uv run agent-eval --help
-uv run agent-eval <command> --help
 ```
