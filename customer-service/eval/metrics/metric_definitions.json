@@ -192,25 +192,5 @@
 
     "_comment_managed_context": "=== CONTEXT-BASED MANAGED METRICS (require context for grounding) ===",
 
-
-    "grounding": {
-      "metric_type": "llm",
-      "is_managed": true,
-      "managed_metric_name": "GROUNDING",
-      "score_range": {"min": 0, "max": 1, "description": "Rate of grounded claims: 0=all claims ungrounded, 1=all claims grounded"},
-      "description": "Checks factuality and consistency by verifying response is grounded in provided context.",
-      "agents": ["customer_service", "app"],
-      "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "final_response"
-        },
-        "context": {
-          "source_column": "extracted_data:tool_interactions"
-        }
-      }
-    }
   }
 }
