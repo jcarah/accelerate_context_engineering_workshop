@@ -20,6 +20,13 @@ We will achieve this through a "hill climbing" exercise. We start with functiona
 
 ---
 
+TODO: need a place to set env vars
+export GOOGLE_CLOUD_PROJECT="x"
+user need roles/aiplatform.user
+gcloud auth login
+gcloud auth application-default login
+gcloud auth application-default set-quota-project project id 
+
 ## 2. The Test Subjects (Agents)
 
 We use two distinct agents to demonstrate different classes of problems.

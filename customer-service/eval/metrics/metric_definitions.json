@@ -206,7 +206,7 @@
 
     "_comment_managed_reference": "=== REFERENCE-BASED MANAGED METRICS (require reference/ground truth) ===",
 
-    "_comment_managed_context": "=== CONTEXT-BASED MANAGED METRICS (require context for grounding) ===",
+    "_comment_managed_context": "=== CONTEXT-BASED MANAGED METRICS (require context for grounding) ==="
 
   }
 }
