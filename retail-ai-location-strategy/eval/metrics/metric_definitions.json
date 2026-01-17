@@ -15,7 +15,7 @@
       },
       "template": "You are evaluating the state management fidelity of a Retail Location Strategy AI Agent.\n\n**User Request:**\n{prompt}\n\n**Extracted State Variables:**\n{response}\n\n**Evaluation Criteria:**\n1.  **Alignment:** Does the 'parsed_request' and 'target_location'/'business_type' accurately match the User Request?\n2.  **Extraction:** Were the key entities (location, business type) correctly extracted from the user's request?\n3.  **Consistency:** Are the extracted values consistent with each other?\n\n**Scoring Rubric (1-5):**\n- 5: Perfect alignment. All extracted variables accurately match the user request.\n- 4: Strong alignment. Minor inconsistencies but core intent is preserved.\n- 3: Moderate alignment. Location or business type is correct, but parsed_request is incomplete.\n- 2: Poor alignment. State variables contradict the user request (e.g., wrong city).\n- 1: Complete failure. State variables are empty, hallucinated, or completely unrelated.\n\n**Response Format:**\nScore: [1-5]\nExplanation: [Reasoning]"
     },
-    "market_research_depth": {
+    "_comment_market_research_depth": {
       "metric_type": "llm",
       "agents": ["retail_location_strategy", "app"],
       "score_range": {"min": 1, "max": 5, "description": "1=Poor, 5=Exceptional depth"},

@@ -14,20 +14,6 @@
       },
       "template": "You are evaluating the execution trajectory of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Agent Execution Trajectory:**\n{response}\n\n**Evaluation Criteria:**\n1. **Sequence:** Did the agent call the sub-agents/tools in a logical order?\n2. **Completeness:** Were any required steps missed?\n3. **Noise:** Were there unnecessary or hallucinated steps?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect trajectory - logical order, all required steps, no unnecessary steps\n- 4: Trajectory is logically equivalent, achieving the same outcome with minor variations\n- 3: Mostly correct trajectory with minor deviations (e.g., one extra step or slight reordering)\n- 2: Some correct sub-agents, but significant ordering issues or extra steps\n- 1: Major deviations; key sub-agents were skipped or invoked in the wrong order\n- 0: The trajectory is completely different or empty\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
     },
-    "tool_usage_accuracy": {
-      "metric_type": "llm",
-      "agents": ["customer_service", "app"],
-      "score_range": {"min": 0, "max": 5, "description": "0=Complete failure, 5=Perfect tool usage"},
-      "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "extracted_data:tool_interactions"
-        }
-      },
-      "template": "You are evaluating the tool usage of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Tool Interactions:**\n{response}\n\n**Evaluation Criteria:**\n1. **Selection:** Did the agent choose the right tool for the task?\n2. **Arguments:** Were the input arguments correct and complete?\n3. **Outcome:** Did the tool call contribute to solving the user's problem?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect tool usage with optimal arguments and flow\n- 4: Effective tool usage that moved the conversation forward\n- 3: Correct tool and arguments, but minor efficiency issues\n- 2: Correct tool, but arguments had errors causing failure\n- 1: Tool selection was wrong, or arguments were critically flawed\n- 0: No tools used when needed, or completely wrong tools used\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
-    },
     "state_management_fidelity": {
       "metric_type": "llm",
       "agents": ["customer_service", "app"],
@@ -61,7 +47,7 @@
         }
       }
     },
-    "text_quality": {
+    "multi_turn_text_quality": {
       "metric_type": "llm",
       "is_managed": true,
       "managed_metric_name": "TEXT_QUALITY",
