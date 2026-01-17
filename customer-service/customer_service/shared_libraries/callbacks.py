@@ -134,31 +134,31 @@ def before_tool(
     # i make sure all values that the agent is sending to tools are lowercase
     lowercase_value(args)
 
-    # Several tools require customer_id as input. We don't want to rely
-    # solely on the model picking the right customer id. We validate it.
-    # Alternative: tools can fetch the customer_id from the state directly.
-    if 'customer_id' in args:
-        valid, err = validate_customer_id(args['customer_id'], tool_context.state)
+    # Extraction logic for Pydantic-hardened tools
+    # If the tool uses our new 'request' object, unwrap it for validation.
+    inner_args = args.get("request", args)
+
+    # Several tools require customer_id as input. 
+    # Check both flat and nested locations.
+    customer_id = inner_args.get("customer_id")
+    if customer_id:
+        valid, err = validate_customer_id(customer_id, tool_context.state)
         if not valid:
             return err
 
     # Check for the next tool call and then act accordingly.
-    # Example logic based on the tool being called.
     if tool.name == "sync_ask_for_approval":
-        amount = args.get("value", None)
-        if amount <= 10:  # Example business rule
+        amount = inner_args.get("value")
+        if amount is not None and amount <= 10:
             return {
                 "status": "approved",
                 "message": "You can approve this discount; no manager needed."
             }
-        # Add more logic checks here as needed for your tools.
 
     if tool.name == "modify_cart":
-        if (
-            args.get("items_added") is True
-            and args.get("items_removed") is True
-        ):
-            return {"result": "I have added and removed the requested items."}
+        # Note: modify_cart now uses structured CartItem objects
+        pass
+
     return None
 
 def after_tool(

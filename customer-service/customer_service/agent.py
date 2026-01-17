@@ -50,8 +50,10 @@ logger = logging.getLogger(__name__)
 
 root_agent = Agent(
     model=configs.agent_settings.model,
-    global_instruction=GLOBAL_INSTRUCTION,
-    instruction=INSTRUCTION,
+    # CACHING OPTIMIZATION: Put static 'INSTRUCTION' first as global_instruction.
+    # Put dynamic 'GLOBAL_INSTRUCTION' (customer profile) second.
+    global_instruction=INSTRUCTION,
+    instruction=GLOBAL_INSTRUCTION,
     name=configs.agent_settings.name,
     tools=[
         send_call_companion_link,

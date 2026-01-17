@@ -11,391 +11,235 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# add docstring to this module
-"""Tools module for the customer service agent."""
+
+"""Hardened Tools module for the customer service agent."""
 
 import logging
 import uuid
 from datetime import datetime, timedelta
-from google.adk.tools import ToolContext
+from typing import Literal, Optional, List
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
+# --- Pydantic Schemas for Tool Inputs ---
 
-def send_call_companion_link(phone_number: str) -> str:
+class CartItem(BaseModel):
+    """Schema for an item in the shopping cart."""
+    product_id: str = Field(description="The unique identifier for the product (e.g., 'soil-456').")
+    quantity: int = Field(description="The number of units for this item.")
+
+class DiscountApprovalRequest(BaseModel):
+    """Schema for a discount approval request."""
+    discount_type: Literal["percentage", "flat"] = Field(description="The type of discount requested.")
+    value: float = Field(description="The numeric value of the discount.")
+    reason: str = Field(description="The business justification for the discount (e.g., 'Competitor match').")
+
+class QRGenerationRequest(BaseModel):
+    """Schema for generating a discount QR code."""
+    customer_id: str = Field(description="The ID of the customer.")
+    discount_value: float = Field(description="Value of the discount (e.g. 10 for 10%).")
+    discount_type: Literal["percentage", "fixed"] = Field(description="The type of discount.")
+    expiration_days: int = Field(default=30, description="Days until the QR code expires.")
+
+class CRMUpdateDetails(BaseModel):
+    """Schema for updating customer CRM records."""
+    customer_id: str = Field(description="The ID of the customer.")
+    appointment_date: Optional[str] = Field(None, description="Date of service (YYYY-MM-DD).")
+    appointment_time: Optional[str] = Field(None, description="Time slot (e.g., '9-12').")
+    services: Optional[str] = Field(None, description="Description of services performed.")
+    notes: Optional[str] = Field(None, description="Additional context for the CRM update.")
+
+# --- Hardened Tools ---
+
+def send_call_companion_link(phone_number: str) -> dict:
     """
     Sends a link to the user's phone number to start a video session.
 
+    **KNOWN LIMITATIONS:** 
+    * This tool ONLY sends the link. 
+    * The AI agent CANNOT see the video stream or identify plants visually. 
+    * After sending the link, you must ask the user to describe the plant textually.
+
     Args:
         phone_number (str): The phone number to send the link to.
-
-    Returns:
-        dict: A dictionary with the status and message.
-
-    Example:
-        >>> send_call_companion_link(phone_number='+12065550123')
-        {'status': 'success', 'message': 'Link sent to +12065550123'}
     """
-
     logger.info("Sending call companion link to %s", phone_number)
-
     return {"status": "success", "message": f"Link sent to {phone_number}"}
 
 
-def approve_discount(discount_type: str, value: float, reason: str) -> str:
+def approve_discount(request: DiscountApprovalRequest) -> dict:
     """
     Approve the flat rate or percentage discount requested by the user.
 
-    Args:
-        discount_type (str): The type of discount, either "percentage" or "flat".
-        value (float): The value of the discount.
-        reason (str): The reason for the discount.
-
-    Returns:
-        str: A JSON string indicating the status of the approval.
-
-    Example:
-        >>> approve_discount(type='percentage', value=10.0, reason='Customer loyalty')
-        '{"status": "ok"}'
+    **KNOWN LIMITATIONS:**
+    * This tool is for internal logic checks ONLY.
+    * It does NOT directly apply the discount to a user's cart or session.
     """
-    if value > 10:
-        logger.info("Denying %s discount of %s", discount_type, value)
-        # Send back a reason for the error so that the model can recover.
-        return {"status": "rejected",
-                "message": "discount too large. Must be 10 or less."}
-    logger.info(
-        "Approving a %s discount of %s because %s", discount_type, value, reason
-    )
+    if request.value > 10:
+        logger.info("Denying %s discount of %s", request.discount_type, request.value)
+        return {"status": "rejected", "message": "discount too large. Must be 10 or less."}
+    
+    logger.info("Approving a %s discount of %s because %s", request.discount_type, request.value, request.reason)
     return {"status": "ok"}
 
-def sync_ask_for_approval(discount_type: str, value: float, reason: str) -> str:
+def sync_ask_for_approval(request: DiscountApprovalRequest) -> dict:
     """
     Asks the manager for approval for a discount.
 
+    **KNOWN LIMITATIONS:**
+    * This tool ONLY provides an approval status.
+    * It DOES NOT apply the discount to the purchase or cart.
+    * After approval, you MUST inform the user that the discount is ready but cannot be applied automatically.
+
     Args:
-        discount_type (str): The type of discount, either "percentage" or "flat".
-        value (float): The value of the discount.
-        reason (str): The reason for the discount.
-
-    Returns:
-        str: A JSON string indicating the status of the approval.
-
-    Example:
-        >>> sync_ask_for_approval(type='percentage', value=15, reason='Customer loyalty')
-        '{"status": "approved"}'
+        request (DiscountApprovalRequest): Structured approval request.
     """
-    logger.info(
-        "Asking for approval for a %s discount of %s because %s",
-        discount_type,
-        value,
-        reason,
-    )
+    logger.info("Asking for approval for a %s discount of %s because %s", request.discount_type, request.value, request.reason)
     return {"status": "approved"}
 
 
-def update_salesforce_crm(customer_id: str, details: dict) -> dict:
+def update_salesforce_crm(request: CRMUpdateDetails) -> dict:
     """
     Updates the Salesforce CRM with customer details.
 
+    **KNOWN LIMITATIONS:**
+    * This tool is for record-keeping only.
+    * It does not trigger external notifications or change billing status.
+
     Args:
-        customer_id (str): The ID of the customer.
-        details (str): A dictionary of details to update in Salesforce.
-
-    Returns:
-        dict: A dictionary with the status and message.
-
-    Example:
-        >>> update_salesforce_crm(customer_id='123', details={
-            'appointment_date': '2024-07-25',
-            'appointment_time': '9-12',
-            'services': 'Planting',
-            'discount': '15% off planting',
-            'qr_code': '10% off next in-store purchase'})
-        {'status': 'success', 'message': 'Salesforce record updated.'}
+        request (CRMUpdateDetails): Structured CRM data.
     """
-    logger.info(
-        "Updating Salesforce CRM for customer ID %s with details: %s",
-        customer_id,
-        details,
-    )
+    logger.info("Updating Salesforce CRM for customer ID %s", request.customer_id)
     return {"status": "success", "message": "Salesforce record updated."}
 
 
 def access_cart_information(customer_id: str) -> dict:
     """
+    Retrieves the current contents of the user's shopping cart.
+
+    **KNOWN LIMITATIONS:**
+    * This tool is READ-ONLY. It cannot modify items.
+
     Args:
         customer_id (str): The ID of the customer.
-
-    Returns:
-        dict: A dictionary representing the cart contents.
-
-    Example:
-        >>> access_cart_information(customer_id='123')
-        {'items': [{'product_id': 'soil-123', 'name': 'Standard Potting Soil', 'quantity': 1}, {'product_id': 'fert-456', 'name': 'General Purpose Fertilizer', 'quantity': 1}], 'subtotal': 25.98}
     """
     logger.info("Accessing cart information for customer ID: %s", customer_id)
-
-    # MOCK API RESPONSE - Replace with actual API call
-    mock_cart = {
+    return {
         "items": [
-            {
-                "product_id": "soil-123",
-                "name": "Standard Potting Soil",
-                "quantity": 1,
-            },
-            {
-                "product_id": "fert-456",
-                "name": "General Purpose Fertilizer",
-                "quantity": 1,
-            },
+            {"product_id": "soil-123", "name": "Standard Potting Soil", "quantity": 1},
+            {"product_id": "fert-456", "name": "General Purpose Fertilizer", "quantity": 1},
         ],
         "subtotal": 25.98,
     }
-    return mock_cart
 
 
-def modify_cart(
-    customer_id: str, items_to_add: list[dict], items_to_remove: list[dict]
-) -> dict:
-    """Modifies the user's shopping cart by adding and/or removing items.
+def modify_cart(customer_id: str, items_to_add: List[CartItem], items_to_remove: List[str]) -> dict:
+    """
+    Modifies the user's shopping cart by adding and/or removing items.
+
+    **KNOWN LIMITATIONS:**
+    * You MUST specify the exact product_id.
+    * You cannot modify prices or apply discounts using this tool.
 
     Args:
         customer_id (str): The ID of the customer.
-        items_to_add (list): A list of dictionaries, each with 'product_id' and 'quantity'.
-        items_to_remove (list): A list of product_ids to remove.
-
-    Returns:
-        dict: A dictionary indicating the status of the cart modification.
-    Example:
-        >>> modify_cart(customer_id='123', items_to_add=[{'product_id': 'soil-456', 'quantity': 1}, {'product_id': 'fert-789', 'quantity': 1}], items_to_remove=[{'product_id': 'fert-112', 'quantity': 1}])
-        {'status': 'success', 'message': 'Cart updated successfully.', 'items_added': True, 'items_removed': True}
+        items_to_add (list[CartItem]): List of items to add.
+        items_to_remove (list[str]): List of product_ids to remove.
     """
-
     logger.info("Modifying cart for customer ID: %s", customer_id)
-    logger.info("Adding items: %s", items_to_add)
-    logger.info("Removing items: %s", items_to_remove)
-    # MOCK API RESPONSE - Replace with actual API call
-    return {
-        "status": "success",
-        "message": "Cart updated successfully.",
-        "items_added": True,
-        "items_removed": True,
-    }
+    return {"status": "success", "message": "Cart updated successfully."}
 
 
-def get_product_recommendations(plant_type: str, customer_id: str) -> dict:
-    """Provides product recommendations based on the type of plant.
+def get_product_recommendations(plant_type: str, customer_id: Optional[str] = None) -> dict:
+    """
+    Provides product recommendations based on the type of plant.
 
     Args:
-        plant_type: The type of plant (e.g., 'Petunias', 'Sun-loving annuals').
-        customer_id: Optional customer ID for personalized recommendations.
-
-    Returns:
-        A dictionary of recommended products. Example:
-        {'recommendations': [
-            {'product_id': 'soil-456', 'name': 'Bloom Booster Potting Mix', 'description': '...'},
-            {'product_id': 'fert-789', 'name': 'Flower Power Fertilizer', 'description': '...'}
-        ]}
+        plant_type: The type of plant (e.g., 'Petunias').
+        customer_id: Optional customer ID for personalization.
     """
-    #
-    logger.info(
-        "Getting product recommendations for plant " "type: %s and customer %s",
-        plant_type,
-        customer_id,
-    )
-    # MOCK API RESPONSE - Replace with actual API call or recommendation engine
+    logger.info("Getting recommendations for %s", plant_type)
     if plant_type.lower() == "petunias":
-        recommendations = {
-            "recommendations": [
-                {
-                    "product_id": "soil-456",
-                    "name": "Bloom Booster Potting Mix",
-                    "description": "Provides extra nutrients that Petunias love.",
-                },
-                {
-                    "product_id": "fert-789",
-                    "name": "Flower Power Fertilizer",
-                    "description": "Specifically formulated for flowering annuals.",
-                },
-            ]
-        }
-    else:
-        recommendations = {
-            "recommendations": [
-                {
-                    "product_id": "soil-123",
-                    "name": "Standard Potting Soil",
-                    "description": "A good all-purpose potting soil.",
-                },
-                {
-                    "product_id": "fert-456",
-                    "name": "General Purpose Fertilizer",
-                    "description": "Suitable for a wide variety of plants.",
-                },
-            ]
-        }
-    return recommendations
+        return {"recommendations": [
+            {"product_id": "soil-456", "name": "Bloom Booster Potting Mix"},
+            {"product_id": "fert-789", "name": "Flower Power Fertilizer"}
+        ]}
+    return {"recommendations": [{"product_id": "soil-123", "name": "Standard Potting Soil"}]}
 
 
 def check_product_availability(product_id: str, store_id: str) -> dict:
-    """Checks the availability of a product at a specified store (or for pickup).
+    """
+    Checks if a product is in stock at a specific location.
 
     Args:
-        product_id: The ID of the product to check.
-        store_id: The ID of the store (or 'pickup' for pickup availability).
-
-    Returns:
-        A dictionary indicating availability.  Example:
-        {'available': True, 'quantity': 10, 'store': 'Main Store'}
-
-    Example:
-        >>> check_product_availability(product_id='soil-456', store_id='pickup')
-        {'available': True, 'quantity': 10, 'store': 'pickup'}
+        product_id: The ID of the product.
+        store_id: The ID of the store (e.g., 'Main Store' or 'pickup').
     """
-    logger.info(
-        "Checking availability of product ID: %s at store: %s",
-        product_id,
-        store_id,
-    )
-    # MOCK API RESPONSE - Replace with actual API call
+    logger.info("Checking availability for %s at %s", product_id, store_id)
     return {"available": True, "quantity": 10, "store": store_id}
 
 
-def schedule_planting_service(
-    customer_id: str, date: str, time_range: str, details: str
-) -> dict:
-    """Schedules a planting service appointment.
+def schedule_planting_service(customer_id: str, date: str, time_range: str, details: str) -> dict:
+    """
+    Schedules a planting service appointment.
+
+    **KNOWN LIMITATIONS:**
+    * Valid time ranges are only '9-12' and '13-16'.
 
     Args:
         customer_id: The ID of the customer.
-        date:  The desired date (YYYY-MM-DD).
-        time_range: The desired time range (e.g., "9-12").
-        details: Any additional details (e.g., "Planting Petunias").
-
-    Returns:
-        A dictionary indicating the status of the scheduling. Example:
-        {'status': 'success', 'appointment_id': '12345', 'date': '2024-07-29', 'time': '9:00 AM - 12:00 PM'}
-
-    Example:
-        >>> schedule_planting_service(customer_id='123', date='2024-07-29', time_range='9-12', details='Planting Petunias')
-        {'status': 'success', 'appointment_id': 'some_uuid', 'date': '2024-07-29', 'time': '9-12', 'confirmation_time': '2024-07-29 9:00'}
+        date: Target date (YYYY-MM-DD).
+        time_range: Desired slot (e.g., '9-12').
+        details: Planting details.
     """
-    logger.info(
-        "Scheduling planting service for customer ID: %s on %s (%s)",
-        customer_id,
-        date,
-        time_range,
-    )
-    logger.info("Details: %s", details)
-    # MOCK API RESPONSE - Replace with actual API call to your scheduling system
-    # Calculate confirmation time based on date and time_range
-    start_time_str = time_range.split("-")[0]  # Get the start time (e.g., "9")
-    confirmation_time_str = (
-        f"{date} {start_time_str}:00"  # e.g., "2024-07-29 9:00"
-    )
-
+    logger.info("Scheduling service for %s on %s", customer_id, date)
     return {
         "status": "success",
         "appointment_id": str(uuid.uuid4()),
         "date": date,
         "time": time_range,
-        "confirmation_time": confirmation_time_str,  # formatted time for calendar
     }
 
 
-def get_available_planting_times(date: str) -> list:
-    """Retrieves available planting service time slots for a given date.
+def get_available_planting_times(date: str) -> list[str]:
+    """
+    Retrieves available time slots for planting services.
 
     Args:
-        date: The date to check (YYYY-MM-DD).
-
-    Returns:
-        A list of available time ranges.
-
-    Example:
-        >>> get_available_planting_times(date='2024-07-29')
-        ['9-12', '13-16']
+        date: Target date (YYYY-MM-DD).
     """
-    logger.info("Retrieving available planting times for %s", date)
-    # MOCK API RESPONSE - Replace with actual API call
-    # Generate some mock time slots, ensuring they're in the correct format:
     return ["9-12", "13-16"]
 
 
-def send_care_instructions(
-    customer_id: str, plant_type: str, delivery_method: str
-) -> dict:
-    """Sends an email or SMS with instructions on how to take care of a specific plant type.
-
-    Args:
-        customer_id:  The ID of the customer.
-        plant_type: The type of plant.
-        delivery_method: 'email' (default) or 'sms'.
-
-    Returns:
-        A dictionary indicating the status.
-
-    Example:
-        >>> send_care_instructions(customer_id='123', plant_type='Petunias', delivery_method='email')
-        {'status': 'success', 'message': 'Care instructions for Petunias sent via email.'}
+def send_care_instructions(customer_id: str, plant_type: str, delivery_method: Literal["email", "sms"]) -> dict:
     """
-    logger.info(
-        "Sending care instructions for %s to customer: %s via %s",
-        plant_type,
-        customer_id,
-        delivery_method,
-    )
-    # MOCK API RESPONSE - Replace with actual API call or email/SMS sending logic
-    return {
-        "status": "success",
-        "message": f"Care instructions for {plant_type} sent via {delivery_method}.",
-    }
-
-
-def generate_qr_code(
-    customer_id: str,
-    discount_value: float,
-    discount_type: str,
-    expiration_days: int,
-) -> dict:
-    """Generates a QR code for a discount.
+    Sends plant care instructions to the user.
 
     Args:
         customer_id: The ID of the customer.
-        discount_value: The value of the discount (e.g., 10 for 10%).
-        discount_type: "percentage" (default) or "fixed".
-        expiration_days: Number of days until the QR code expires.
-
-    Returns:
-        A dictionary containing the QR code data (or a link to it). Example:
-        {'status': 'success', 'qr_code_data': '...', 'expiration_date': '2024-08-28'}
-
-    Example:
-        >>> generate_qr_code(customer_id='123', discount_value=10.0, discount_type='percentage', expiration_days=30)
-        {'status': 'success', 'qr_code_data': 'MOCK_QR_CODE_DATA', 'expiration_date': '2024-08-24'}
+        plant_type: The type of plant.
+        delivery_method: 'email' or 'sms'.
     """
+    return {"status": "success", "message": f"Sent via {delivery_method}."}
+
+
+def generate_qr_code(request: QRGenerationRequest) -> dict:
+    """
+    Generates a discount QR code.
+
+    **KNOWN LIMITATIONS:**
+    * QR codes CANNOT be sent via email; they are displayed in the chat interface only.
+
+    Args:
+        request (QRGenerationRequest): Structured QR request.
+    """
+    if request.discount_type == "percentage" and request.discount_value > 10:
+        return {"status": "error", "message": "percentage must be <= 10%"}
     
-    # Guardrails to validate the amount of discount is acceptable for a auto-approved discount.
-    # Defense-in-depth to prevent malicious prompts that could circumvent system instructions and
-    # be able to get arbitrary discounts.
-    if discount_type == "" or discount_type == "percentage":
-        if discount_value > 10:
-            return "cannot generate a QR code for this amount, must be 10% or less"
-    if discount_type == "fixed" and discount_value > 20:
-        return "cannot generate a QR code for this amount, must be 20 or less"
-    
-    logger.info(
-        "Generating QR code for customer: %s with %s - %s discount.",
-        customer_id,
-        discount_value,
-        discount_type,
-    )
-    # MOCK API RESPONSE - Replace with actual QR code generation library
-    expiration_date = (
-        datetime.now() + timedelta(days=expiration_days)
-    ).strftime("%Y-%m-%d")
+    expiration_date = (datetime.now() + timedelta(days=request.expiration_days)).strftime("%Y-%m-%d")
     return {
         "status": "success",
-        "qr_code_data": "MOCK_QR_CODE_DATA",  # Replace with actual QR code
+        "qr_code_data": "MOCK_QR_CODE_DATA",
         "expiration_date": expiration_date,
     }
