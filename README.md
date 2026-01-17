@@ -32,7 +32,12 @@ To verify your setup after installation, run:
 ```bash
 make verify  # Available in each agent directory
 ```
-
+TODO: need a place to set env vars
+export GOOGLE_CLOUD_PROJECT="x"
+user need roles/aiplatform.user
+gcloud auth login
+gcloud auth application-default login
+gcloud auth application-default set-quota-project project id 
 ---
 
 ## 3. The Test Subjects (Agents)
@@ -143,13 +148,12 @@ Might need to make sure that we have the project in env vars
 cd ../evaluation
 uv sync  # First time only
 
-# Convert ADK traces to evaluation format
-uv run agent-eval convert \
+# Convert ADK traces to evaluation format (creates timestamp folder)
+RUN_DIR=$(uv run agent-eval convert \
   --agent-dir ../customer-service/customer_service \
-  --output-dir ../customer-service/eval/results
+  --output-dir ../customer-service/eval/results \
+  | awk -F': ' '/^Run folder:/ {print $2}')
 
-# Note the timestamp folder printed by the CLI, then:
-RUN_DIR=../customer-service/eval/results/<timestamp>
 
 # Run metrics (deterministic + LLM-as-Judge)
 uv run agent-eval evaluate \
