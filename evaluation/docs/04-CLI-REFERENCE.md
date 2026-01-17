@@ -48,7 +48,7 @@ uv run agent-eval convert \
 
 ### Output
 
-Creates `<output-dir>/<timestamp>/raw/processed_interaction_sim.csv`
+Creates `<output-dir>/<timestamp>/raw/processed_interaction_sim.jsonl`
 
 ### Example
 
@@ -153,14 +153,14 @@ uv run agent-eval interact \
 
 ### Output
 
-Creates `<results-dir>/<timestamp>/raw/processed_interaction_<app_name>.csv`
+Creates `<results-dir>/<timestamp>/raw/processed_interaction_<app_name>.jsonl`
 
 The CLI prints the next command to run:
 ```
 Run folder: ../your-agent/eval/results/20260114_143022
 
 To evaluate, run:
-agent-eval evaluate --interaction-file .../raw/processed_interaction_my_agent.csv ...
+agent-eval evaluate --interaction-file .../raw/processed_interaction_my_agent.jsonl ...
 ```
 
 ### Example
@@ -188,7 +188,7 @@ Runs evaluation metrics on processed interaction data.
 
 ```bash
 uv run agent-eval evaluate \
-  --interaction-file path/to/processed_interaction.csv \
+  --interaction-file path/to/processed_interaction.jsonl \
   --metrics-files path/to/metric_definitions.json \
   --results-dir path/to/results/<timestamp>
 ```
@@ -219,7 +219,7 @@ Adds to the results folder:
 RUN_DIR=../customer-service/eval/results/20260114_143022
 
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR \
   --input-label baseline \
@@ -299,7 +299,7 @@ uv run agent-eval convert \
 # 3. Evaluate (use timestamp from step 2)
 RUN_DIR=../customer-service/eval/results/20260114_143022
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_sim.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR \
   --input-label baseline
@@ -331,7 +331,7 @@ uv run agent-eval interact \
 # 3. Evaluate (use timestamp from step 2)
 RUN_DIR=../customer-service/eval/results/20260114_150000
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR
 

@@ -153,7 +153,7 @@ RUN_DIR=../customer-service/eval/results/<timestamp>
 
 # Run metrics (deterministic + LLM-as-Judge)
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_sim.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR \
   --input-label baseline \

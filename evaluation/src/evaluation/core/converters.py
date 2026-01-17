@@ -274,28 +274,66 @@ class AdkHistoryConverter:
             reference_data = golden_q.get("reference_data", {})
             question_metadata = golden_q.get("metadata", {})
 
-            # 7. Construct Row
+            # 7. Build contents for Gemini batch format (multi-turn conversations)
+            # The SDK auto-extracts conversation_history and prompt from this format.
+            # See: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-dataset
+            text_responses = [t.get("text_response", "") for t in sub_agent_trace if t.get("text_response")]
+
+            # Build full conversation as Content objects
+            contents = []
+            for i, user_input in enumerate(user_inputs):
+                # Add user turn
+                contents.append({
+                    "role": "user",
+                    "parts": [{"text": user_input}]
+                })
+                # Add corresponding model response if available (except after last user input)
+                if i < len(text_responses):
+                    contents.append({
+                        "role": "model",
+                        "parts": [{"text": text_responses[i]}]
+                    })
+
+            # Build Gemini batch format for SDK auto-parsing
+            gemini_request = {
+                "contents": contents
+            }
+            gemini_response = {
+                "candidates": [
+                    {"content": {"role": "model", "parts": [{"text": final_response}]}}
+                ]
+            }
+
+            # Also store conversation_history separately for custom metrics
+            conversation_history = contents[:-1] if len(contents) > 1 else []  # All but last user turn
+            extracted_data["conversation_history"] = conversation_history
+
+            # 8. Construct Row - JSONL format with Gemini batch structure
             row = {
+                # Gemini batch format fields (SDK auto-parses these for multi-turn metrics)
+                "request": gemini_request,
+                "response": gemini_response,
+                # Metadata fields
                 "question_id": eval_id,
                 "session_id": session_details.get("id"),
                 "base_url": "simulation",
                 "app_name": app_name,
                 "ADK_USER_ID": session_details.get("user_id"),
-                "status": json.dumps({"boolean": "success"}), # Simulation implies success run
-                "run_id": str(uuid.uuid4()), # Generated
-                "agents_evaluated": json.dumps([app_name]),
-                "user_inputs": json.dumps(user_inputs),
-                "question_metadata": json.dumps(question_metadata),
+                "status": {"boolean": "success"},
+                "run_id": str(uuid.uuid4()),
+                "agents_evaluated": [app_name],
+                "user_inputs": user_inputs,
+                "question_metadata": question_metadata,
                 "interaction_datetime": datetime.now().isoformat(),
                 "USER": os.environ.get("USER", "simulator"),
-                "reference_data": json.dumps(reference_data),
-                "missing_information": json.dumps({"boolean": False}),
-                "final_session_state": json.dumps(final_session_state),
-                "session_trace": json.dumps(synthetic_trace),
-                "latency_data": json.dumps(latency_data),
-                "trace_summary": json.dumps(trace_summary),
-                "extracted_data": json.dumps(extracted_data),
-                "final_response": final_response  # For response_correctness metric
+                "reference_data": reference_data,
+                "missing_information": {"boolean": False},
+                "final_session_state": final_session_state,
+                "session_trace": synthetic_trace,
+                "latency_data": latency_data,
+                "trace_summary": trace_summary,
+                "extracted_data": extracted_data,
+                "final_response": final_response
             }
             
             # Preserve ADK Eval Scores as Metadata or separate columns?
@@ -312,7 +350,13 @@ class AdkHistoryConverter:
 
         return extracted_rows
 
-    def run(self) -> pd.DataFrame:
+    def run(self) -> List[Dict[str, Any]]:
+        """Processes ADK eval history files and returns a list of interaction records.
+
+        Returns:
+            List of dictionaries, each representing one interaction.
+            Use write_jsonl() to save to disk.
+        """
         history_dir = os.path.join(self.agent_dir, ".adk", "eval_history")
         if not os.path.exists(history_dir):
             raise FileNotFoundError(f"History directory not found: {history_dir}")
@@ -321,7 +365,37 @@ class AdkHistoryConverter:
         for file_path in glob.glob(os.path.join(history_dir, "*.json")):
             all_rows.extend(self.process_file(file_path))
 
-        return pd.DataFrame(all_rows)
+        return all_rows
+
+
+def write_jsonl(records: List[Dict[str, Any]], output_path: str) -> None:
+    """Writes a list of records to a JSONL file (one JSON object per line).
+
+    Args:
+        records: List of dictionaries to write.
+        output_path: Path to output .jsonl file.
+    """
+    with open(output_path, 'w', encoding='utf-8') as f:
+        for record in records:
+            f.write(json.dumps(record, ensure_ascii=False, default=str) + '\n')
+
+
+def read_jsonl(input_path: str) -> List[Dict[str, Any]]:
+    """Reads a JSONL file and returns a list of records.
+
+    Args:
+        input_path: Path to .jsonl file.
+
+    Returns:
+        List of dictionaries.
+    """
+    records = []
+    with open(input_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+    return records
 
 class TestToGoldenConverter:
     """Converts a list of conversation turns (test data) into a Golden Dataset JSON."""

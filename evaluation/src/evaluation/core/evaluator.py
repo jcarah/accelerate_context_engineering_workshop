@@ -331,29 +331,39 @@ class Evaluator:
 
     def evaluate(self, interaction_file: Path, metrics_files: List[str], results_dir: Path):
         logger.info(f"Starting evaluation on {interaction_file}")
-        
-        # Load Data
-        interaction_results = pd.read_csv(interaction_file, dtype={"question_id": str})
+
+        # Load Data - support both CSV and JSONL formats
+        file_ext = interaction_file.suffix.lower()
+        if file_ext == '.jsonl':
+            # JSONL format: nested structures are already native Python objects
+            interaction_results = pd.read_json(interaction_file, lines=True, dtype={"question_id": str})
+            is_jsonl = True
+        else:
+            # CSV format: nested structures are JSON strings
+            interaction_results = pd.read_csv(interaction_file, dtype={"question_id": str})
+            is_jsonl = False
+
         results_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Load Metrics
         metric_definitions = load_and_consolidate_metrics(metrics_files)
-        
+
         # Apply Filters
         if self.config.get("metric_filters"):
             metric_definitions = filter_metrics_by_criteria(
                 metric_definitions, self.config["metric_filters"]
             )
 
-        # Preprocess JSON columns
+        # Preprocess JSON columns (only needed for CSV format)
         original_df = interaction_results.copy()
-        json_cols = [
-            "extracted_data", "reference_data", "latency_data",
-            "agents_evaluated", "user_inputs", "session_trace", "final_session_state"
-        ]
-        for col in json_cols:
-            if col in interaction_results.columns:
-                interaction_results[col] = interaction_results[col].apply(robust_json_loads)
+        if not is_jsonl:
+            json_cols = [
+                "extracted_data", "reference_data", "latency_data",
+                "agents_evaluated", "user_inputs", "session_trace", "final_session_state"
+            ]
+            for col in json_cols:
+                if col in interaction_results.columns:
+                    interaction_results[col] = interaction_results[col].apply(robust_json_loads)
 
         # Expand data for easy mapping
         dfs = [interaction_results]
@@ -416,20 +426,30 @@ class Evaluator:
                 if info.get("metric_type") == "deterministic":
                     continue
 
-                eval_dataset = map_dataset_columns(
-                    agent_df,
-                    original_df,
-                    info.get("dataset_mapping", {}),
-                    metric_name,
-                    CONFIG.METRIC_TOOL_USE_QUALITY,
-                    is_managed_metric=info.get("is_managed", False),
-                )
+                # For API Predefined metrics, check if we should use raw GEMINI format
+                is_managed = info.get("is_managed", False)
+                use_gemini_format = info.get("use_gemini_format", False)
+
+                if is_managed and use_gemini_format:
+                    # Use raw data with request/response - SDK will auto-detect GEMINI schema
+                    # This allows proper parsing of conversation_history from request.contents
+                    eval_dataset = original_df[["request", "response"]].copy()
+                    logger.info(f"Using GEMINI format for API Predefined metric: {metric_name}")
+                else:
+                    eval_dataset = map_dataset_columns(
+                        agent_df,
+                        original_df,
+                        info.get("dataset_mapping", {}),
+                        metric_name,
+                        CONFIG.METRIC_TOOL_USE_QUALITY,
+                        is_managed_metric=is_managed,
+                    )
 
                 if eval_dataset.empty or len(eval_dataset.columns) == 0:
                     continue
 
                 # Create Metric Object
-                if info.get("is_managed"):
+                if is_managed:
                     m_name = info.get("managed_metric_name", "").upper()
                     metric_obj = getattr(types.RubricMetric, m_name, None) or PointwiseMetric(
                         metric=metric_name, metric_prompt_template=info.get("template", "")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 from datetime import datetime
@@ -29,7 +30,10 @@ class LogEntry(TypedDict):
 
 
 def robust_json_loads(x: Any) -> Optional[Dict[str, Any]]:
-    """Safely load JSON strings, handling various input types."""
+    """Safely load JSON strings, handling various input types.
+
+    Tries json.loads first, then ast.literal_eval for Python dict syntax.
+    """
     if x is None:
         return None
     if isinstance(x, (dict, list)):
@@ -39,7 +43,14 @@ def robust_json_loads(x: Any) -> Optional[Dict[str, Any]]:
     try:
         return json.loads(x)
     except (json.JSONDecodeError, TypeError):
-        return x
+        # Try ast.literal_eval for Python dict syntax (single quotes)
+        try:
+            result = ast.literal_eval(x)
+            if isinstance(result, (dict, list)):
+                return result
+        except (ValueError, SyntaxError):
+            pass
+        return None
 
 
 class Analyzer:

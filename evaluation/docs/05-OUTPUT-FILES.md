@@ -15,7 +15,7 @@ eval/results/
     ├── question_answer_log.md            # Q&A transcript (from analyze)
     ├── gemini_analysis.md                # AI root cause analysis (from analyze)
     └── raw/
-        ├── processed_interaction_*.csv   # Interaction data (from convert/interact)
+        ├── processed_interaction_*.jsonl  # Interaction data (from convert/interact)
         ├── evaluation_results_*.csv      # Full eval results (from evaluate)
         └── gemini_prompt.txt             # Debug: prompt sent to Gemini
 ```
@@ -28,15 +28,15 @@ eval/results/
 
 | File | Description |
 | :--- | :--- |
-| `processed_interaction_sim.csv` | Converted data from ADK simulator traces |
+| `processed_interaction_sim.jsonl` | Converted data from ADK simulator traces |
 
 ### From `agent-eval interact` (Path B: Live API)
 
 | File | Description |
 | :--- | :--- |
-| `processed_interaction_<app_name>.csv` | Interaction data from live agent API |
+| `processed_interaction_<app_name>.jsonl` | Interaction data from live agent API |
 
-### Processed CSV Columns
+### Processed JSONL Fields
 
 | Column | Description | Used By |
 | :--- | :--- | :--- |
@@ -180,7 +180,7 @@ These files help troubleshoot issues without opening large CSVs:
                     └───────────┬─────────────┘
                                 │
                     ┌───────────▼─────────────┐
-                    │   processed_*.csv       │ ◄── Phase 1
+                    │   processed_*.jsonl     │ ◄── Phase 1
                     │   (interaction data)    │
                     └───────────┬─────────────┘
                                 │

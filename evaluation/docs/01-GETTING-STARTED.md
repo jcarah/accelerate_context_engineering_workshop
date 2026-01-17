@@ -73,7 +73,7 @@ uv run agent-eval convert \
 
 ```bash
 uv run agent-eval evaluate \
-  --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_sim.csv \
+  --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_sim.jsonl \
   --metrics-files ../your-agent/eval/metrics/metric_definitions.json \
   --results-dir ../your-agent/eval/results/<timestamp>
 ```
