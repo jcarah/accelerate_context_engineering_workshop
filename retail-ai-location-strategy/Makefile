@@ -79,7 +79,7 @@ help:
 	@echo ""
 	@echo "LOCAL DEVELOPMENT:"
 	@echo "  make install     - Install dependencies with uv"
-	@echo "  make dev         - Run agent locally with ADK web UI (port 8501)"
+	@echo "  make dev         - Run agent locally with ADK web UI (port 8502)"
 	@echo "  make playground  - Alias for 'make dev'"
 	@echo ""
 	@echo "AG-UI FRONTEND (Interactive Dashboard):"

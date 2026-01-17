@@ -1,0 +1,476 @@
+{
+    "experiment_id": "eval-20260114_011020",
+    "run_type": "baseline",
+    "test_description": "Customer Service Baseline",
+    "interaction_datetime": "2026-01-14T01:10:20.637852",
+    "overall_summary": {
+        "deterministic_metrics": {
+            "latency_metrics.total_latency_seconds": 21.90908,
+            "latency_metrics.average_turn_latency_seconds": 6.381995,
+            "latency_metrics.llm_latency_seconds": 4.4,
+            "latency_metrics.tool_latency_seconds": 5.2,
+            "latency_metrics.time_to_first_response_seconds": 1.0003536896,
+            "cache_efficiency.cache_hit_rate": 0.3670995949956969,
+            "cache_efficiency.total_cached_tokens": 15628.0,
+            "cache_efficiency.total_fresh_prompt_tokens": 26522.0,
+            "cache_efficiency.total_input_tokens": 42150.0,
+            "thinking_metrics.reasoning_ratio": 0.7426554176396938,
+            "thinking_metrics.total_thinking_tokens": 906.8,
+            "thinking_metrics.total_candidate_tokens": 254.8,
+            "thinking_metrics.total_output_tokens": 1161.6,
+            "thinking_metrics.turns_with_thinking": 5.6,
+            "tool_utilization.total_tool_calls": 5.2,
+            "tool_utilization.unique_tools_used": 2.6,
+            "tool_success_rate.tool_success_rate": 1.0,
+            "tool_success_rate.total_tool_calls": 2.6,
+            "tool_success_rate.failed_tool_calls": 0.0,
+            "grounding_utilization.total_grounding_chunks": 0.0,
+            "grounding_utilization.total_grounded_responses": 0.0,
+            "grounding_utilization.total_llm_responses": 6.0,
+            "context_saturation.max_total_tokens": 5203.0,
+            "agent_handoffs.total_handoffs": 3.4,
+            "agent_handoffs.unique_agents_count": 1.0,
+            "output_density.average_output_tokens": 45.52571428571429,
+            "output_density.total_output_tokens": 274.2,
+            "output_density.llm_calls_count": 6.0,
+            "sandbox_usage.total_sandbox_ops": 0.0,
+            "sandbox_usage.unique_ops_used": 0.0
+        },
+        "llm_based_metrics": {
+            "state_management_fidelity": 0.4,
+            "trajectory_accuracy": 0.8,
+            "response_correctness": 0.642490844,
+            "tool_usage_accuracy": 0.0
+        }
+    },
+    "per_question_summary": [
+        {
+            "question_id": "22e1e449",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": 0.0,
+                "latency_metrics": {
+                    "total_latency_seconds": 14.6195,
+                    "average_turn_latency_seconds": 4.873166666666667,
+                    "llm_latency_seconds": 4.0,
+                    "tool_latency_seconds": 4.0,
+                    "time_to_first_response_seconds": 1.000381184
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.3266276399624826,
+                    "total_cached_tokens": 10099,
+                    "total_fresh_prompt_tokens": 20820,
+                    "total_input_tokens": 30919
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.7759036144578313,
+                    "total_thinking_tokens": 644,
+                    "total_candidate_tokens": 186,
+                    "total_output_tokens": 830,
+                    "turns_with_thinking": 5
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 4,
+                    "unique_tools_used": 2,
+                    "tool_counts": {
+                        "sync_ask_for_approval": 2,
+                        "access_cart_information": 2
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 2,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 5
+                },
+                "context_saturation": {
+                    "max_total_tokens": 4805,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 3,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 37.2,
+                    "total_output_tokens": 186,
+                    "llm_calls_count": 5
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "state_management_fidelity": {
+                    "score": 1.0,
+                    "explanation": "The agent failed to extract any relevant information from the user's prompt regarding the discount percentage, competitor match, manager approval request, or the action to apply the discount. The session state only contains a static customer profile and system variables, indicating major errors in capturing the intent and details of the current interaction."
+                },
+                "trajectory_accuracy": {
+                    "score": 1.0,
+                    "explanation": "The trajectory shows major deviations. The user explicitly requested two distinct actions: 'proceed with the manager approval request' and 'apply the 15% discount'. The agent repeatedly called a generic 'customer_service' tool three times, which does not clearly represent these distinct steps, introduces significant noise, and fails to reflect a logical sequence for the requested actions. If specific tools for approval and discount existed, they were skipped; if 'customer_service' was meant to handle both, it should not have been called three times."
+                },
+                "response_correctness": {
+                    "score": 0.5,
+                    "explanation": ""
+                },
+                "tool_usage_accuracy": {
+                    "score": 0.0,
+                    "explanation": "The agent did not use any tools, even though tools would have been necessary to perform actions like requesting manager approval, applying a discount, or checking cart items. The response is a narrative simulation rather than an execution of tasks via tool calls."
+                }
+            }
+        },
+        {
+            "question_id": "2d0fd405",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": 0.0,
+                "latency_metrics": {
+                    "total_latency_seconds": 31.837400000000002,
+                    "average_turn_latency_seconds": 7.959350000000001,
+                    "llm_latency_seconds": 5.0,
+                    "tool_latency_seconds": 4.0,
+                    "time_to_first_response_seconds": 1.000245248
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.4121062818933662,
+                    "total_cached_tokens": 18736,
+                    "total_fresh_prompt_tokens": 26728,
+                    "total_input_tokens": 45464
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.835399107585523,
+                    "total_thinking_tokens": 1685,
+                    "total_candidate_tokens": 332,
+                    "total_output_tokens": 2017,
+                    "turns_with_thinking": 6
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 4,
+                    "unique_tools_used": 2,
+                    "tool_counts": {
+                        "generate_qr_code": 2,
+                        "update_salesforce_crm": 2
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 2,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 6
+                },
+                "context_saturation": {
+                    "max_total_tokens": 6003,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 4,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 55.333333333333336,
+                    "total_output_tokens": 332,
+                    "llm_calls_count": 6
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "state_management_fidelity": {
+                    "score": 1.0,
+                    "explanation": "The session state primarily contains a static customer profile, which is likely pre-existing context rather than information extracted from the user's specific requests in this interaction. Crucial requests for a discount code, QR code generation, and sending to email were not parsed or stored as state variables, indicating a major failure in capturing the user's intent and specific demands."
+                },
+                "trajectory_accuracy": {
+                    "score": 1.0,
+                    "explanation": "The agent correctly identified 'customer_service' for the initial inquiries about rewards and discount codes. However, for the requests to 'generate the QR code' and 'send it to my email,' it incorrectly continued to call 'customer_service' instead of identifying and invoking specific tools like a 'qr_code_generator' and 'email_sender.' This represents a major deviation as key sub-agents required to perform the requested actions were skipped."
+                },
+                "response_correctness": {
+                    "score": 0.8333333,
+                    "explanation": ""
+                },
+                "tool_usage_accuracy": {
+                    "score": 0.0,
+                    "explanation": "The provided AI-generated response does not include any tool calls. The evaluation specifically targets tool calls, but none are present in the given output, making it impossible to assess their necessity, correctness, or effectiveness. The agent's text responses imply actions that would typically require tools (e.g., retrieving loyalty points, generating a discount/QR code, sending an email), but no such calls are logged."
+                }
+            }
+        },
+        {
+            "question_id": "6446f647",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": 0.0,
+                "latency_metrics": {
+                    "total_latency_seconds": 16.7503,
+                    "average_turn_latency_seconds": 5.583433333333333,
+                    "llm_latency_seconds": 4.0,
+                    "tool_latency_seconds": 6.0,
+                    "time_to_first_response_seconds": 1.000386816
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.3575574877301378,
+                    "total_cached_tokens": 14352,
+                    "total_fresh_prompt_tokens": 25787,
+                    "total_input_tokens": 40139
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.7099056603773585,
+                    "total_thinking_tokens": 602,
+                    "total_candidate_tokens": 246,
+                    "total_output_tokens": 848,
+                    "turns_with_thinking": 6
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 6,
+                    "unique_tools_used": 3,
+                    "tool_counts": {
+                        "get_available_planting_times": 2,
+                        "schedule_planting_service": 2,
+                        "update_salesforce_crm": 2
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 3,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 6
+                },
+                "context_saturation": {
+                    "max_total_tokens": 4923,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 3,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 41.0,
+                    "total_output_tokens": 246,
+                    "llm_calls_count": 6
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "state_management_fidelity": {
+                    "score": 0.0,
+                    "explanation": "The AI failed to extract any relevant information from the user's prompt regarding the service request, date, or time slot. The `customer_profile` is likely pre-existing data and does not reflect the current user interaction, as the `scheduled_appointments` field is empty and no specific service, date, or time was captured into the session state."
+                },
+                "trajectory_accuracy": {
+                    "score": 1.0,
+                    "explanation": "The agent used a generic 'customer_service' tool three times instead of specific tools that would likely exist for checking service availability and scheduling an appointment. This represents a major deviation from the expected specific tool usage and sequence. The repetition of the generic tool also adds unnecessary noise and does not clearly reflect the user's multi-step request (checking availability, then scheduling)."
+                },
+                "response_correctness": {
+                    "score": 1.0,
+                    "explanation": ""
+                },
+                "tool_usage_accuracy": {
+                    "score": 0.0,
+                    "explanation": "The agent did not make any tool calls, which were necessary for checking service availability and scheduling the appointment as requested by the user. The agent also failed to parse the user's initial prompt comprehensively, asking for information already provided."
+                }
+            }
+        },
+        {
+            "question_id": "68e57b06",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": 0.0,
+                "latency_metrics": {
+                    "total_latency_seconds": 22.9137,
+                    "average_turn_latency_seconds": 7.637899999999999,
+                    "llm_latency_seconds": 4.0,
+                    "tool_latency_seconds": 8.0,
+                    "time_to_first_response_seconds": 1.000397056
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.3782586314667059,
+                    "total_cached_tokens": 20575,
+                    "total_fresh_prompt_tokens": 33819,
+                    "total_input_tokens": 54394
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.815527950310559,
+                    "total_thinking_tokens": 1313,
+                    "total_candidate_tokens": 297,
+                    "total_output_tokens": 1610,
+                    "turns_with_thinking": 7
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 8,
+                    "unique_tools_used": 4,
+                    "tool_counts": {
+                        "get_product_recommendations": 2,
+                        "check_product_availability": 2,
+                        "access_cart_information": 2,
+                        "modify_cart": 2
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 4,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 7
+                },
+                "context_saturation": {
+                    "max_total_tokens": 5671,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 3,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 42.42857142857143,
+                    "total_output_tokens": 297,
+                    "llm_calls_count": 7
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "state_management_fidelity": {
+                    "score": 0.0,
+                    "explanation": "The AI-generated response only returns a static customer profile and completely fails to extract any information or entities from the user's prompt, such as 'Petunias', 'Las Vegas', 'Bloom Booster Potting Mix', or the requested actions (check stock, add to cart). The state is unrelated to the interaction."
+                },
+                "trajectory_accuracy": {
+                    "score": 1.0,
+                    "explanation": "The agent correctly identified 'customer_service' for the first two conversational turns, which involve general information and a stock check query. However, for the final turn, 'Yes, please add the Bloom Booster Potting Mix to my cart.', a dedicated shopping cart or e-commerce tool (e.g., `shopping_cart.add_item`) should have been invoked, not 'customer_service'. This constitutes a major deviation as a key action-oriented sub-agent was skipped, leading to a functional error for the cart modification request."
+                },
+                "response_correctness": {
+                    "score": 0.5714286,
+                    "explanation": ""
+                },
+                "tool_usage_accuracy": {
+                    "score": 0.0,
+                    "explanation": "The agent failed to make any tool calls when they were necessary. Specifically, it did not use a tool to check product stock or to add an item to the cart, despite the user's explicit requests and the agent's text responses implying these actions were taken."
+                }
+            }
+        },
+        {
+            "question_id": "c8fa2069",
+            "runs": 1,
+            "deterministic_metrics": {
+                "token_usage": 0.0,
+                "latency_metrics": {
+                    "total_latency_seconds": 23.424500000000002,
+                    "average_turn_latency_seconds": 5.8561250000000005,
+                    "llm_latency_seconds": 5.0,
+                    "tool_latency_seconds": 4.0,
+                    "time_to_first_response_seconds": 1.000358144
+                },
+                "cache_efficiency": {
+                    "cache_hit_rate": 0.36094793392579205,
+                    "total_cached_tokens": 14378,
+                    "total_fresh_prompt_tokens": 25456,
+                    "total_input_tokens": 39834
+                },
+                "thinking_metrics": {
+                    "reasoning_ratio": 0.5765407554671969,
+                    "total_thinking_tokens": 290,
+                    "total_candidate_tokens": 213,
+                    "total_output_tokens": 503,
+                    "turns_with_thinking": 4
+                },
+                "tool_utilization": {
+                    "total_tool_calls": 4,
+                    "unique_tools_used": 2,
+                    "tool_counts": {
+                        "send_call_companion_link": 2,
+                        "send_care_instructions": 2
+                    }
+                },
+                "tool_success_rate": {
+                    "tool_success_rate": 1.0,
+                    "total_tool_calls": 2,
+                    "failed_tool_calls": 0,
+                    "failed_tools_list": []
+                },
+                "grounding_utilization": {
+                    "total_grounding_chunks": 0,
+                    "total_grounded_responses": 0,
+                    "total_llm_responses": 6
+                },
+                "context_saturation": {
+                    "max_total_tokens": 4613,
+                    "peak_usage_span": "call_llm"
+                },
+                "agent_handoffs": {
+                    "total_handoffs": 4,
+                    "unique_agents_count": 1,
+                    "agents_invoked_list": [
+                        "customer_service"
+                    ]
+                },
+                "output_density": {
+                    "average_output_tokens": 51.666666666666664,
+                    "total_output_tokens": 310,
+                    "llm_calls_count": 6
+                },
+                "sandbox_usage": {
+                    "total_sandbox_ops": 0,
+                    "unique_ops_used": 0,
+                    "sandbox_tools_used": {}
+                }
+            },
+            "llm_metrics": {
+                "state_management_fidelity": {
+                    "score": 0.0,
+                    "explanation": "The AI failed to extract and store any information relevant to the user's current interaction, such as the identified plant ('Fern'), the request for care instructions, or the chosen delivery method ('email'). The provided state variables (`customer_profile`, `__llm_request_key__`, `timer_start`, `request_count`) are either boilerplate or pre-existing customer data, not reflecting the conversation about plant identification and care."
+                },
+                "trajectory_accuracy": {
+                    "score": 0.0,
+                    "explanation": "The agent completely failed to identify and call the appropriate tools for plant identification, video call scheduling, retrieving care instructions, or sending an email, instead using a generic 'customer_service' tool repeatedly, which does not align with any of the specific user requests."
+                },
+                "response_correctness": {
+                    "score": 0.30769232,
+                    "explanation": ""
+                },
+                "tool_usage_accuracy": {
+                    "score": 0.0,
+                    "explanation": "The agent's text responses claim to have performed actions that require tool calls (sending a video call link and sending an email with care instructions). However, the provided AI-generated Response only contains `text_response` entries and does not show any actual tool calls being made. Therefore, essential tools were not used in the provided trace, leading to a score of 0."
+                }
+            }
+        }
+    ]
+}
