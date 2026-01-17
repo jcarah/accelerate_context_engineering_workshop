@@ -38,6 +38,7 @@ user need roles/aiplatform.user
 gcloud auth login
 gcloud auth application-default login
 gcloud auth application-default set-quota-project project id 
+enable Places API 
 ---
 
 ## 3. The Test Subjects (Agents)
@@ -126,6 +127,10 @@ Follow these steps to establish a baseline before making optimizations.
 #### Step 1: Run ADK Simulator
 
 > ⚠️ **CRITICAL:** Always clear `eval_history` before running a new baseline. The ADK simulator *appends* to this folder on every run. Without clearing, your baseline will include stale data from previous runs, corrupting all metrics.
+
+TODO: suggestion: add info conversation_scenarios.json and metric_definitions.json and prompt user to look at those two files 
+
+Add details on what the simulator does 
 
 ```bash
 cd customer-service
