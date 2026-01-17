@@ -1,53 +1,5 @@
 {
   "metrics": {
-    "trajectory_accuracy": {
-      "metric_type": "llm",
-      "agents": ["customer_service", "app"],
-      "score_range": {"min": 0, "max": 5, "description": "0=Completely wrong, 5=Perfect trajectory"},
-      "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "trace_summary"
-        }
-      },
-      "template": "You are evaluating the execution trajectory of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Agent Execution Trajectory:**\n{response}\n\n**Evaluation Criteria:**\n1. **Sequence:** Did the agent call the sub-agents/tools in a logical order?\n2. **Completeness:** Were any required steps missed?\n3. **Noise:** Were there unnecessary or hallucinated steps?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect trajectory - logical order, all required steps, no unnecessary steps\n- 4: Trajectory is logically equivalent, achieving the same outcome with minor variations\n- 3: Mostly correct trajectory with minor deviations (e.g., one extra step or slight reordering)\n- 2: Some correct sub-agents, but significant ordering issues or extra steps\n- 1: Major deviations; key sub-agents were skipped or invoked in the wrong order\n- 0: The trajectory is completely different or empty\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
-    },
-    "state_management_fidelity": {
-      "metric_type": "llm",
-      "agents": ["customer_service", "app"],
-      "score_range": {"min": 0, "max": 5, "description": "0=Empty/unrelated state, 5=Perfect state capture"},
-      "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "extracted_data:state_variables"
-        }
-      },
-      "template": "You are evaluating the state management of an AI customer service agent.\n\n**User Request:**\n{prompt}\n\n**Final Session State Variables:**\n{response}\n\n**Evaluation Criteria:**\n1. **Relevance:** Does the state contain variables relevant to the user's request?\n2. **Completeness:** Are key entities (customer info, request details, resolution status) captured?\n3. **Accuracy:** Do the state values accurately reflect the conversation context?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect state capture with all relevant entities extracted and correctly mapped\n- 4: All critical state variables present and correct\n- 3: Key variables captured correctly, but some details missed\n- 2: Some correct state variables, but significant omissions or errors\n- 1: Major errors in state capture; wrong entities or values\n- 0: State is empty or completely unrelated to the interaction\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
-    },
-
-    "_comment_managed_basic": "=== BASIC MANAGED METRICS (require only prompt + response) ===",
-
-    "general_conversation_quality": {
-      "metric_type": "llm",
-      "is_managed": true,
-      "managed_metric_name": "GENERAL_QUALITY",
-      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
-      "description": "Comprehensive adaptive rubrics metric that evaluates overall quality. Generates and assesses criteria based on prompt content. Returns score (passing rate) and rubric verdicts.",
-      "agents": ["customer_service", "app"],
-      "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "final_response"
-        }
-      }
-    },
-    "multi_turn_text_quality": {
     "_documentation": {
       "overview": "This file defines evaluation metrics for the customer-service agent.",
       "metric_types": {
@@ -74,23 +26,6 @@
 
       "natural_language_guidelines": "Evaluate if the agent correctly maintains and references customer state throughout the conversation. The agent should remember customer preferences, order history, and context from earlier in the conversation. Penalize responses that ask for information the customer already provided or forget earlier context."
     },
-        "multiturn_general_conversation_quality": {
-      "metric_type": "llm",
-      "is_managed": true,
-      "managed_metric_name": "MULTI_TURN_GENERAL_QUALITY",
-      "score_range": {"min": 0, "max": 1, "description": "Passing rate: 0=all rubrics failed, 1=all rubrics passed"},
-      "description": "An adaptive rubrics metric that evaluates the overall quality of a model's response within the context of a multi-turn dialogue.",
-      "agents": ["customer_service", "app"],
-      "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "final_response"
-        }
-      }
-    },
-    "instruction_following": {
 
     "multi_turn_text_quality": {
       "metric_type": "llm",
