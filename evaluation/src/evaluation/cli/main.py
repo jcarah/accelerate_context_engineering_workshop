@@ -9,7 +9,7 @@ from evaluation.core.interactions import InteractionRunner
 from evaluation.core.processor import InteractionProcessor
 from evaluation.core.evaluator import Evaluator
 from evaluation.core.analyzer import Analyzer
-from evaluation.core.converters import AdkHistoryConverter, TestToGoldenConverter
+from evaluation.core.converters import AdkHistoryConverter, TestToGoldenConverter, write_jsonl, read_jsonl
 
 def interact_command(args):
     """
@@ -111,7 +111,11 @@ def analyze_command(args):
         "agent_dir": args.agent_dir,
         "model": args.model,
         "skip_gemini": args.skip_gemini,
-        "gcs_bucket": args.gcs_bucket
+        "gcs_bucket": args.gcs_bucket,
+        "strategy_file": args.strategy_file,
+        "report_audience": args.report_audience,
+        "report_tone": args.report_tone,
+        "report_length": args.report_length
     }
 
     analyzer = Analyzer(config)
@@ -120,14 +124,15 @@ def analyze_command(args):
 def convert_command(args):
     """
     Handles the 'convert' command: AdkHistoryConverter
+    Outputs JSONL format for clean handling of nested JSON data.
     """
     print("\n=== Converting ADK History to Dataset ===")
 
     try:
         converter = AdkHistoryConverter(args.agent_dir, args.questions_file)
-        df = converter.run()
+        records = converter.run()
 
-        if df.empty:
+        if not records:
             print("No history found to convert.")
             return
 
@@ -137,14 +142,20 @@ def convert_command(args):
         raw_dir = os.path.join(run_dir, "raw")
         os.makedirs(raw_dir, exist_ok=True)
 
-        # Auto-name output if not provided
+        # Auto-name output if not provided - now using .jsonl extension
         if not args.output_file:
-            output_path = os.path.join(raw_dir, f"processed_interaction_sim.csv")
+            output_path = os.path.join(raw_dir, f"processed_interaction_sim.jsonl")
         else:
-            output_path = os.path.join(raw_dir, args.output_file)
+            # Ensure .jsonl extension
+            output_file = args.output_file
+            if not output_file.endswith('.jsonl'):
+                output_file = output_file.replace('.csv', '.jsonl')
+                if not output_file.endswith('.jsonl'):
+                    output_file += '.jsonl'
+            output_path = os.path.join(raw_dir, output_file)
 
-        df.to_csv(output_path, index=False)
-        print(f"SUCCESS: Converted {len(df)} interactions to: {output_path}")
+        write_jsonl(records, output_path)
+        print(f"SUCCESS: Converted {len(records)} interactions to: {output_path}")
         print(f"Run folder: {run_dir}")
         print("\nTo evaluate, run:")
         print(f"agent-eval evaluate --interaction-file {output_path} --metrics-files <metrics.json> --results-dir {run_dir}")
@@ -206,8 +217,12 @@ def main():
     analyze_parser = subparsers.add_parser("analyze", help="Analyze evaluation results and generate reports.")
     analyze_parser.add_argument("--results-dir", required=True, help="Directory containing evaluation results.")
     analyze_parser.add_argument("--agent-dir", help="Path to agent directory (for source code context). Auto-discovers agent.py and GEMINI.md.")
-    analyze_parser.add_argument("--model", default="gemini-2.5-pro",
-                                help="Gemini model for analysis (default: gemini-2.5-pro). Options: gemini-3-pro-preview (needs to be enabled), gemini-3-flash-preview (needs to be enabled), gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-pro, gemini-1.5-flash")
+    analyze_parser.add_argument("--strategy-file", help="Path to a custom optimization strategy Markdown file to guide the analysis.")
+    analyze_parser.add_argument("--report-audience", help="Customize the target audience for the Gemini analysis.")
+    analyze_parser.add_argument("--report-tone", help="Customize the tone of the Gemini analysis.")
+    analyze_parser.add_argument("--report-length", help="Customize the length of the Gemini analysis.")
+    analyze_parser.add_argument("--model", default="gemini-3-pro-preview",
+                                help="Gemini model for analysis (default: gemini-3-pro-preview).")
     analyze_parser.add_argument("--skip-gemini", action="store_true", help="Skip AI-powered analysis.")
     analyze_parser.add_argument("--gcs-bucket", help="GCS bucket for upload.")
     analyze_parser.set_defaults(func=analyze_command)

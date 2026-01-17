@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 import os
 from datetime import datetime
@@ -29,7 +30,10 @@ class LogEntry(TypedDict):
 
 
 def robust_json_loads(x: Any) -> Optional[Dict[str, Any]]:
-    """Safely load JSON strings, handling various input types."""
+    """Safely load JSON strings, handling various input types.
+
+    Tries json.loads first, then ast.literal_eval for Python dict syntax.
+    """
     if x is None:
         return None
     if isinstance(x, (dict, list)):
@@ -39,7 +43,14 @@ def robust_json_loads(x: Any) -> Optional[Dict[str, Any]]:
     try:
         return json.loads(x)
     except (json.JSONDecodeError, TypeError):
-        return x
+        # Try ast.literal_eval for Python dict syntax (single quotes)
+        try:
+            result = ast.literal_eval(x)
+            if isinstance(result, (dict, list)):
+                return result
+        except (ValueError, SyntaxError):
+            pass
+        return None
 
 
 class Analyzer:
@@ -388,10 +399,25 @@ class Analyzer:
 
         # Discover agent context from --agent-dir if provided
         agent_dir = self.config.get("agent_dir")
+        custom_strategy_content = None
+        
         if agent_dir:
             print("\n--- Discovering Agent Context ---")
             agent_context = self._discover_agent_context(Path(agent_dir))
             context_content.update(agent_context)
+            
+        # Load optimization strategy file if provided via CLI
+        strategy_path = self.config.get("strategy_file")
+        if strategy_path:
+            strategy_file = Path(strategy_path)
+            if strategy_file.exists():
+                try:
+                    custom_strategy_content = strategy_file.read_text()
+                    print(f"  Found optimization strategy: {strategy_file}")
+                except Exception as e:
+                    print(f"  Warning: Could not read strategy file: {e}")
+            else:
+                print(f"  Warning: Strategy file not found: {strategy_file}")
 
         prompter = GeminiAnalysisPrompter(
             summary_data=summary_data,
@@ -399,21 +425,25 @@ class Analyzer:
             context_files=context_content,
             question_file_path=str(question_file),
             consolidated_metrics_path=str(consolidated_metrics_file),
+            # Pass custom config params
+            audience=self.config.get("report_audience"),
+            tone=self.config.get("report_tone"),
+            length=self.config.get("report_length"),
+            custom_strategy_content=custom_strategy_content,
         )
         prompt = prompter.build_prompt()
 
         # Save prompt to raw/ folder for debugging
         (raw_dir / "gemini_prompt.txt").write_text(prompt, encoding="utf-8")
 
-        # Get model from config (default: gemini-2.5-pro)
-        model = self.config.get("model", "gemini-2.5-pro")
+        # Get model from config (default: gemini-3-pro-preview)
+        model = self.config.get("model", "gemini-3-pro-preview")
 
         # Validate model is a supported Gemini model
         supported_models = [
             "gemini-3-pro-preview", "gemini-3-flash-preview",
             "gemini-2.5-pro", "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-pro", "gemini-1.5-flash"
+            "gemini-2.0-flash"
         ]
         if model not in supported_models:
             print(f"Warning: Model '{model}' may not be supported. Supported: {', '.join(supported_models)}")

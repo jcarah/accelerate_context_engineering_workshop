@@ -22,9 +22,14 @@ def robust_json_loads(x: Any) -> Optional[Union[Dict, List, str]]:
         return x
 
 
-def convert_interactions_to_events(val: Any) -> List[Dict]:
+def convert_interactions_to_events(
+    val: Any, sub_agent_trace: Any = None
+) -> List[Dict]:
     """
-    Converts a list of tool interactions into Vertex AI SDK Event dictionaries.
+    Converts tool interactions and agent text responses into Vertex AI SDK Event dictionaries.
+
+    Includes both tool events (function_call, function_response) and text response events
+    from sub_agent_trace for complete conversation context.
 
     Returns dictionaries instead of Event objects because:
     1. Pandas DataFrames serialize Event objects to __repr__ strings when passed to SDK
@@ -33,9 +38,36 @@ def convert_interactions_to_events(val: Any) -> List[Dict]:
     """
     interactions = robust_json_loads(val)
     if not isinstance(interactions, list):
-        return []
+        interactions = []
+
+    # Parse sub_agent_trace for text responses
+    text_responses = []
+    if sub_agent_trace:
+        trace = robust_json_loads(sub_agent_trace)
+        if isinstance(trace, list):
+            for item in trace:
+                if isinstance(item, dict) and item.get("text_response"):
+                    text_responses.append({
+                        "text": item["text_response"],
+                        "timestamp": item.get("timestamp", 0),
+                        "agent": item.get("agent_name", "model"),
+                    })
 
     events = []
+
+    # If we have text responses with timestamps, interleave with tool events
+    # Otherwise, just process tool interactions
+    if text_responses:
+        # Add text responses as model events
+        # Since tool_interactions don't have timestamps, add text responses first
+        # then tool events (this approximates the conversation flow)
+        for tr in text_responses:
+            text_part = genai_types.Part.from_text(text=tr["text"])
+            text_content = genai_types.Content(role="model", parts=[text_part])
+            text_event = types.evals.Event(content=text_content, author="model")
+            events.append(text_event.model_dump(mode="json", exclude_none=True))
+
+    # Add tool call and response events
     for item in interactions:
         tool_name = item.get("tool_name")
         args = item.get("input_arguments", {})
@@ -64,6 +96,49 @@ def convert_interactions_to_events(val: Any) -> List[Dict]:
         events.append(tool_event.model_dump(mode="json", exclude_none=True))
 
     return events
+
+
+def build_conversation_history(user_inputs: Any, sub_agent_trace: Any) -> List[Dict]:
+    """
+    Builds conversation_history for multi-turn metrics from user_inputs and sub_agent_trace.
+
+    Returns a list of Content dicts with role (user/model) and parts.
+    This is used as a fallback when conversation_history is not pre-generated.
+    """
+    # Parse user_inputs
+    if isinstance(user_inputs, str):
+        parsed_inputs = robust_json_loads(user_inputs)
+        if isinstance(parsed_inputs, list):
+            user_inputs = parsed_inputs
+        else:
+            user_inputs = [user_inputs] if user_inputs else []
+    elif not isinstance(user_inputs, list):
+        user_inputs = []
+
+    # Parse sub_agent_trace
+    trace = robust_json_loads(sub_agent_trace) if sub_agent_trace else []
+    if not isinstance(trace, list):
+        trace = []
+
+    text_responses = [t.get("text_response", "") for t in trace if isinstance(t, dict) and t.get("text_response")]
+
+    conversation_history = []
+    # Build conversation pairs (user input -> model response)
+    # The last user input is the "prompt", so exclude it from history
+    for i, user_input in enumerate(user_inputs[:-1] if len(user_inputs) > 1 else []):
+        # Add user turn
+        conversation_history.append({
+            "role": "user",
+            "parts": [{"text": str(user_input)}]
+        })
+        # Add corresponding model response if available
+        if i < len(text_responses):
+            conversation_history.append({
+                "role": "model",
+                "parts": [{"text": text_responses[i]}]
+            })
+
+    return conversation_history
 
 
 def get_nested_value(row_val: Any, path: str) -> Any:
@@ -134,6 +209,7 @@ def map_dataset_columns(
     for placeholder, details in mapping.items():
         if "source_column" in details:
             col_path = details["source_column"]
+            transform = details.get("transform")  # e.g., "last_item"
 
             # 1. Try exact flattened name
             cands = [
@@ -155,6 +231,21 @@ def map_dataset_columns(
                         lambda x: get_nested_value(robust_json_loads(x), col_path)
                     )
 
+            # Apply transform if specified
+            if val_series is not None and transform:
+                if transform == "last_item":
+                    # Extract last item from list (for multi-turn prompt extraction)
+                    def get_last_item(x):
+                        if isinstance(x, list) and len(x) > 0:
+                            return x[-1]
+                        elif isinstance(x, str):
+                            # Try parsing as JSON list
+                            parsed = robust_json_loads(x)
+                            if isinstance(parsed, list) and len(parsed) > 0:
+                                return parsed[-1]
+                        return x if x is not None else ""
+                    val_series = val_series.apply(get_last_item)
+
             # Get default value if column not found
             default_value = details.get("default", "")
 
@@ -172,40 +263,101 @@ def map_dataset_columns(
                 is_event_col = placeholder in ["intermediate_events", "tool_usage"]
 
                 if is_agent_metric and is_event_col:
-                    eval_dataset[placeholder] = val_series.apply(
-                        convert_interactions_to_events
-                    )
+                    # Get sub_agent_trace for text response events
+                    sub_agent_trace_series = None
+                    if "extracted_data.sub_agent_trace" in agent_df.columns:
+                        sub_agent_trace_series = agent_df["extracted_data.sub_agent_trace"]
+                    elif "extracted_data" in original_df.columns:
+                        sub_agent_trace_series = original_df["extracted_data"].apply(
+                            lambda x: get_nested_value(robust_json_loads(x), "extracted_data:sub_agent_trace")
+                        )
+
+                    if sub_agent_trace_series is not None:
+                        # Pass both tool_interactions and sub_agent_trace
+                        eval_dataset[placeholder] = pd.DataFrame({
+                            "tools": val_series,
+                            "trace": sub_agent_trace_series
+                        }).apply(
+                            lambda row: convert_interactions_to_events(row["tools"], row["trace"]),
+                            axis=1
+                        )
+                    else:
+                        eval_dataset[placeholder] = val_series.apply(
+                            convert_interactions_to_events
+                        )
                 else:
-                    # Robust Flattening for custom placeholders (Templates need strings)
-                    # For grounding context, SDK expects valid JSON - use array format
-                    is_grounding_context = placeholder == "context"
+                    # Special handling for fields that need to stay as lists/objects
+                    # These are passed directly to the SDK without string conversion
+                    # Note: "history" is NOT included here - it needs to be converted to string
+                    # for MULTI_TURN_CHAT_QUALITY template substitution ({history} placeholder)
+                    SDK_LIST_FIELDS = {"tool_declarations", "conversation_history", "intermediate_events"}
 
-                    def normalize_input(x):
-                        if isinstance(x, list):
-                            # For grounding context, convert to JSON array (not newline-separated)
-                            # SDK's grounding API fails with "Extra data" on multiple JSON objects
-                            if is_grounding_context:
-                                return json.dumps(x)
-                            # For other list fields, convert each item to JSON string
-                            try:
-                                json_items = []
-                                for item in x:
-                                    if isinstance(item, dict):
-                                        json_items.append(json.dumps(item))
-                                    else:
-                                        json_items.append(str(item))
-                                return "\n".join(json_items) if json_items else ""
-                            except (TypeError, ValueError):
-                                return json.dumps(x)
-                        elif isinstance(x, dict):
-                            return json.dumps(x)
-                        return str(x) if x is not None else ""
+                    if placeholder in SDK_LIST_FIELDS:
+                        # Keep as list/object - SDK expects these as proper structures
+                        def parse_if_needed(x):
+                            if isinstance(x, str):
+                                parsed = robust_json_loads(x)
+                                return parsed if parsed is not None else []
+                            return x if x is not None else []
+                        eval_dataset[placeholder] = val_series.apply(parse_if_needed)
+                    else:
+                        # Robust Flattening for custom placeholders (Templates need strings)
+                        # For grounding context, SDK expects valid JSON - use array format
+                        is_grounding_context = placeholder == "context"
 
-                    eval_dataset[placeholder] = val_series.apply(normalize_input)
+                        def normalize_input(x):
+                            if isinstance(x, list):
+                                # For grounding context, convert to JSON array (not newline-separated)
+                                # SDK's grounding API fails with "Extra data" on multiple JSON objects
+                                if is_grounding_context:
+                                    return json.dumps(x)
+                                # For other list fields, convert each item to JSON string
+                                try:
+                                    json_items = []
+                                    for item in x:
+                                        if isinstance(item, dict):
+                                            json_items.append(json.dumps(item))
+                                        else:
+                                            json_items.append(str(item))
+                                    return "\n".join(json_items) if json_items else ""
+                                except (TypeError, ValueError):
+                                    return json.dumps(x)
+                            elif isinstance(x, dict):
+                                return json.dumps(x)
+                            return str(x) if x is not None else ""
+
+                        eval_dataset[placeholder] = val_series.apply(normalize_input)
             else:
-                # Column not found - use default value
-                logger.debug(f"Column '{col_path}' not found for placeholder '{placeholder}', using default: '{default_value}'")
-                eval_dataset[placeholder] = default_value
+                # Column not found - check for special fallback cases
+                if placeholder in ("conversation_history", "history"):
+                    # Build conversation_history on-the-fly from user_inputs and sub_agent_trace
+                    logger.info(f"Building {placeholder} on-the-fly (column not found in processed data)")
+                    user_inputs_series = agent_df.get("user_inputs", pd.Series([""] * len(agent_df)))
+
+                    # Get sub_agent_trace
+                    sub_agent_trace_series = None
+                    if "extracted_data.sub_agent_trace" in agent_df.columns:
+                        sub_agent_trace_series = agent_df["extracted_data.sub_agent_trace"]
+                    elif "extracted_data" in original_df.columns:
+                        sub_agent_trace_series = original_df["extracted_data"].apply(
+                            lambda x: get_nested_value(robust_json_loads(x), "extracted_data:sub_agent_trace")
+                        )
+
+                    if sub_agent_trace_series is not None:
+                        eval_dataset[placeholder] = pd.DataFrame({
+                            "inputs": user_inputs_series,
+                            "trace": sub_agent_trace_series
+                        }).apply(
+                            lambda row: build_conversation_history(row["inputs"], row["trace"]),
+                            axis=1
+                        )
+                    else:
+                        # No sub_agent_trace available, use empty history
+                        eval_dataset[placeholder] = [[] for _ in range(len(agent_df))]
+                else:
+                    # Use default value for other columns
+                    logger.debug(f"Column '{col_path}' not found for placeholder '{placeholder}', using default: '{default_value}'")
+                    eval_dataset[placeholder] = default_value
 
         elif "template" in details:
 

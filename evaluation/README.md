@@ -53,8 +53,8 @@ uv run adk eval your_agent --config_file_path eval/scenarios/eval_config.json ev
             └── <run_id>.json
     ```
 
-**Step 2: Convert History to CSV**
-Transform the raw simulation logs into a flat CSV format.
+**Step 2: Convert History to JSONL**
+Transform the raw simulation logs into a JSONL format.
 ```bash
 cd ../evaluation
 uv run agent-eval convert --agent-dir ../your-agent/your_agent --output-dir ../your-agent/eval/results
@@ -63,13 +63,13 @@ uv run agent-eval convert --agent-dir ../your-agent/your_agent --output-dir ../y
     ```text
     your_agent/eval/results/<timestamp>/  # Format: YYYYMMDD_HHMMSS
     └── raw/
-        └── processed_interaction_sim.csv
+        └── processed_interaction_sim.jsonl
     ```
 
 **Step 3: Grade (Evaluate)**
-Run your metrics against the CSV generated in Step 2. (See: [custom metric definition](#metric-definition--strategies))
+Run your metrics against the JSONL generated in Step 2. (See: [custom metric definition](#metric-definition--strategies))
 ```bash
-uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_sim.csv \
+uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_sim.jsonl \
   --metrics-files ../your-agent/eval/metrics/metric_definitions.json \
   --results-dir ../your-agent/eval/results/<timestamp>
 ```
@@ -79,7 +79,7 @@ uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timest
     ├── eval_summary.json
     ├── question_answer_log.md
     └── raw/
-        ├── processed_interaction_sim.csv
+        ├── processed_interaction_sim.jsonl
         └── evaluation_results_*.csv
     ```
 
@@ -119,13 +119,13 @@ uv run agent-eval interact --app-name your_agent \
     ```text
     your_agent/eval/results/<timestamp>/  # Format: YYYYMMDD_HHMMSS
     └── raw/
-        └── processed_interaction_live.csv
+        └── processed_interaction_live.jsonl
     ```
 
 **Step 3: Grade (Evaluate)**
-Execute metrics against the live interaction CSV. (See: [custom metric definition](#metric-definition--strategies))
+Execute metrics against the live interaction JSONL. (See: [custom metric definition](#metric-definition--strategies))
 ```bash
-uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_live.csv \
+uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_live.jsonl \
   --metrics-files ../your-agent/eval/metrics/metric_definitions.json \
   --results-dir ../your-agent/eval/results/<timestamp>
 ```
@@ -135,7 +135,7 @@ uv run agent-eval evaluate --interaction-file ../your-agent/eval/results/<timest
     ├── eval_summary.json
     ├── question_answer_log.md
     └── raw/
-        ├── processed_interaction_live.csv
+        ├── processed_interaction_live.jsonl
         └── evaluation_results_*.csv
     ```
 
@@ -188,7 +188,7 @@ uv run agent-eval create-dataset --input ~/code/my-new-agent/eval/test.json --ou
 uv run agent-eval interact --app-name my_agent --questions-file ~/code/my-new-agent/eval/datasets/golden.json --base-url http://localhost:8080
 
 # 3. Grade (Evaluate)
-uv run agent-eval evaluate --interaction-file ~/code/my-new-agent/eval/results/<timestamp>/raw/processed_interaction_live.csv --metrics-files ~/code/my-new-agent/eval/metrics/metric_definitions.json --results-dir ~/code/my-new-agent/eval/results/<timestamp>
+uv run agent-eval evaluate --interaction-file ~/code/my-new-agent/eval/results/<timestamp>/raw/processed_interaction_live.jsonl --metrics-files ~/code/my-new-agent/eval/metrics/metric_definitions.json --results-dir ~/code/my-new-agent/eval/results/<timestamp>
 ```
 
 ### 4. Run Path A - Development Agent (User Simulation)
@@ -223,14 +223,14 @@ uv run agent-eval convert --agent-dir ~/code/my-new-agent --output-dir ~/code/my
         ```text
         .adk/eval_history/*.json
         ```
-3.  **Convert History** (`convert`): Converts raw logs into a flat CSV.
+3.  **Convert History** (`convert`): Converts raw logs into JSONL format.
     *   **Result**:
         ```text
         eval/results/<timestamp>/
         └── raw/
-            └── processed_interaction_sim.csv
+            └── processed_interaction_sim.jsonl
         ```
-4.  **Grade** (`evaluate`): 🏁 **Convergence Point**. Runs metrics against the CSV.
+4.  **Grade** (`evaluate`): 🏁 **Convergence Point**. Runs metrics against the JSONL.
     *   **Result**:
         ```text
         eval/results/<timestamp>/
@@ -261,9 +261,9 @@ uv run agent-eval convert --agent-dir ~/code/my-new-agent --output-dir ~/code/my
         ```text
         eval/results/<timestamp>/
         └── raw/
-            └── processed_interaction_live.csv
+            └── processed_interaction_live.jsonl
         ```
-4.  **Grade** (`evaluate`): 🏁 **Convergence Point**. Runs metrics against the CSV.
+4.  **Grade** (`evaluate`): 🏁 **Convergence Point**. Runs metrics against the JSONL.
     *   **Result**:
         ```text
         eval/results/<timestamp>/
@@ -359,6 +359,6 @@ eval/results/20260114_143022/
 ├── question_answer_log.md      # Human-readable Q&A transcript
 ├── gemini_analysis.md          # AI root cause analysis
 └── raw/
-    ├── processed_interaction_*.csv
+    ├── processed_interaction_*.jsonl
     └── evaluation_results_*.csv
 ```
