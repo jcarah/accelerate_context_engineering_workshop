@@ -38,6 +38,7 @@ user need roles/aiplatform.user
 gcloud auth login
 gcloud auth application-default login
 gcloud auth application-default set-quota-project project id 
+enable Places API 
 ---
 
 ## 3. The Test Subjects (Agents)
