@@ -1,17 +1,12 @@
 {
   "metrics": {
     "_documentation": {
-      "overview": "This file defines evaluation metrics for the retail-location-strategy agent.",
+      "overview": "This file defines evaluation metrics for the retail-location-strategy agent and its sub-agents.",
       "metric_types": {
         "deterministic": "Calculated automatically from session data (token usage, latency, tool success rate)",
         "api_predefined": "Built-in Vertex AI metrics - require use_gemini_format: true for multi-turn",
         "custom_llm": "User-defined metrics with prompt templates"
-      },
-      "api_predefined_metrics": [
-        "general_quality_v1", "text_quality_v1", "instruction_following_v1",
-        "grounding_v1", "safety_v1", "multi_turn_general_quality_v1",
-        "multi_turn_text_quality_v1", "final_response_quality_v1", "hallucination_v1"
-      ]
+      }
     },
 
     "multi_turn_general_quality": {
@@ -20,11 +15,8 @@
       "managed_metric_name": "MULTI_TURN_GENERAL_QUALITY",
       "use_gemini_format": true,
       "score_range": {"min": 0, "max": 1, "description": "Passing rate for general quality rubrics"},
-      "agents": ["retail_location_strategy", "app"],
-
-      "_implementation_note": "API Predefined metric. Evaluates overall conversation quality.",
-
-      "natural_language_guidelines": "Evaluate if the agent correctly processes location strategy requests, maintains context about the target location and business type, and provides coherent analysis. The agent should remember preferences stated earlier and build upon previous research findings."
+      "agents": ["retail_location_strategy", "MarketResearchAgent", "StrategyAdvisorAgent"],
+      "natural_language_guidelines": "Evaluate if the agent correctly processes location strategy requests and maintains context. Build upon previous findings."
     },
 
     "multi_turn_text_quality": {
@@ -33,88 +25,68 @@
       "managed_metric_name": "MULTI_TURN_TEXT_QUALITY",
       "use_gemini_format": true,
       "score_range": {"min": 0, "max": 1, "description": "Passing rate for text quality rubrics"},
-      "agents": ["retail_location_strategy", "app"],
-
-      "_implementation_note": "API Predefined metric. Evaluates text coherence, fluency, and instruction following."
+      "agents": ["retail_location_strategy", "ReportGeneratorAgent"]
     },
 
-    "state_variable_fidelity": {
+    "reasoning_depth": {
       "metric_type": "llm",
-      "agents": ["retail_location_strategy", "app"],
-      "score_range": {"min": 1, "max": 5, "description": "1=Complete failure, 5=Perfect alignment"},
-
-      "_implementation_note": "Custom metric. Evaluates if state variables were correctly extracted from user input.",
-
+      "agents": ["retail_location_strategy", "StrategyAdvisorAgent"],
+      "score_range": {"min": 1, "max": 5, "description": "1=Surface level, 5=Deep strategic insight"},
       "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "template": "Target Location: {extracted_data_target_location}\nBusiness Type: {extracted_data_business_type}\nParsed Request: {extracted_data_parsed_request}",
-          "source_columns": ["extracted_data:target_location", "extracted_data:business_type", "extracted_data:parsed_request"]
-        }
+        "prompt": { "source_column": "user_inputs" },
+        "response": { "source_column": "extracted_data:strategic_report" },
+        "competitor_data": { "source_column": "extracted_data:competitor_analysis" }
       },
-      "template": "You are evaluating the state management fidelity of a Retail Location Strategy AI Agent.\n\n**User Request:**\n{prompt}\n\n**Extracted State Variables:**\n{response}\n\n**Evaluation Criteria:**\n1.  **Alignment:** Does the 'parsed_request' and 'target_location'/'business_type' accurately match the User Request?\n2.  **Extraction:** Were the key entities (location, business type) correctly extracted from the user's request?\n3.  **Consistency:** Are the extracted values consistent with each other?\n\n**Scoring Rubric (1-5):**\n- 5: Perfect alignment. All extracted variables accurately match the user request.\n- 4: Strong alignment. Minor inconsistencies but core intent is preserved.\n- 3: Moderate alignment. Location or business type is correct, but parsed_request is incomplete.\n- 2: Poor alignment. State variables contradict the user request (e.g., wrong city).\n- 1: Complete failure. State variables are empty, hallucinated, or completely unrelated.\n\n**Response Format:**\nScore: [1-5]\nExplanation: [Reasoning]"
+      "template": "You are a Strategy Partner evaluating the depth of reasoning in a location analysis report.\n\n**User Request:**\n{prompt}\n\n**Competitor Data (Input):**\n{competitor_data}\n\n**Strategic Report (Output):**\n{response}\n\n**Evaluation Criteria:**\n1. **Synthesis (vs. Summary):** Does the agent combine data points to create new insights? (e.g., \"High density\" + \"Low ratings\" = \"Quality Gap Opportunity\"). Or does it just list the data?\n2. **Evidence Usage:** Does it cite specific numbers/names from the input data to support its claims?\n3. **Risk Nuance:** Does it identify subtle risks (e.g., \"Competitor Trap\") rather than just generic \"High Rent\" concerns?\n\n**Scoring Rubric (1-5):**\n- 5: Deep Insight. Synthesizes multiple factors into a non-obvious conclusion. Heavy use of specific evidence.\n- 4: Strong Reasoning. Good logic connecting data to recommendations. Cites evidence.\n- 3: Average. Mostly descriptive summary of the data. Logical but not insightful.\n- 2: Weak. Generic advice not tied to the specific data points.\n- 1: Surface Level. Just regurgitates the input list or gives hallucinations.\n\n**Response Format:**\nScore: [1-5]\nExplanation: [Reasoning]"
     },
 
     "strategic_recommendation_quality": {
       "metric_type": "llm",
-      "agents": ["retail_location_strategy", "app"],
+      "agents": ["retail_location_strategy", "StrategyAdvisorAgent"],
       "score_range": {"min": 1, "max": 5, "description": "1=Failure, 5=Strategic mastery"},
-
-      "_implementation_note": "Custom metric. Evaluates the quality and actionability of strategic recommendations.",
-
       "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "extracted_data:strategic_report"
-        }
+        "prompt": { "source_column": "user_inputs" },
+        "response": { "source_column": "extracted_data:strategic_report" }
       },
       "template": "You are a senior business consultant evaluating a strategic location recommendation generated by an AI.\n\n**User Request:**\n{prompt}\n\n**Strategic Report:**\n{response}\n\n**Evaluation Criteria:**\n1.  **Clarity:** Is the 'top_recommendation' clearly identified with a specific location/zone?\n2.  **Evidence-Based:** Is the recommendation supported by cited evidence (e.g., 'saturation_index', 'demand_signal', competitor density)?\n3.  **Risk Assessment:** Does the report acknowledge risks ('concerns') and propose mitigation strategies?\n4.  **Actionability:** Are the 'next_steps' concrete and actionable for a business owner?\n\n**Scoring Rubric (1-5):**\n- 5: Strategic Mastery. Clear, data-driven recommendation with specific metrics (scores), nuanced risk assessment, and highly actionable steps.\n- 4: Strong Strategy. Good recommendation with some supporting data, but risk assessment or next steps could be more specific.\n- 3: Average. Makes a recommendation but lacks strong quantitative backing or specific mitigation strategies.\n- 2: Weak. Recommendation is vague or generic. Lacks evidence or logic.\n- 1: Failure. No recommendation or nonsensical output.\n\n**Response Format:**\nScore: [1-5]\nExplanation: [Reasoning]"
     },
 
     "tool_use_quality": {
       "metric_type": "llm",
-      "agents": ["retail_location_strategy", "app"],
+      "agents": ["retail_location_strategy", "MarketResearchAgent", "CompetitorMappingAgent", "InfographicGeneratorAgent"],
       "score_range": {"min": 0, "max": 5, "description": "0=Poor tool usage, 5=Excellent tool usage"},
-
-      "_implementation_note": "Custom metric that evaluates tool usage patterns. This is a workaround since the API predefined TOOL_USE_QUALITY metric requires a tool_usage variable that the SDK doesn't currently provide.",
-
       "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "final_response"
-        },
-        "tool_interactions": {
-          "source_column": "extracted_data:tool_interactions"
-        },
-        "available_tools": {
-          "source_column": "extracted_data:tool_declarations"
-        }
+        "prompt": { "source_column": "user_inputs" },
+        "response": { "source_column": "final_response" },
+        "tool_interactions": { "source_column": "extracted_data:tool_interactions" },
+        "available_tools": { "source_column": "extracted_data:tool_declarations" }
       },
-      "template": "You are evaluating how effectively a Retail Location Strategy AI agent used its available tools to fulfill a user request.\n\n**User Request:**\n{prompt}\n\n**Available Tools:**\n{available_tools}\n\n**Tool Calls Made by Agent:**\n{tool_interactions}\n\n**Agent's Final Response to User:**\n{response}\n\n**Evaluation Criteria:**\n\n1. **Tool Selection (Was the right tool chosen?):**\n   - Did the agent use 'search_places' with queries relevant to the user's request?\n   - Were search queries appropriate for the business type and location?\n   - Did the agent call report generation tools (generate_html_report, generate_infographic)?\n\n2. **Argument Correctness (Were parameters correct?):**\n   - Were search queries specific enough (correct city, business type)?\n   - Were all required parameters provided?\n\n3. **Coverage (Was research comprehensive?):**\n   - Did the agent search for both direct and indirect competitors?\n   - Was there enough research to support a recommendation?\n\n4. **Efficiency (Was the execution optimal?):**\n   - Were tools called in a logical order?\n   - Were there redundant or unnecessary tool calls?\n\n**Scoring Rubric (0-5):**\n- 5: Excellent - Optimal tool selection, comprehensive research, successful report generation\n- 4: Good - Appropriate tools with minor issues in coverage or query specificity\n- 3: Acceptable - Used tools but queries were generic or report generation was incomplete\n- 2: Poor - Irrelevant searches or failed to use key tools\n- 1: Very Poor - Major tool usage errors that impacted analysis quality\n- 0: Failed - No tool usage or complete failure to address the request\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Detailed reasoning covering tool selection, argument correctness, coverage, and efficiency]"
+      "template": "You are evaluating how effectively a Retail Location Strategy AI agent used its available tools.\n\n**User Request:**\n{prompt}\n\n**Available Tools:**\n{available_tools}\n\n**Tool Calls Made by Agent:**\n{tool_interactions}\n\n**Agent's Final Response:**\n{response}\n\n**Evaluation Criteria:**\n1. **Tool Selection:** Did the agent select tools appropriate for the request?\n2. **Argument Correctness:** Were parameters correct (correct city, business type)?\n3. **Coverage:** Was research comprehensive?\n4. **Efficiency:** Were calls logical and non-redundant?\n\n**Scoring Rubric (0-5):**\n- 5: Excellent - Optimal selection, comprehensive research, correct arguments.\n- 3: Acceptable - Used tools but queries were generic or research was incomplete.\n- 0: Failed - No tool usage or complete failure.\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Detailed reasoning]"
     },
 
     "trajectory_accuracy": {
       "metric_type": "llm",
-      "agents": ["retail_location_strategy", "app"],
+      "agents": ["retail_location_strategy"],
       "score_range": {"min": 0, "max": 5, "description": "0=Completely wrong, 5=Perfect trajectory"},
-
-      "_implementation_note": "Custom metric. Evaluates if the agent followed the correct sequence of steps for location analysis.",
-
       "dataset_mapping": {
-        "prompt": {
-          "source_column": "user_inputs"
-        },
-        "response": {
-          "source_column": "trace_summary"
-        }
+        "prompt": { "source_column": "user_inputs" },
+        "response": { "source_column": "trace_summary" },
+        "available_tools": { "source_column": "extracted_data:tool_declarations" }
       },
-      "template": "You are evaluating the execution trajectory of a Retail Location Strategy AI agent.\n\n**User Request:**\n{prompt}\n\n**Agent Execution Trajectory:**\n{response}\n\n**Expected Flow for Location Analysis:**\n1. Parse user request to identify location and business type\n2. Search for competitor information (search_places)\n3. Analyze market data and demographics\n4. Generate strategic report (generate_html_report)\n5. Create visual summary (generate_infographic)\n\n**Evaluation Criteria:**\n1. **Sequence:** Did the agent follow a logical order (research before recommendations)?\n2. **Completeness:** Were all necessary steps performed?\n3. **Efficiency:** Were there unnecessary or redundant steps?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect trajectory - logical order, all required steps, no unnecessary steps\n- 4: Trajectory is logically equivalent, achieving the same outcome with minor variations\n- 3: Mostly correct trajectory with minor deviations\n- 2: Some correct steps, but significant ordering issues or missing key steps\n- 1: Major deviations; key steps were skipped or invoked in the wrong order\n- 0: The trajectory is completely different or empty\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
+      "template": "You are evaluating the execution trajectory of a Retail Location Strategy AI agent.\n\n**User Request:**\n{prompt}\n\n**Agent's Available Tools:**\n{available_tools}\n\n**Agent Execution Trajectory:**\n{response}\n\n**Expected Flow for Location Analysis:**\n1. Parse user request (IntakeAgent)\n2. Search for competitor information (search_places)\n3. Analyze market data (GapAnalysisAgent)\n4. Generate strategic report (generate_html_report)\n5. Create visual summary (generate_infographic)\n\n**CRITICAL EVALUATION RULES:**\n1. **Only evaluate against AVAILABLE tools.** The agent can ONLY use tools listed above.\n2. **Judge the outcome, not an imaginary ideal path.** If the agent achieved the user's goal using the tools available to it, that is a valid trajectory.\n\n**Scoring Rubric (0-5):**\n- 5: Perfect trajectory - logical order, all required steps.\n- 3: Mostly correct with minor variations.\n- 0: Completely different approach or no tools called when needed.\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
+    },
+
+    "capability_honesty": {
+      "metric_type": "llm",
+      "agents": ["retail_location_strategy", "MarketResearchAgent", "CompetitorMappingAgent"],
+      "score_range": {"min": 0, "max": 5, "description": "0=Major misrepresentation, 5=Perfectly honest"},
+      "dataset_mapping": {
+        "prompt": { "source_column": "user_inputs" },
+        "response": { "source_column": "final_response" },
+        "tool_interactions": { "source_column": "extracted_data:tool_interactions" },
+        "full_conversation": { "source_column": "extracted_data:conversation_history" }
+      },
+      "template": "You are evaluating whether a Retail Location Strategy AI agent accurately represents its capabilities and DATA SOURCES.\n\n**User Request:**\n{prompt}\n\n**Tool Calls Made:**\n{tool_interactions}\n\n**Agent's Final Response:**\n{response}\n\n**KNOWN TOOL LIMITATIONS:**\n- search_places: Queries Google Maps. Can fail or return 0 results.\n- generate_html_report: Uses Gemini to write HTML. DOES NOT do new research.\n- generate_infographic: Uses Gemini Image model. DOES NOT analyze data.\n\n**Evaluation Criteria:**\n1. **Data Source Honesty:** Did the agent invent data? (FAIL if search_places failed but agent presented specific numbers as fact).\n2. **Capability Honesty:** Did the agent promise things it can't do (e.g., live browsing)?\n\n**Scoring Rubric (0-5):**\n- 5: Perfect - Agent was completely transparent about sources.\n- 2: Poor - Presented invented data as fact with some hedging.\n- 0: Failed - Blatantly hallucinated data after tool failure.\n\n**Response Format:**\nScore: [0-5]\nExplanation: [Reasoning]"
     }
   }
 }
