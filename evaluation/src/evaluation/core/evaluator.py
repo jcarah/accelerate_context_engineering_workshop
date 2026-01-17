@@ -486,6 +486,22 @@ class Evaluator:
         final_df = original_df.copy()
         eval_results_list = [{} for _ in range(len(final_df))]
 
+        # Add Pre-calculated ADK scores from simulation (if present)
+        adk_score_cols = [c for c in original_df.columns if c.startswith("adk_score.")]
+        for col in adk_score_cols:
+            metric_name = col.replace("adk_score.", "")
+            for idx, val in original_df[col].items():
+                if idx < len(eval_results_list):
+                    # Handle potential NaN values from pandas
+                    try:
+                        if pd.notna(val):
+                            eval_results_list[idx][metric_name] = {
+                                "score": float(val),
+                                "explanation": "Extracted from ADK simulation history."
+                            }
+                    except (ValueError, TypeError):
+                        continue
+
         # Add Deterministic
         for index, results in det_results_map.items():
             if index < len(eval_results_list):

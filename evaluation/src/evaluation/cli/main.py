@@ -111,7 +111,11 @@ def analyze_command(args):
         "agent_dir": args.agent_dir,
         "model": args.model,
         "skip_gemini": args.skip_gemini,
-        "gcs_bucket": args.gcs_bucket
+        "gcs_bucket": args.gcs_bucket,
+        "strategy_file": args.strategy_file,
+        "report_audience": args.report_audience,
+        "report_tone": args.report_tone,
+        "report_length": args.report_length
     }
 
     analyzer = Analyzer(config)
@@ -213,8 +217,12 @@ def main():
     analyze_parser = subparsers.add_parser("analyze", help="Analyze evaluation results and generate reports.")
     analyze_parser.add_argument("--results-dir", required=True, help="Directory containing evaluation results.")
     analyze_parser.add_argument("--agent-dir", help="Path to agent directory (for source code context). Auto-discovers agent.py and GEMINI.md.")
-    analyze_parser.add_argument("--model", default="gemini-2.5-pro",
-                                help="Gemini model for analysis (default: gemini-2.5-pro). Options: gemini-3-pro-preview (needs to be enabled), gemini-3-flash-preview (needs to be enabled), gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-pro, gemini-1.5-flash")
+    analyze_parser.add_argument("--strategy-file", help="Path to a custom optimization strategy Markdown file to guide the analysis.")
+    analyze_parser.add_argument("--report-audience", help="Customize the target audience for the Gemini analysis.")
+    analyze_parser.add_argument("--report-tone", help="Customize the tone of the Gemini analysis.")
+    analyze_parser.add_argument("--report-length", help="Customize the length of the Gemini analysis.")
+    analyze_parser.add_argument("--model", default="gemini-3-pro-preview",
+                                help="Gemini model for analysis (default: gemini-3-pro-preview).")
     analyze_parser.add_argument("--skip-gemini", action="store_true", help="Skip AI-powered analysis.")
     analyze_parser.add_argument("--gcs-bucket", help="GCS bucket for upload.")
     analyze_parser.set_defaults(func=analyze_command)

@@ -129,6 +129,21 @@ def synthesize_trace_from_events(
                         fr = part.get("functionResponse") or part.get("function_response")
                         if fr: attrs["gcp.vertex.agent.tool_response"] = json.dumps(fr.get("response") or fr.get("content"))
 
+            # Capture finish reason if available
+            finish_reason = None
+            if "candidates" in content:
+                # Some formats nest finishReason under candidates
+                candidates = content.get("candidates", [])
+                if candidates:
+                    finish_reason = candidates[0].get("finishReason") or candidates[0].get("finish_reason")
+            
+            # Fallback: check top-level of event or content (ADK variations)
+            if not finish_reason:
+                finish_reason = event.get("finish_reason") or content.get("finish_reason")
+            
+            if finish_reason:
+                attrs["gen_ai.response.finish_reason"] = finish_reason
+
             usage = event.get("usage_metadata")
             if usage:
                 attrs["gen_ai.usage.input_tokens"] = usage.get("prompt_token_count")
@@ -240,12 +255,51 @@ class AdkHistoryConverter:
             # In a full implementation, this would come from the agent definition
             system_instruction = f"You are the {app_name} agent."
 
+            # --- NEW DATA EXTRACTION FOR OPTIMIZATION SIGNALS ---
+            thinking_trace = []
+            grounding_chunks = []
+            per_turn_tokens = []
+            stop_reasons = []
+
+            for event in events:
+                # Extract Thinking Process
+                content = event.get("content") or {}
+                parts = content.get("parts") or []
+                for part in parts:
+                    if part.get("thought"):
+                        thinking_trace.append(part.get("text", ""))
+                
+                # Extract Grounding Metadata (often in candidates[0])
+                candidates = content.get("candidates") or []
+                if candidates:
+                    candidate = candidates[0]
+                    gm = candidate.get("grounding_metadata") or candidate.get("groundingMetadata")
+                    if gm:
+                        chunks = gm.get("grounding_chunks") or gm.get("groundingChunks")
+                        if chunks:
+                            grounding_chunks.extend(chunks)
+                    
+                    # Extract Stop Reasons
+                    finish_reason = candidate.get("finish_reason") or candidate.get("finishReason")
+                    if finish_reason:
+                        stop_reasons.append(finish_reason)
+
+                # Extract Per-Turn Usage
+                usage = event.get("usage_metadata")
+                if usage:
+                    per_turn_tokens.append(usage)
+
             extracted_data = {
                 "state_variables": state,
                 "tool_interactions": tool_interactions,
                 "sub_agent_trace": sub_agent_trace,
                 "tool_declarations": tool_declarations,
-                "system_instruction": system_instruction
+                "system_instruction": system_instruction,
+                # New fields for Root Cause Analysis
+                "thinking_trace": thinking_trace,
+                "grounding_chunks": grounding_chunks,
+                "per_turn_tokens": per_turn_tokens,
+                "stop_reasons": stop_reasons
             }
             # Flatten state for legacy support if needed, but keeping clean is better.
             # Live path flattens it, so we should too for consistency.
