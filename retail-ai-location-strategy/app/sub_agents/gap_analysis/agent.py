@@ -29,6 +29,7 @@ from ...callbacks import before_gap_analysis, after_gap_analysis
 GAP_ANALYSIS_INSTRUCTION = """You are a data scientist analyzing market opportunities using quantitative methods.
 
 Your task is to perform advanced gap analysis on the data collected from previous stages.
+You have access to a `competitors.json` file containing the raw competitor data found by the previous agent.
 
 TARGET LOCATION: {target_location}
 BUSINESS TYPE: {business_type}
@@ -43,67 +44,53 @@ CURRENT DATE: {current_date}
 {competitor_analysis}
 
 ## Your Mission
-Write and execute Python code to perform comprehensive quantitative analysis.
+Write and execute Python code to perform comprehensive quantitative analysis AND competitive landscape mapping.
+You MUST load the competitor data from `competitors.json`.
 
 ## Analysis Steps
 
-### Step 1: Parse Competitor Data
-Extract from the competitor analysis:
-- Competitor names and locations
-- Ratings and review counts
-- Zone/area classifications
-- Business types (chain vs independent)
+### Step 1: Load and Parse Data
+- Load `competitors.json` into a pandas DataFrame.
+- Inspect the data structure.
+- Clean and prepare the data (handle missing ratings, normalize addresses).
 
 ### Step 2: Extract Market Fundamentals
-From the market research:
+From the market research findings (text above):
 - Population estimates
 - Income levels (assign numeric scores)
 - Infrastructure quality indicators
 - Foot traffic patterns
 
-### Step 3: Calculate Zone Metrics
-For each identified zone, compute:
+### Step 3: Perform Landscape Analysis (Clustering & Segmentation)
+Using Python, analyze the competitor data to identify patterns:
+- **Geographic Clustering:** Group competitors by neighborhood/zip code or use coordinate clustering (K-Means if applicable) to identify dense zones vs. gaps.
+- **Quality Segmentation:** Categorize competitors by rating tiers (Premium > 4.5, Mid 4.0-4.4, Budget < 4.0).
+- **Location Types:** Analyze addresses/types to infer location context (malls, high streets).
+
+### Step 4: Calculate Zone Metrics
+For each identified zone/cluster, compute:
 
 **Basic Metrics:**
-- Competitor count
-- Competitor density (per estimated area)
-- Average competitor rating
-- Total review volume
+- Competitor count & density
+- Average rating & review volume
 
 **Quality Metrics:**
-- Competition Quality Score: Weighted by ratings (4.5+ = high threat)
-- Chain Dominance Ratio: % of chain/franchise competitors
-- High Performer Count: Number of 4.5+ rated competitors
+- Competition Quality Score: Weighted by ratings
+- Chain Dominance Ratio: Identify chains vs independents
+- High Performer Count (4.5+ rated)
 
 **Opportunity Metrics:**
-- Demand Signal: Based on population, income, infrastructure
+- Demand Signal: Based on population, income (from research)
 - Market Saturation Index: (Competitors × Quality) / Demand
 - Viability Score: Multi-factor weighted score
 
-### Step 4: Zone Categorization
-Classify each zone as:
-- **SATURATED**: High competition, low opportunity
-- **MODERATE**: Balanced market, moderate opportunity
-- **OPPORTUNITY**: Low competition, high potential
+### Step 5: Zone Categorization & Ranking
+Classify each zone (SATURATED, MODERATE, OPPORTUNITY) and assign Risk Levels.
+Rank the top zones based on the Viability Score.
 
-Also assign:
-- Risk Level: Low / Medium / High
-- Investment Tier: Based on expected costs
-- Best Customer Segment: Target demographic
-
-### Step 5: Rank Top Zones
-Create a weighted ranking considering:
-- Low market saturation (weight: 30%)
-- High demand signals (weight: 30%)
-- Low chain dominance (weight: 15%)
-- Infrastructure quality (weight: 15%)
-- Manageable costs (weight: 10%)
-
-### Step 6: Output Tables
-Generate clear output tables showing:
-1. All zones with computed metrics
-2. Top 3 recommended zones with scores
-3. Risk assessment matrix
+### Step 6: Output Tables & Insights
+Generate clear output tables and a strategic summary.
+Your final answer should provide actionable recommendations based on the data.
 
 ## Code Guidelines
 - Use pandas for data manipulation
@@ -128,6 +115,7 @@ gap_analysis_agent = LlmAgent(
         ),
     ),
     code_executor=BuiltInCodeExecutor(),
+    include_contents='none',  # Isolate from previous history
     output_key="gap_analysis",
     before_agent_callback=before_gap_analysis,
     after_agent_callback=after_gap_analysis,

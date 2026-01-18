@@ -15,6 +15,7 @@
 """Google Maps Places API search tool for competitor mapping."""
 
 import os
+import json
 from google.adk.tools import ToolContext
 
 
@@ -41,6 +42,8 @@ def search_places(query: str, tool_context: ToolContext) -> dict:
 
         # Get API key from session state first, then fall back to environment variable
         maps_api_key = tool_context.state.get("maps_api_key", "") or os.environ.get("MAPS_API_KEY", "")
+        
+        print(f"DEBUG: search_places is using MAPS_API_KEY: {maps_api_key}")
 
         if not maps_api_key:
             return {
@@ -74,9 +77,13 @@ def search_places(query: str, tool_context: ToolContext) -> dict:
                 "place_id": place.get("place_id", ""),
             })
 
+        # Save to artifact file for offloading
+        with open("competitors.json", "w") as f:
+            json.dump(places, f, indent=2)
+
         return {
             "status": "success",
-            "results": places,
+            "message": f"Found {len(places)} competitors and saved details to 'competitors.json'.",
             "count": len(places),
             "next_page_token": result.get("next_page_token"),
         }

@@ -111,6 +111,7 @@ infographic_generator_agent = LlmAgent(
             ),
         ),
     ),
+    include_contents='none',  # Isolate from previous history to save tokens and prevent context overflow
     tools=[generate_infographic],
     output_key="infographic_result",
     before_agent_callback=before_infographic_generator,
