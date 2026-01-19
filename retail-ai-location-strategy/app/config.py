@@ -65,7 +65,7 @@ MAPS_API_KEY = os.environ.get("MAPS_API_KEY", "")
 FAST_MODEL = "gemini-2.5-pro"
 PRO_MODEL = "gemini-2.5-pro"
 CODE_EXEC_MODEL = "gemini-2.5-pro"
-IMAGE_MODEL = "gemini-3-pro-image-preview"  # Gemini 3 for native image generation
+IMAGE_MODEL = "gemini-2.5-flash-image"  # Gemini 3 for native image generation
 
 # Option 2: Gemini 3 Pro Preview (latest features, may have availability issues)
 # FAST_MODEL = "gemini-3-pro-preview"
