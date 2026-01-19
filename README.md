@@ -32,13 +32,21 @@ To verify your setup after installation, run:
 ```bash
 make verify  # Available in each agent directory
 ```
-TODO: need a place to set env vars
-export GOOGLE_CLOUD_PROJECT="x"
-user need roles/aiplatform.user
+
+**Required Setup:**
+```bash
+# Set your GCP project
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+
+# Authenticate with Google Cloud
 gcloud auth login
 gcloud auth application-default login
-gcloud auth application-default set-quota-project project id 
-enable Places API 
+gcloud auth application-default set-quota-project $GOOGLE_CLOUD_PROJECT
+
+# Required IAM role: roles/aiplatform.user
+# Required APIs: Vertex AI, Places API (for retail agent)
+```
+
 ---
 
 ## 3. The Test Subjects (Agents)
@@ -128,9 +136,7 @@ Follow these steps to establish a baseline before making optimizations.
 
 > ⚠️ **CRITICAL:** Always clear `eval_history` before running a new baseline. The ADK simulator *appends* to this folder on every run. Without clearing, your baseline will include stale data from previous runs, corrupting all metrics.
 
-TODO: suggestion: add info conversation_scenarios.json and metric_definitions.json and prompt user to look at those two files 
-
-Add details on what the simulator does 
+> **📝 Before running:** Review `eval/scenarios/conversation_scenarios.json` (test conversations) and `eval/metrics/metric_definitions.json` (scoring rubrics) to understand what's being tested.
 
 ```bash
 cd customer-service
@@ -147,7 +153,7 @@ uv run adk eval customer_service \
 
 #### Step 2: Convert Traces & Run Evaluation
 
-Might need to make sure that we have the project in env vars
+> **Note:** Ensure `GOOGLE_CLOUD_PROJECT` is set in your environment before running.
 
 ```bash
 cd ../evaluation
