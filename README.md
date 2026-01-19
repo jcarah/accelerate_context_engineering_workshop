@@ -151,6 +151,13 @@ uv run adk eval customer_service \
   --print_detailed_results
 ```
 
+NOTE: to change the conversation scenarios
+
+- Delete eval_set_with_scenarios.evalset.json 
+- update conversation_scenarios.json 
+- uv run adk eval_set create eval/scenarios eval_set_with_scenarios 
+- uv run adk eval_set add_eval_case eval/scenarios eval_set_with_scenarios --scenarios_file eval/scenarios/conversation_scenarios.json --session_input_file eval/scenarios/session_input.json
+
 #### Step 2: Convert Traces & Run Evaluation
 
 > **Note:** Ensure `GOOGLE_CLOUD_PROJECT` is set in your environment before running.
