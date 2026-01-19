@@ -18,7 +18,7 @@ uv run agent-eval <command> --help
 
 | Command | Purpose | Evaluation Path |
 |---------|---------|-----------------|
-| `convert` | Convert ADK simulator traces to CSV | Path A (Simulation) |
+| `convert` | Convert ADK simulator traces to JSONL | Path A (Simulation) |
 | `create-dataset` | Convert ADK test files to Golden Dataset | Path B (Live API) |
 | `interact` | Run interactions against live agent | Path B (Live API) |
 | `evaluate` | Run metrics on processed interactions | Both paths |
@@ -28,7 +28,7 @@ uv run agent-eval <command> --help
 
 ## `agent-eval convert`
 
-Converts ADK simulator history (`.adk/eval_history/`) to the evaluation CSV format.
+Converts ADK simulator history (`.adk/eval_history/`) to the evaluation JSONL format.
 
 ### Usage
 
@@ -43,12 +43,16 @@ uv run agent-eval convert \
 | Argument | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `--agent-dir` | Agent module directory containing `.adk/eval_history/` | Yes | - |
-| `--output-dir` | Output directory for CSV | No | `results/` |
+| `--output-dir` | Output directory for JSONL | No | `results/` |
 | `--questions-file` | Golden dataset for merging reference data | No | - |
 
 ### Output
 
 Creates `<output-dir>/<timestamp>/raw/processed_interaction_sim.jsonl`
+
+### Error Handling
+
+If the converter detects missing `session_details` in the ADK history, it will display an error message explaining that the `app_name` in your evalset file likely doesn't match the agent's folder name. See [Troubleshooting](01-GETTING-STARTED.md#troubleshooting) for details.
 
 ### Example
 
@@ -197,7 +201,7 @@ uv run agent-eval evaluate \
 
 | Argument | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `--interaction-file` | Path to processed_interaction CSV | Yes | - |
+| `--interaction-file` | Path to processed_interaction JSONL | Yes | - |
 | `--metrics-files` | Metric definition JSON file(s) | Yes | - |
 | `--results-dir` | Output directory (use same timestamp folder) | Yes | - |
 | `--input-label` | Run label (e.g., `baseline`, `v2`) | No | - |

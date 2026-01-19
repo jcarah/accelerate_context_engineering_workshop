@@ -61,9 +61,19 @@ These appear in `eval_summary.json` under `deterministic_metrics` after every ev
 
 ## API Predefined Metrics (Vertex AI)
 
-These use Google's built-in evaluators. For multi-turn conversations, use the `MULTI_TURN_*` variants with `use_gemini_format: true`.
+These use Google's built-in evaluators. Choose between **single-turn** and **multi-turn** variants based on your agent's conversation pattern.
 
-### Recommended Metrics for ADK Agents
+### Choosing Single-Turn vs Multi-Turn Metrics
+
+| Your Agent | Metric to Use | Example |
+|------------|---------------|---------|
+| **Multi-turn conversation** (user ↔ agent ↔ user ↔ agent) | `MULTI_TURN_*` | Customer service chatbot |
+| **Single-turn / pipeline** (user → agent runs pipeline → final response) | `GENERAL_QUALITY`, `TEXT_QUALITY` | Retail location strategy agent |
+
+> **Important**: Using `MULTI_TURN_*` metrics on single-turn agents will fail with error:
+> `"Variable conversation_history is required but not provided"`
+
+### Multi-Turn Metrics (for conversational agents)
 
 ```json
 {
@@ -74,11 +84,26 @@ These use Google's built-in evaluators. For multi-turn conversations, use the `M
     "use_gemini_format": true,
     "score_range": {"min": 0, "max": 1, "description": "Passing rate"},
     "natural_language_guidelines": "Evaluate if the agent correctly maintains customer state throughout the conversation. Penalize responses that forget earlier context."
-  },
-  "multi_turn_text_quality": {
+  }
+}
+```
+
+### Single-Turn Metrics (for pipeline/single-response agents)
+
+```json
+{
+  "general_quality": {
     "metric_type": "llm",
     "is_managed": true,
-    "managed_metric_name": "MULTI_TURN_TEXT_QUALITY",
+    "managed_metric_name": "GENERAL_QUALITY",
+    "use_gemini_format": true,
+    "score_range": {"min": 0, "max": 1, "description": "Passing rate"},
+    "natural_language_guidelines": "Evaluate if the agent correctly processes the request and provides comprehensive analysis."
+  },
+  "text_quality": {
+    "metric_type": "llm",
+    "is_managed": true,
+    "managed_metric_name": "TEXT_QUALITY",
     "use_gemini_format": true,
     "score_range": {"min": 0, "max": 1, "description": "Passing rate"}
   }
@@ -90,18 +115,22 @@ These use Google's built-in evaluators. For multi-turn conversations, use the `M
 | Field | Required | Description |
 |-------|----------|-------------|
 | `is_managed` | Yes | Must be `true` |
-| `managed_metric_name` | Yes | `MULTI_TURN_GENERAL_QUALITY` or `MULTI_TURN_TEXT_QUALITY` |
-| `use_gemini_format` | Yes | Must be `true` for multi-turn metrics |
-| `natural_language_guidelines` | No | Custom evaluation criteria (recommended for GENERAL_QUALITY) |
+| `managed_metric_name` | Yes | See table below |
+| `use_gemini_format` | Yes | Must be `true` for API metrics |
+| `natural_language_guidelines` | No | Custom evaluation criteria (recommended) |
 
 ### Available API Predefined Metrics
 
 | Metric | Best For | Score Range |
 |--------|----------|-------------|
-| `MULTI_TURN_GENERAL_QUALITY` | Overall conversation quality | 0-1 (passing rate) |
-| `MULTI_TURN_TEXT_QUALITY` | Text coherence and fluency | 0-1 (passing rate) |
-
-> **Note**: Single-turn metrics (`GENERAL_QUALITY`, `TEXT_QUALITY`) only evaluate the final response and ignore conversation history. Use `MULTI_TURN_*` variants for ADK agents.
+| `GENERAL_QUALITY` | Single-turn overall quality | 0-1 (passing rate) |
+| `TEXT_QUALITY` | Single-turn text coherence | 0-1 (passing rate) |
+| `MULTI_TURN_GENERAL_QUALITY` | Multi-turn conversation quality | 0-1 (passing rate) |
+| `MULTI_TURN_TEXT_QUALITY` | Multi-turn text coherence | 0-1 (passing rate) |
+| `INSTRUCTION_FOLLOWING` | Instruction adherence | 0-1 (passing rate) |
+| `GROUNDING` | Factual grounding | 0-1 (passing rate) |
+| `SAFETY` | Safety compliance | 0-1 (passing rate) |
+| `HALLUCINATION` | Hallucination detection | 0-1 (passing rate) |
 
 ---
 

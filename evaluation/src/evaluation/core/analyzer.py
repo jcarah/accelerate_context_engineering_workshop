@@ -452,7 +452,14 @@ class Analyzer:
         try:
             # Use Vertex AI with project/location from environment
             project = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("PROJECT_ID")
-            location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+
+            # Gemini 3 models require 'global' location, others use us-central1
+            # See: https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions
+            if model.startswith("gemini-3"):
+                location = "global"
+                print(f"  Using 'global' location for {model} (required for Gemini 3 models)")
+            else:
+                location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
 
             if not project:
                 print("Warning: GOOGLE_CLOUD_PROJECT not set. Trying default credentials...")

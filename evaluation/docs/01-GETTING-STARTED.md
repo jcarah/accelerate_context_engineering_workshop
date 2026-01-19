@@ -125,6 +125,27 @@ Same as Path A Steps 3-4.
 
 ---
 
+## Quick vs Full Evaluation
+
+Each agent has two evaluation modes:
+
+| Mode | Files | Duration | Use Case |
+|------|-------|----------|----------|
+| **Quick** | `eval_set_single`, `eval_config_single.json` | ~2 min | Daily development |
+| **Full** | `eval_set_with_scenarios`, `eval_config.json` | 10+ min | CI/CD, nightly runs |
+
+**Quick mode** runs 1-2 scenarios for fast iteration. **Full mode** runs all scenarios for comprehensive validation.
+
+```bash
+# Quick iteration
+uv run adk eval app --config_file_path eval/scenarios/eval_config_single.json eval_set_single
+
+# Full CI/CD run
+uv run adk eval app --config_file_path eval/scenarios/eval_config.json eval_set_with_scenarios
+```
+
+---
+
 ## Agent Directory Structure
 
 Each agent should have an `eval/` folder with this structure:
@@ -135,9 +156,12 @@ your-agent/
 │   └── .adk/eval_history/       # ADK simulator output (auto-generated)
 └── eval/
     ├── scenarios/               # Path A: Simulation files
-    │   ├── conversation_scenarios.json
-    │   ├── eval_config.json
-    │   └── eval_set_with_scenarios.evalset.json
+    │   ├── conversation_scenarios.json       # All scenarios
+    │   ├── conversation_scenarios_single.json # Quick mode (1-2 scenarios)
+    │   ├── eval_config.json                  # Full config
+    │   ├── eval_config_single.json           # Quick config
+    │   ├── eval_set_with_scenarios.evalset.json
+    │   └── eval_set_single.evalset.json
     ├── eval_data/               # Path B: Source test files
     │   └── test.json
     ├── datasets/                # Path B: Converted golden datasets
@@ -149,6 +173,64 @@ your-agent/
             ├── eval_summary.json
             └── raw/
 ```
+
+---
+
+## Troubleshooting
+
+### Token Usage Shows All Zeros
+
+If your evaluation summary shows `token_usage.llm_calls: 0` and other metrics as zero, the most likely cause is an incorrect `app_name` in your evalset file.
+
+**The Rule:** `app_name` must match the **folder name** containing your agent, not the agent's internal name.
+
+```json
+// WRONG - using agent's internal name
+"session_input": {
+  "app_name": "retail_location_strategy"
+}
+
+// CORRECT - using folder name
+"session_input": {
+  "app_name": "app"  // matches retail-ai-location-strategy/app/
+}
+```
+
+**To fix:**
+1. Update `app_name` in your evalset.json
+2. Clear the .adk folder: `rm -rf your_agent_module/.adk`
+3. Re-run the ADK simulation
+4. Re-run the converter
+
+The converter will display a detailed error message if it detects this problem.
+
+### Converter Shows "session_details is empty"
+
+This error means ADK couldn't properly create a session. See the "Token Usage Shows All Zeros" section above.
+
+### "Variable conversation_history is required but not provided"
+
+This error occurs when using `MULTI_TURN_*` metrics on a single-turn/pipeline agent.
+
+**The Rule:** Match your metric type to your agent's conversation pattern:
+
+| Your Agent | Use These Metrics |
+|------------|-------------------|
+| Multi-turn (user ↔ agent ↔ user ↔ agent) | `MULTI_TURN_GENERAL_QUALITY` |
+| Single-turn/pipeline (user → agent pipeline → response) | `GENERAL_QUALITY`, `TEXT_QUALITY` |
+
+**To fix:** Update your `metric_definitions.json`:
+```json
+// For single-turn agents (like retail-ai-location-strategy)
+{
+  "general_quality": {
+    "managed_metric_name": "GENERAL_QUALITY",
+    "use_gemini_format": true
+  }
+}
+```
+
+See [03-METRICS-GUIDE.md](03-METRICS-GUIDE.md) for full configuration examples.
 
 ---
 

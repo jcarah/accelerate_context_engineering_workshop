@@ -126,6 +126,19 @@ Create `session_input.json` to define initial session state:
 }
 ```
 
+> **CRITICAL: `app_name` Must Match Folder Name**
+>
+> The `app_name` value MUST match the folder name containing your agent's `agent.py` file,
+> NOT the agent's internal name defined in code.
+>
+> | Agent Location | Correct `app_name` |
+> |----------------|-------------------|
+> | `customer-service/customer_service/agent.py` | `"customer_service"` |
+> | `retail-ai-location-strategy/app/agent.py` | `"app"` |
+>
+> If this is incorrect, the converter will show an error about missing `session_details`
+> and your evaluation will have zero values for token usage and state variables.
+
 ### Step 3: Create Eval Set Definition
 
 Create `eval_set_with_scenarios.evalset.json`:

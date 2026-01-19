@@ -160,7 +160,7 @@ The agent scored 3.2/5 on response correctness due to...
 
 ## Debug Artifacts
 
-These files help troubleshoot issues without opening large CSVs:
+These files help troubleshoot issues without opening large JSONL files:
 
 | File Pattern | Location | Purpose |
 | :--- | :--- | :--- |

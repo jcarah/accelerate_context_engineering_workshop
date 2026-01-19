@@ -201,232 +201,247 @@ class AdkHistoryConverter:
 
         for case in case_results:
             eval_id = case.get("eval_id")
+            session_id = case.get("session_id")
+
+            # Try two different data formats:
+            # Format 1: session_details (customer-service style)
+            # Format 2: eval_metric_result_per_invocation (retail-ai style)
+
+            session_details = case.get("session_details")
+
+            if not session_details:
+                # session_details is None - this indicates a configuration problem
+                # The most common cause is app_name in evalset.json not matching the folder name
+                print("\n" + "=" * 70)
+                print("ERROR: session_details is empty for eval case: " + str(eval_id))
+                print("=" * 70)
+                print("\nThis usually means the 'app_name' in your evalset.json file")
+                print("does not match the folder name containing your agent.")
+                print("\nThe app_name MUST match the folder name, NOT the agent's internal name.")
+                print("\nExample:")
+                print("  If your agent is in: retail-ai-location-strategy/app/agent.py")
+                print("  Then app_name must be: \"app\"")
+                print("")
+                print("  If your agent is in: customer-service/customer_service/agent.py")
+                print("  Then app_name must be: \"customer_service\"")
+                print("\nTo fix this:")
+                print("  1. Open your evalset.json file")
+                print("  2. Find the 'session_input' section")
+                print("  3. Change 'app_name' to match your agent's folder name")
+                print("  4. Clear the .adk folder: rm -rf <agent-dir>/.adk")
+                print("  5. Re-run the ADK simulation: uv run adk eval <folder> ...")
+                print("  6. Re-run this converter")
+                print("\nWithout session_details, critical data is missing:")
+                print("  - Token usage (prompt_tokens, completion_tokens)")
+                print("  - Session state variables")
+                print("  - Proper latency measurements")
+                print("=" * 70 + "\n")
+
+                # Skip this case - don't process with incomplete data
+                continue
+
+            # Format 1: session_details is available (correct configuration)
+            events = session_details.get("events", [])
+            state = session_details.get("state", {})
+            app_name = session_details.get("app_name")
+            session_id = session_details.get("id") or session_id
+            user_id = session_details.get("user_id")
+
+            if not events:
+                continue
+
+            # 1. Synthesize Trace
+            synthetic_trace = synthesize_trace_from_events(
+                events, session_id, app_name
+            )
+
+            # 2. Analyze Trace (using AgentClient logic)
+            analyzed_trace = AgentClient.analyze_trace_and_extract_spans(synthetic_trace)
+            latency_data = AgentClient.get_latency_from_spans(analyzed_trace)
+            trace_summary = AgentClient.get_agent_trajectory(analyzed_trace)
             
-            # Case Results can be organized in two ways:
-            # 1. session_details: Full session history captured (preferred - used by Customer Service)
-            # 2. eval_metric_result_per_invocation: Results per user turn (common in latest ADK / Retail)
-            
-            if case.get("session_details"):
-                session_details = case["session_details"]
-                events = session_details.get("events", [])
-                state = session_details.get("state", {})
-                app_name = session_details.get("app_name")
-                session_id = session_details.get("id")
-                user_id = session_details.get("user_id")
-                
-                extracted_rows.append(self._process_single_run(
-                    eval_id, session_id, user_id, app_name, events, state, case
-                ))
+            # 3. Reconstruct Session Object (CamelCase for consistency with runtime)
+            camel_events = convert_keys_to_camel_case(events)
+            final_session_state = {
+                "id": session_id,
+                "appName": app_name,
+                "userId": user_id,
+                "state": state,
+                "events": camel_events,
+                "lastUpdateTime": events[-1].get("timestamp") if events else None,
+            }
 
-            elif case.get("eval_metric_result_per_invocation"):
-                invocations = case["eval_metric_result_per_invocation"]
-                # Reconstruct the sequence from invocations
-                
-                all_events = []
-                last_state = {}
-                app_name = "app"
-                
-                for inv in invocations:
-                    actual = inv.get("actual_invocation") or {}
-                    
-                    user_content = actual.get("user_content")
-                    final_resp = actual.get("final_response")
-                    intermediate = actual.get("intermediate_data") or {}
-                    
-                    # Add user message
-                    if user_content:
-                        all_events.append({
-                            "author": "user",
-                            "content": user_content,
-                            "timestamp": time.time() # Proxy timestamp
-                        })
-                    
-                    # Add intermediate events (tool calls, etc)
-                    inv_events = intermediate.get("invocation_events", [])
-                    all_events.extend(inv_events)
-                    
-                    # Add final response
-                    if final_resp:
-                        all_events.append({
-                            "author": "agent", 
-                            "content": final_resp,
-                            "timestamp": time.time() + 1 # Proxy
-                        })
-                        
-                    # Try to capture state/app info from events if possible
-                    for e in inv_events:
-                        if e.get("author") and e["author"] not in ("user", "model", "agent"):
-                            app_name = e["author"]
+            # 4. Extracted Data
+            # Use AgentClient helpers to ensure consistency
+            tool_interactions = AgentClient.get_tool_interactions(final_session_state)
+            sub_agent_trace = AgentClient.get_sub_agent_trace(final_session_state)
 
-                # Generate a session ID for this reconstructed trace
-                session_id = f"sim-{eval_id}"
-                user_id = "simulator"
-                
-                extracted_rows.append(self._process_single_run(
-                    eval_id, session_id, user_id, app_name, all_events, last_state, case
-                ))
+            # 4a. Generate tool_declarations from tools found in events
+            # SDK format: [{"function_declarations": [{"name": "tool_name", ...}]}]
+            tool_names = set()
+            for ti in tool_interactions:
+                if isinstance(ti, dict) and "tool_name" in ti:
+                    tool_names.add(ti["tool_name"])
 
-        return extracted_rows
+            tool_declarations = []
+            for tool_name in sorted(tool_names):
+                tool_declarations.append({
+                    "function_declarations": [{
+                        "name": tool_name,
+                        "description": f"Tool: {tool_name}"
+                    }]
+                })
 
-    def _process_single_run(self, eval_id: str, session_id: str, user_id: str, app_name: str, events: List[Dict], state: Dict, case: Dict) -> Dict[str, Any]:
-        """Processes a single conversation run (session or invocation sequence) into a dataset row."""
-        
-        # 1. Synthesize Trace
-        synthetic_trace = synthesize_trace_from_events(events, session_id, app_name)
+            # 4b. Generate system_instruction from app_name
+            # In a full implementation, this could come from the agent definition
+            system_instruction = f"You are the {app_name} agent."
 
-        # 2. Analyze Trace (using AgentClient logic)
-        analyzed_trace = AgentClient.analyze_trace_and_extract_spans(synthetic_trace)
-        latency_data = AgentClient.get_latency_from_spans(analyzed_trace)
-        trace_summary = AgentClient.get_agent_trajectory(analyzed_trace)
-        
-        # 3. Reconstruct Session Object (CamelCase for consistency with runtime)
-        camel_events = convert_keys_to_camel_case(events)
-        final_session_state = {
-            "id": session_id,
-            "appName": app_name,
-            "userId": user_id,
-            "state": state,
-            "events": camel_events,
-            "lastUpdateTime": events[-1].get("timestamp") if events else None,
-        }
+            # --- NEW DATA EXTRACTION FOR OPTIMIZATION SIGNALS ---
+            thinking_trace = []
+            grounding_chunks = []
+            per_turn_tokens = []
+            stop_reasons = []
 
-        # 4. Extracted Data
-        tool_interactions = AgentClient.get_tool_interactions(final_session_state)
-        sub_agent_trace = AgentClient.get_sub_agent_trace(final_session_state)
-
-        # 4a. Generate tool_declarations from tools found in events
-        tool_names = set()
-        for ti in tool_interactions:
-            if isinstance(ti, dict) and "tool_name" in ti:
-                tool_names.add(ti["tool_name"])
-
-        tool_declarations = []
-        for tool_name in sorted(tool_names):
-            tool_declarations.append({
-                "function_declarations": [{
-                    "name": tool_name,
-                    "description": f"Tool: {tool_name}"
-                }]
-            })
-
-        system_instruction = f"You are the {app_name} agent."
-
-        # --- NEW DATA EXTRACTION FOR OPTIMIZATION SIGNALS ---
-        thinking_trace = []
-        grounding_chunks = []
-        per_turn_tokens = []
-        stop_reasons = []
-
-        for event in events:
-            # Extract Thinking Process
-            content = event.get("content") or {}
-            parts = content.get("parts") or []
-            for part in parts:
-                if part.get("thought"):
-                    thinking_trace.append(part.get("text", ""))
-            
-            # Extract Grounding Metadata
-            candidates = content.get("candidates") or []
-            if candidates:
-                candidate = candidates[0]
-                gm = candidate.get("grounding_metadata") or candidate.get("groundingMetadata")
-                if gm:
-                    chunks = gm.get("grounding_chunks") or gm.get("groundingChunks")
-                    if chunks:
-                        grounding_chunks.extend(chunks)
-                
-                # Extract Stop Reasons
-                finish_reason = candidate.get("finish_reason") or candidate.get("finishReason")
-                if finish_reason:
-                    stop_reasons.append(finish_reason)
-
-            # Extract Per-Turn Usage
-            usage = event.get("usage_metadata")
-            if usage:
-                per_turn_tokens.append(usage)
-
-        extracted_data = {
-            "state_variables": state,
-            "tool_interactions": tool_interactions,
-            "sub_agent_trace": sub_agent_trace,
-            "tool_declarations": tool_declarations,
-            "system_instruction": system_instruction,
-            "thinking_trace": thinking_trace,
-            "grounding_chunks": grounding_chunks,
-            "per_turn_tokens": per_turn_tokens,
-            "stop_reasons": stop_reasons
-        }
-        extracted_data.update(state)
-
-        # 4b. Extract final_response
-        final_response = ""
-        if sub_agent_trace:
-            for turn in reversed(sub_agent_trace):
-                if turn.get("text_response"):
-                    final_response = turn["text_response"]
-                    break
-
-        # 5. User Inputs
-        user_inputs = []
-        for e in events:
-            if e.get("author") == "user":
-                content = e.get("content") or {}
+            for event in events:
+                # Extract Thinking Process
+                content = event.get("content") or {}
                 parts = content.get("parts") or []
-                text = "".join([p.get("text", "") for p in parts])
-                if text: user_inputs.append(text)
+                for part in parts:
+                    if part.get("thought"):
+                        thinking_trace.append(part.get("text", ""))
+                
+                # Extract Grounding Metadata (often in candidates[0])
+                candidates = content.get("candidates") or []
+                if candidates:
+                    candidate = candidates[0]
+                    gm = candidate.get("grounding_metadata") or candidate.get("groundingMetadata")
+                    if gm:
+                        chunks = gm.get("grounding_chunks") or gm.get("groundingChunks")
+                        if chunks:
+                            grounding_chunks.extend(chunks)
+                    
+                    # Extract Stop Reasons
+                    finish_reason = candidate.get("finish_reason") or candidate.get("finishReason")
+                    if finish_reason:
+                        stop_reasons.append(finish_reason)
 
-        # 6. Merge with Golden Data (if available)
-        golden_q = self.golden_map.get(eval_id, {})
-        reference_data = golden_q.get("reference_data", {})
-        question_metadata = golden_q.get("metadata", {})
+                # Extract Per-Turn Usage
+                usage = event.get("usage_metadata")
+                if usage:
+                    per_turn_tokens.append(usage)
 
-        # 7. Build contents for Gemini batch format
-        text_responses = [t.get("text_response", "") for t in sub_agent_trace if t.get("text_response")]
-        contents = []
-        for i, user_input in enumerate(user_inputs):
-            contents.append({"role": "user", "parts": [{"text": user_input}]})
-            if i < len(text_responses):
-                contents.append({"role": "model", "parts": [{"text": text_responses[i]}]})
+            extracted_data = {
+                "state_variables": state,
+                "tool_interactions": tool_interactions,
+                "sub_agent_trace": sub_agent_trace,
+                "tool_declarations": tool_declarations,
+                "system_instruction": system_instruction,
+                # New fields for Root Cause Analysis
+                "thinking_trace": thinking_trace,
+                "grounding_chunks": grounding_chunks,
+                "per_turn_tokens": per_turn_tokens,
+                "stop_reasons": stop_reasons
+            }
+            # Flatten state for legacy support if needed, but keeping clean is better.
+            # Live path flattens it, so we should too for consistency.
+            extracted_data.update(state)
 
-        gemini_request = {"contents": contents}
-        gemini_response = {"candidates": [{"content": {"role": "model", "parts": [{"text": final_response}]}}]}
-        conversation_history = contents[:-1] if len(contents) > 1 else []
-        extracted_data["conversation_history"] = conversation_history
+            # 4b. Extract final_response (last agent text response)
+            final_response = ""
+            if sub_agent_trace:
+                # Get the last agent turn with a text response
+                for turn in reversed(sub_agent_trace):
+                    if turn.get("text_response"):
+                        final_response = turn["text_response"]
+                        break
 
-        # 8. Construct Row
-        row = {
-            "request": gemini_request,
-            "response": gemini_response,
-            "question_id": eval_id,
-            "session_id": session_id,
-            "base_url": "simulation",
-            "app_name": app_name,
-            "ADK_USER_ID": user_id,
-            "status": {"boolean": "success"},
-            "run_id": str(uuid.uuid4()),
-            "agents_evaluated": [app_name],
-            "user_inputs": user_inputs,
-            "question_metadata": question_metadata,
-            "interaction_datetime": datetime.now().isoformat(),
-            "USER": os.environ.get("USER", "simulator"),
-            "reference_data": reference_data,
-            "missing_information": {"boolean": False},
-            "final_session_state": final_session_state,
-            "session_trace": synthetic_trace,
-            "latency_data": latency_data,
-            "trace_summary": trace_summary,
-            "extracted_data": extracted_data,
-            "final_response": final_response
-        }
-        
-        adk_evals = case.get("eval_metric_results") or case.get("overall_eval_metric_results") or []
-        for eval_res in adk_evals:
-            m_name = eval_res.get("metric_name")
-            if m_name:
-                row[f"adk_score.{m_name}"] = eval_res.get("score")
+            # 5. User Inputs
+            user_inputs = []
+            for e in events:
+                if e.get("author") == "user":
+                    content = e.get("content") or {}
+                    parts = content.get("parts") or []
+                    text = "".join([p.get("text", "") for p in parts])
+                    if text: user_inputs.append(text)
 
-        return row
+            # 6. Merge with Golden Data (if available)
+            golden_q = self.golden_map.get(eval_id, {})
+            reference_data = golden_q.get("reference_data", {})
+            question_metadata = golden_q.get("metadata", {})
 
+            # 7. Build contents for Gemini batch format (multi-turn conversations)
+            # The SDK auto-extracts conversation_history and prompt from this format.
+            # See: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/evaluation-dataset
+            text_responses = [t.get("text_response", "") for t in sub_agent_trace if t.get("text_response")]
+
+            # Build full conversation as Content objects
+            contents = []
+            for i, user_input in enumerate(user_inputs):
+                # Add user turn
+                contents.append({
+                    "role": "user",
+                    "parts": [{"text": user_input}]
+                })
+                # Add corresponding model response if available (except after last user input)
+                if i < len(text_responses):
+                    contents.append({
+                        "role": "model",
+                        "parts": [{"text": text_responses[i]}]
+                    })
+
+            # Build Gemini batch format for SDK auto-parsing
+            gemini_request = {
+                "contents": contents
+            }
+            gemini_response = {
+                "candidates": [
+                    {"content": {"role": "model", "parts": [{"text": final_response}]}}
+                ]
+            }
+
+            # Also store conversation_history separately for custom metrics
+            conversation_history = contents[:-1] if len(contents) > 1 else []  # All but last user turn
+            extracted_data["conversation_history"] = conversation_history
+
+            # 8. Construct Row - JSONL format with Gemini batch structure
+            row = {
+                # Gemini batch format fields (SDK auto-parses these for multi-turn metrics)
+                "request": gemini_request,
+                "response": gemini_response,
+                # Metadata fields
+                "question_id": eval_id,
+                "session_id": session_id,
+                "base_url": "simulation",
+                "app_name": app_name,
+                "ADK_USER_ID": user_id,
+                "status": {"boolean": "success"},
+                "run_id": str(uuid.uuid4()),
+                "agents_evaluated": [app_name],
+                "user_inputs": user_inputs,
+                "question_metadata": question_metadata,
+                "interaction_datetime": datetime.now().isoformat(),
+                "USER": os.environ.get("USER", "simulator"),
+                "reference_data": reference_data,
+                "missing_information": {"boolean": False},
+                "final_session_state": final_session_state,
+                "session_trace": synthetic_trace,
+                "latency_data": latency_data,
+                "trace_summary": trace_summary,
+                "extracted_data": extracted_data,
+                "final_response": final_response
+            }
+            
+            # Preserve ADK Eval Scores as Metadata or separate columns?
+            # User wants "same structure as processed_interactions".
+            # Processed interactions doesn't have score columns yet (they come from evaluation).
+            # But we can keep them as extra columns, they won't hurt.
+            adk_evals = case.get("eval_metric_results") or case.get("overall_eval_metric_results") or []
+            for eval_res in adk_evals:
+                m_name = eval_res.get("metric_name")
+                if m_name:
+                    row[f"adk_score.{m_name}"] = eval_res.get("score")
+
+            extracted_rows.append(row)
 
         return extracted_rows
 
