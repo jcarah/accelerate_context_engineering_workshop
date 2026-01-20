@@ -243,7 +243,9 @@ uv run agent-eval analyze \
 ```bash
   uv run agent-eval analyze \
   --results-dir $RUN_DIR \
-  --agent-dir ../retail-ai-location-strategy 
+  --agent-dir ../retail-ai-location-strategy \
+  --strategy-file ../optimization_strategy.md \
+  --location global  # Required for Gemini 3 Preview models
 ```
 
 **Output files in `customer-service/eval/results/<timestamp>/`:**
