@@ -155,8 +155,20 @@ NOTE: to change the conversation scenarios
 
 - Delete eval_set_with_scenarios.evalset.json 
 - update conversation_scenarios.json 
-- uv run adk eval_set create eval/scenarios eval_set_with_scenarios 
-- uv run adk eval_set add_eval_case eval/scenarios eval_set_with_scenarios --scenarios_file eval/scenarios/conversation_scenarios.json --session_input_file eval/scenarios/session_input.json
+- uv run adk eval_set create app eval_set_with_scenarios
+- uv run adk eval_set add_eval_case app eval_set_with_scenarios --scenarios_file eval/scenarios/conversation_scenarios.json --session_input_file eval/scenarios/session_input.json
+
+Note: Retail Agent commands 
+cd retail-ai-location-strategy
+
+# Clear previous eval history (REQUIRED before each baseline)
+rm -rf app/.adk/eval_history/*
+
+# Run the simulation
+uv run adk eval app \
+  --config_file_path eval/scenarios/eval_config.json \
+  eval_set_with_scenarios \
+  --print_detailed_results
 
 #### Step 2: Convert Traces & Run Evaluation
 
