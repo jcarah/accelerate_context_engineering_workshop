@@ -250,6 +250,7 @@ uv run agent-eval analyze \
 |----------|-------------|----------|---------|
 | `--results-dir` | Directory containing eval results | Yes | - |
 | `--agent-dir` | Agent source directory (adds context to AI analysis) | No | - |
+| `--strategy-file` | Path to a markdown file defining the optimization strategy/framework | No | - |
 | `--model` | Gemini model for AI analysis | No | `gemini-2.5-pro` |
 | `--skip-gemini` | Skip AI analysis (generate Q&A log only) | No | `false` |
 
