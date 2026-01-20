@@ -138,6 +138,7 @@ Follow these steps to establish a baseline before making optimizations.
 
 > **📝 Before running:** Review `eval/scenarios/conversation_scenarios.json` (test conversations) and `eval/metrics/metric_definitions.json` (scoring rubrics) to understand what's being tested.
 
+##### Customer Service Agent Commands 
 ```bash
 cd customer-service
 
@@ -158,7 +159,8 @@ NOTE: to change the conversation scenarios
 - uv run adk eval_set create app eval_set_with_scenarios
 - uv run adk eval_set add_eval_case app eval_set_with_scenarios --scenarios_file eval/scenarios/conversation_scenarios.json --session_input_file eval/scenarios/session_input.json
 
-Note: Retail Agent commands 
+##### Retail Agent commands 
+```bash
 cd retail-ai-location-strategy
 
 # Clear previous eval history (REQUIRED before each baseline)
@@ -169,14 +171,23 @@ uv run adk eval app \
   --config_file_path eval/scenarios/eval_config.json \
   eval_set_with_scenarios \
   --print_detailed_results
+  ```
 
 #### Step 2: Convert Traces & Run Evaluation
 
 > **Note:** Ensure `GOOGLE_CLOUD_PROJECT` is set in your environment before running.
 
+TODO: instead of having separate commands for CS and Retail agent - parameterize paths 
+Agent = "CS" will set customer-service and customer_service in below paths 
+Agent = "Retail" will set retail-ai-location-straetgy and app in below paths 
+
+
+##### Customer Service Agent Commands 
+
 ```bash
 cd ../evaluation
 uv sync  # First time only
+
 
 # Convert ADK traces to evaluation format (creates timestamp folder)
 RUN_DIR=$(uv run agent-eval convert \
@@ -194,12 +205,44 @@ uv run agent-eval evaluate \
   --test-description "Customer Service Baseline"
 ```
 
+##### Retail Agent Commands 
+
+```bash
+cd ../evaluation
+uv sync  # First time only
+
+
+# Convert ADK traces to evaluation format (creates timestamp folder)
+RUN_DIR=$(uv run agent-eval convert \
+  --agent-dir ../retail-ai-location-strategy/app \
+  --output-dir ../retail-ai-location-strategy/eval/results \
+  | awk -F': ' '/^Run folder:/ {print $2}')
+
+
+uv run agent-eval evaluate \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
+  --metrics-files ../retail-ai-location-strategy/eval/metrics/metric_definitions.json \
+  --results-dir $RUN_DIR \
+  --input-label baseline \
+  --test-description "Retail Baseline"
+```
+
 #### Step 3: Analyze Results
+
+##### Customer Service Agent Commands 
 
 ```bash
 uv run agent-eval analyze \
   --results-dir $RUN_DIR \
   --agent-dir ../customer-service
+```
+
+##### Retail Agent Commands 
+
+```bash
+  uv run agent-eval analyze \
+  --results-dir $RUN_DIR \
+  --agent-dir ../retail-ai-location-strategy 
 ```
 
 **Output files in `customer-service/eval/results/<timestamp>/`:**
