@@ -32,13 +32,24 @@ To verify your setup after installation, run:
 ```bash
 make verify  # Available in each agent directory
 ```
-TODO: need a place to set env vars
-export GOOGLE_CLOUD_PROJECT="x"
-user need roles/aiplatform.user
+
+**Required Setup:**
+```bash
+# Set your GCP project
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+
+# Optional: Suppress experimental warnings for cleaner output
+export PYTHONWARNINGS="ignore"
+
+# Authenticate with Google Cloud
 gcloud auth login
 gcloud auth application-default login
-gcloud auth application-default set-quota-project project id 
-enable Places API 
+gcloud auth application-default set-quota-project $GOOGLE_CLOUD_PROJECT
+
+# Required IAM role: roles/aiplatform.user
+# Required APIs: Vertex AI, Places API (for retail agent)
+```
+
 ---
 
 ## 3. The Test Subjects (Agents)
@@ -128,26 +139,51 @@ Follow these steps to establish a baseline before making optimizations.
 
 > ⚠️ **CRITICAL:** Always clear `eval_history` before running a new baseline. The ADK simulator *appends* to this folder on every run. Without clearing, your baseline will include stale data from previous runs, corrupting all metrics.
 
-TODO: suggestion: add info conversation_scenarios.json and metric_definitions.json and prompt user to look at those two files 
+> **📝 Before running:** Review `eval/scenarios/conversation_scenarios.json` (test conversations) and `eval/metrics/metric_definitions.json` (scoring rubrics) to understand what's being tested.
 
-Add details on what the simulator does 
-
+##### Customer Service Agent Commands 
 ```bash
 cd customer-service
 
-# Clear previous eval history (REQUIRED before each baseline)
-rm -rf customer_service/.adk/eval_history/*
-
-# Run the simulation
+# Safe Run Command: Clear history AND run simulation with explicit path
+rm -rf customer_service/.adk/eval_history/* && \
 uv run adk eval customer_service \
   --config_file_path eval/scenarios/eval_config.json \
-  eval_set_with_scenarios \
+  eval/scenarios/eval_set_with_scenarios.evalset.json \
   --print_detailed_results
 ```
 
+NOTE: to change the conversation scenarios
+
+- Delete eval_set_with_scenarios.evalset.json 
+- update conversation_scenarios.json 
+- uv run adk eval_set create app eval_set_with_scenarios
+- uv run adk eval_set add_eval_case app eval_set_with_scenarios --scenarios_file eval/scenarios/conversation_scenarios.json --session_input_file eval/scenarios/session_input.json
+
+##### Retail Agent commands 
+```bash
+cd retail-ai-location-strategy
+
+# Clear previous eval history (REQUIRED before each baseline)
+rm -rf app/.adk/eval_history/*
+
+# Run the simulation
+uv run adk eval app \
+  --config_file_path eval/scenarios/eval_config.json \
+  eval_set_with_scenarios \
+  --print_detailed_results
+  ```
+
 #### Step 2: Convert Traces & Run Evaluation
 
-Might need to make sure that we have the project in env vars
+> **Note:** Ensure `GOOGLE_CLOUD_PROJECT` is set in your environment before running.
+
+TODO: instead of having separate commands for CS and Retail agent - parameterize paths 
+Agent = "CS" will set customer-service and customer_service in below paths 
+Agent = "Retail" will set retail-ai-location-straetgy and app in below paths 
+
+
+##### Customer Service Agent Commands 
 
 ```bash
 cd ../evaluation
@@ -159,7 +195,6 @@ RUN_DIR=$(uv run agent-eval convert \
   --output-dir ../customer-service/eval/results \
   | awk -F': ' '/^Run folder:/ {print $2}')
 
-
 # Run metrics (deterministic + LLM-as-Judge)
 uv run agent-eval evaluate \
   --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
@@ -169,12 +204,48 @@ uv run agent-eval evaluate \
   --test-description "Customer Service Baseline"
 ```
 
+##### Retail Agent Commands 
+
+```bash
+cd ../evaluation
+uv sync  # First time only
+
+
+# Convert ADK traces to evaluation format (creates timestamp folder)
+RUN_DIR=$(uv run agent-eval convert \
+  --agent-dir ../retail-ai-location-strategy/app \
+  --output-dir ../retail-ai-location-strategy/eval/results \
+  | awk -F': ' '/^Run folder:/ {print $2}')
+
+
+uv run agent-eval evaluate \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
+  --metrics-files ../retail-ai-location-strategy/eval/metrics/metric_definitions.json \
+  --results-dir $RUN_DIR \
+  --input-label baseline \
+  --test-description "Retail Baseline"
+```
+
 #### Step 3: Analyze Results
+
+##### Customer Service Agent Commands 
 
 ```bash
 uv run agent-eval analyze \
   --results-dir $RUN_DIR \
-  --agent-dir ../customer-service
+  --agent-dir ../customer-service \
+  --strategy-file ../optimization_strategy.md \
+  --location global  # Required for Gemini 3 Preview models
+```
+
+##### Retail Agent Commands 
+
+```bash
+  uv run agent-eval analyze \
+  --results-dir $RUN_DIR \
+  --agent-dir ../retail-ai-location-strategy \
+  --strategy-file ../optimization_strategy.md \
+  --location global  # Required for Gemini 3 Preview models
 ```
 
 **Output files in `customer-service/eval/results/<timestamp>/`:**

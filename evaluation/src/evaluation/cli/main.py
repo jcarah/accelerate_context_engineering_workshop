@@ -97,6 +97,8 @@ def evaluate_command(args):
         )
         print(f"\nEvaluation complete. To analyze results, run:\nagent-eval analyze --results-dir {args.results_dir}")
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error during evaluation: {e}")
         sys.exit(1)
 
@@ -110,6 +112,7 @@ def analyze_command(args):
         "results_dir": args.results_dir,
         "agent_dir": args.agent_dir,
         "model": args.model,
+        "location": args.location,
         "skip_gemini": args.skip_gemini,
         "gcs_bucket": args.gcs_bucket,
         "strategy_file": args.strategy_file,
@@ -223,6 +226,7 @@ def main():
     analyze_parser.add_argument("--report-length", help="Customize the length of the Gemini analysis.")
     analyze_parser.add_argument("--model", default="gemini-3-pro-preview",
                                 help="Gemini model for analysis (default: gemini-3-pro-preview).")
+    analyze_parser.add_argument("--location", help="Vertex AI location (e.g., us-central1, global).")
     analyze_parser.add_argument("--skip-gemini", action="store_true", help="Skip AI-powered analysis.")
     analyze_parser.add_argument("--gcs-bucket", help="GCS bucket for upload.")
     analyze_parser.set_defaults(func=analyze_command)

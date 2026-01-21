@@ -346,7 +346,7 @@ It is recommended to split your metric definitions based on your evaluation path
 | [02-EVALUATION-PATHS.md](docs/02-EVALUATION-PATHS.md) | Scenarios vs Golden Datasets | ADK User Simulation setup, scenario files, symlinks, Golden Dataset format, when to use each path |
 | [03-METRICS-GUIDE.md](docs/03-METRICS-GUIDE.md) | Defining evaluation metrics | Custom LLM metrics, Vertex AI managed metrics, dataset mapping syntax, available columns reference, score ranges, troubleshooting |
 | [04-CLI-REFERENCE.md](docs/04-CLI-REFERENCE.md) | Complete command reference | All commands (`convert`, `create-dataset`, `interact`, `evaluate`, `analyze`) with arguments and examples |
-| [05-OUTPUT-FILES.md](docs/05-OUTPUT-FILES.md) | Understanding output files | CSV columns, eval_summary.json structure, deterministic metrics, Q&A log format, file relationships |
+| [05-OUTPUT-FILES.md](docs/05-OUTPUT-FILES.md) | Understanding output files | JSONL columns, eval_summary.json structure, deterministic metrics, Q&A log format, file relationships |
 | [99-DEVELOPMENT.md](docs/99-DEVELOPMENT.md) | For contributors | Project structure, running tests, adding commands/metrics, code style, release process |
 
 ## Output Structure

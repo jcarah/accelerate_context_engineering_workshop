@@ -1,111 +1,198 @@
-# Context Handoff: Multi-Turn & Agent Metrics Implementation
+# Context Handoff: Agent Evaluation Implementation
 
-**Last Updated**: 2026-01-17 (Session 4)
+**Last Updated**: 2026-01-19 (Session 7)
 
----
-
-## TL;DR - Current Status
-
-| Metric Type | Status | Notes |
-|-------------|--------|-------|
-| **Deterministic Metrics** | ✅ WORKING | Fully functional - token usage, latency, tool success rate, etc. |
-| **Custom LLM Metrics** | ✅ WORKING | trajectory_accuracy, tool_use_quality, capability_honesty |
-| **API Predefined (MULTI_TURN_*)** | ✅ WORKING | Works with `use_gemini_format: true` |
-| **API Predefined (TOOL_USE_QUALITY)** | ❌ NOT WORKING | Requires `tool_usage` variable SDK doesn't provide yet |
+This document serves two purposes:
+1. **For teammates/workshop participants**: Quick reference for common issues and patterns
+2. **For AI continuity**: Context to resume development across sessions
 
 ---
 
-## IMPORTANT: Before You Start
+## Quick Reference
 
-### 1. Data Format Change: CSV → JSONL
+### Metric Types at a Glance
 
-We've changed the processed interaction format from CSV to JSONL. You have two options:
+| Type | Status | When to Use |
+|------|--------|-------------|
+| **Deterministic** | ✅ Working | Always - auto-calculated from traces |
+| **Custom LLM** | ✅ Working | When you need specific evaluation criteria |
+| **API: Single-turn** | ✅ Working | Pipeline agents (retail-ai) |
+| **API: Multi-turn** | ✅ Working | Conversational agents (customer-service) |
 
-**Option A: Re-run the ADK simulation**
+### Which API Metrics for Your Agent?
+
+| Your Agent Pattern | Use These | Example Agent |
+|-------------------|-----------|---------------|
+| User → Agent → User → Agent (back-and-forth) | `MULTI_TURN_GENERAL_QUALITY` | customer-service |
+| User → Agent runs pipeline → Final response | `GENERAL_QUALITY`, `TEXT_QUALITY` | retail-ai-location-strategy |
+
+### Why Multiple Scenario Files?
+
+Each agent has two sets of evaluation files:
+
+| File Set | Purpose | Use Case |
+|----------|---------|----------|
+| `eval_set_single` / `eval_config_single.json` | Quick iteration | Daily development (~2 min) |
+| `eval_set_with_scenarios` / `eval_config.json` | Comprehensive | CI/CD, nightly runs (10+ min) |
+
+**Rule of thumb**: Use single-scenario for development, full set for CI/CD.
+
+---
+
+## Common Errors & Fixes
+
+### 1. "Variable conversation_history is required but not provided"
+
+**Cause**: Using `MULTI_TURN_*` metrics on a single-turn agent.
+
+**Fix**: Switch to single-turn metrics:
+```json
+{
+  "general_quality": {
+    "managed_metric_name": "GENERAL_QUALITY",
+    "use_gemini_format": true
+  }
+}
+```
+
+### 2. Deterministic Metrics Show All Zeros
+
+**Cause**: `app_name` in evalset doesn't match the folder name.
+
+**The Rule**:
+```
+app_name in evalset.json MUST match the folder containing agent.py
+```
+
+| Agent | Folder | Correct app_name |
+|-------|--------|------------------|
+| customer-service | `customer_service/` | `"customer_service"` |
+| retail-ai | `app/` | `"app"` |
+
+**Wrong**:
+```json
+"session_input": { "app_name": "retail_location_strategy" }  // ❌ Internal name
+```
+
+**Correct**:
+```json
+"session_input": { "app_name": "app" }  // ✅ Folder name
+```
+
+### 3. Trajectory Accuracy Penalizing for Missing Tools
+
+**Cause**: LLM judge expects tools that don't exist.
+
+**Fix**: Add `available_tools` to your metric and update the prompt:
+```json
+"dataset_mapping": {
+  "available_tools": { "source_column": "extracted_data:tool_declarations" }
+}
+```
+
+Add to template:
+```
+**CRITICAL:** Only evaluate against AVAILABLE tools listed above.
+Do NOT penalize for tools that don't exist.
+```
+
+### 4. Mock Data Being Penalized
+
+**Cause**: Test environments return mock data like `MOCK_QR_CODE_DATA`.
+
+**Fix**: Add context to custom metrics:
+```
+**IMPORTANT:** Tools may return MOCK data in test environments.
+Do NOT penalize the agent for correctly relaying mock data.
+```
+
+---
+
+## Running Evaluations
+
+### Customer Service Agent (Multi-turn)
+
 ```bash
-cd customer-service
-rm -rf customer_service/.adk/eval_history/*
-uv run adk eval customer_service --config_file_path eval/scenarios/eval_config.json eval_set_with_scenarios
+cd evaluation
 
+# Evaluate
+uv run agent-eval evaluate \
+  --interaction-file ../customer-service/eval/results/baseline/raw/processed_interaction_sim.jsonl \
+  --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
+  --results-dir ../customer-service/eval/results/baseline
+
+# Analyze
+uv run agent-eval analyze \
+  --results-dir ../customer-service/eval/results/baseline \
+  --agent-dir ../customer-service
+```
+
+### Retail AI Agent (Single-turn Pipeline)
+
+```bash
+# Step 1: Run ADK simulation
+cd retail-ai-location-strategy
+rm -rf app/.adk  # Clear previous runs
+uv run adk eval app --config_file_path eval/scenarios/eval_config_single.json eval_set_single
+
+# Step 2: Convert traces
 cd ../evaluation
-uv run agent-eval convert --agent-dir ../customer-service/customer_service --output-dir ../customer-service/eval/results
+uv run agent-eval convert \
+  --agent-dir ../retail-ai-location-strategy/app \
+  --output-dir ../retail-ai-location-strategy/eval/results
+
+# Step 3: Evaluate (use timestamp from step 2)
+RUN_DIR=../retail-ai-location-strategy/eval/results/<TIMESTAMP>
+uv run agent-eval evaluate \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
+  --metrics-files ../retail-ai-location-strategy/eval/metrics/metric_definitions.json \
+  --results-dir $RUN_DIR
+
+# Step 4: Analyze
+uv run agent-eval analyze --results-dir $RUN_DIR --agent-dir ../retail-ai-location-strategy
 ```
-
-**Option B: Run the converter on existing data**
-If you have existing CSV files, the converter now outputs JSONL. Just re-run:
-```bash
-uv run agent-eval convert --agent-dir ../customer-service/customer_service --output-dir ../customer-service/eval/results
-```
-
-### 2. Copy Latest Metric Definitions
-
-The `customer-service/eval/metrics/metric_definitions.json` has the latest working metrics. Copy this pattern for other agents.
-
-Key metrics included:
-- `multi_turn_general_quality` - API predefined with custom guidelines
-- `multi_turn_text_quality` - API predefined
-- `trajectory_accuracy` - Custom, includes available tools context
-- `tool_use_quality` - Custom, handles mock data gracefully
-- `capability_honesty` - **NEW** - Catches agents overpromising capabilities
 
 ---
 
-## Key Learnings from This Session
+## Expected Results
 
-### 1. trajectory_accuracy Was Giving False Negatives
+### Customer Service Agent
 
-**Problem:** The metric was scoring 2.2/5 because the LLM judge was penalizing the agent for not using tools that don't exist (e.g., "apply_discount", "send_email").
+| Metric | Expected | Notes |
+|--------|----------|-------|
+| `multi_turn_general_quality` | ~0.77 | API predefined |
+| `multi_turn_text_quality` | ~0.98 | API predefined |
+| `trajectory_accuracy` | ~4.4/5 | Custom metric |
+| `capability_honesty` | ~2.6/5 | **Actionable**: Agent overpromises |
 
-**Fix:** Added `available_tools` to the dataset_mapping and updated the prompt with:
-```
-**CRITICAL EVALUATION RULES:**
-1. Only evaluate against AVAILABLE tools.
-2. Judge the outcome, not an imaginary ideal path.
-3. Credit graceful handling of limitations.
-```
+### Retail AI Agent
 
-**Result:** Score improved from 2.2 → 4.8/5
-
-### 2. New Metric: capability_honesty
-
-**Problem:** The agent was claiming capabilities it doesn't have (e.g., "I can see your plant via video" when the tool just sends a link to a human expert).
-
-**Solution:** Created a new metric that specifically evaluates whether the agent makes false promises. It includes known tool limitations as ground truth in the prompt.
-
-**Result:** Scores 2.6/5, correctly identifying the agent's overpromising behavior as the main issue.
-
-### 3. Tool Descriptions Are Missing
-
-**Problem:** The `tool_declarations` in extracted_data only have names like `"Tool: get_available_planting_times"` instead of actual descriptions.
-
-**Workaround:** We embed known tool limitations directly in metric prompts. Created `tool_descriptions.json` as a reference file.
-
-**Future Fix:** Modify the converter to extract tool docstrings from the agent's `tools.py`.
-
-### 4. Mock Data Penalization
-
-**Problem:** `multi_turn_text_quality` was penalizing the agent for returning `MOCK_QR_CODE_DATA`.
-
-**Fix:** Added context to custom metrics:
-```
-**IMPORTANT CONTEXT:**
-- Tools may return MOCK data in test environments (e.g., 'MOCK_QR_CODE_DATA').
-  Do NOT penalize the agent for correctly relaying mock data.
-```
-
-### 5. Analyzer Bug Fix
-
-**Problem:** The analyzer was failing with "'str' object has no attribute 'get'" when parsing extracted_data.
-
-**Root Cause:** Data was stored as Python dict syntax (single quotes) instead of JSON (double quotes).
-
-**Fix:** Added `ast.literal_eval` as fallback in `robust_json_loads()` in `analyzer.py`.
+| Metric | Expected | Notes |
+|--------|----------|-------|
+| `general_quality` | ~0.10 | Single-turn API metric |
+| `text_quality` | ~0.38 | Single-turn API metric |
+| `trajectory_accuracy` | ~4-5/5 | Custom metric |
+| `pipeline_integrity` | ~1.0/5 | **Actionable**: Agent hallucinates analysis |
 
 ---
 
-## Recommended Metric Configuration
+## Metric Configuration Patterns
 
-### For API Predefined Metrics (multi-turn)
+### Single-Turn API Metrics (Pipeline Agents)
+
+```json
+{
+  "general_quality": {
+    "metric_type": "llm",
+    "is_managed": true,
+    "managed_metric_name": "GENERAL_QUALITY",
+    "use_gemini_format": true,
+    "natural_language_guidelines": "Evaluate response quality..."
+  }
+}
+```
+
+### Multi-Turn API Metrics (Conversational Agents)
 
 ```json
 {
@@ -114,120 +201,96 @@ Key metrics included:
     "is_managed": true,
     "managed_metric_name": "MULTI_TURN_GENERAL_QUALITY",
     "use_gemini_format": true,
-    "natural_language_guidelines": "Your custom evaluation criteria here..."
+    "natural_language_guidelines": "Evaluate conversation quality..."
   }
 }
 ```
 
-### For Custom LLM Metrics
-
-Include `available_tools` and test environment context:
+### Custom LLM Metrics (Best Practice)
 
 ```json
 {
   "trajectory_accuracy": {
     "metric_type": "llm",
+    "score_range": {"min": 0, "max": 5},
     "dataset_mapping": {
       "prompt": { "source_column": "user_inputs" },
       "response": { "source_column": "trace_summary" },
       "available_tools": { "source_column": "extracted_data:tool_declarations" },
       "final_response": { "source_column": "final_response" }
     },
-    "template": "...\n**CRITICAL:** Only evaluate against AVAILABLE tools..."
+    "template": "Evaluate the agent trajectory...\n\n**CRITICAL:** Only evaluate against AVAILABLE tools.\n\nScore: [0-5]\nExplanation: [reasoning]"
   }
 }
 ```
 
 ---
 
-## Files Modified in This Session
-
-1. **`evaluation/src/evaluation/core/analyzer.py`**
-   - Added `ast.literal_eval` fallback for Python dict syntax
-
-2. **`customer-service/eval/metrics/metric_definitions.json`**
-   - Updated `trajectory_accuracy` with available_tools context
-   - Updated `tool_use_quality` with mock data handling
-   - Added new `capability_honesty` metric
-
-3. **`customer-service/eval/metrics/tool_descriptions.json`** (NEW)
-   - Reference file with actual tool capabilities and limitations
-
-4. **Documentation updates (CSV → JSONL)**
-   - `evaluation/docs/01-GETTING-STARTED.md`
-   - `evaluation/docs/02-EVALUATION-PATHS.md`
-   - `evaluation/docs/03-METRICS-GUIDE.md`
-   - `evaluation/docs/04-CLI-REFERENCE.md`
-   - `evaluation/docs/05-OUTPUT-FILES.md`
-   - `evaluation/README.md`
-   - `README.md` (root)
-
----
-
-## Quick Test Commands
-
-```bash
-cd evaluation
-
-# Run evaluation
-uv run agent-eval evaluate \
-  --interaction-file ../customer-service/eval/results/baseline/raw/processed_interaction_sim.jsonl \
-  --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
-  --results-dir ../customer-service/eval/results/baseline
-
-# Run analysis
-uv run agent-eval analyze \
-  --results-dir ../customer-service/eval/results/baseline \
-  --agent-dir ../customer-service
-```
-
----
-
-## Expected Results
-
-After running with the updated metrics:
-
-| Metric | Expected Score | Notes |
-|--------|----------------|-------|
-| `multi_turn_general_quality` | ~0.77 | API predefined |
-| `multi_turn_text_quality` | ~0.98 | API predefined |
-| `trajectory_accuracy` | ~4.4/5 | Now evaluates against available tools |
-| `tool_use_quality` | ~4.2/5 | Handles mock data gracefully |
-| `capability_honesty` | ~2.6/5 | Correctly catches overpromising |
-
-The low `capability_honesty` score is the **actionable signal** - the agent needs to stop claiming capabilities it doesn't have.
-
----
-
-## Next Steps
-
-### High Priority
-1. **Fix the agent** - Stop overpromising capabilities (main issue identified)
-2. **De-conflict metrics** - `tool_use_quality` and `trajectory_accuracy` sometimes give conflicting signals
-
-### Medium Priority
-3. **Extract real tool descriptions** - Modify converter to read docstrings from tools.py
-4. **Apply metrics to retail agent** - Copy the metric patterns
-
-### Low Priority
-5. **Report SDK bugs** - TOOL_USE_QUALITY requires variable SDK doesn't provide
-
----
-
 ## Deterministic Metrics Reference
 
-These are calculated automatically from session data:
+Auto-calculated from session traces - no configuration needed:
 
 | Metric | Description |
 |--------|-------------|
-| `token_usage` | LLM calls, tokens, costs |
-| `latency_metrics` | Total, average, time to first response |
-| `cache_efficiency` | Cache hit rate |
+| `token_usage` | LLM calls, tokens (prompt/completion/cached), estimated cost |
+| `latency_metrics` | Total latency, time to first response, LLM vs tool time |
+| `cache_efficiency` | KV-cache hit rate |
 | `thinking_metrics` | Reasoning ratio, thinking tokens |
-| `tool_utilization` | Tool calls count, unique tools |
-| `tool_success_rate` | Success rate, failed tools |
-| `grounding_utilization` | Grounding chunks used |
-| `context_saturation` | Max context usage |
+| `tool_utilization` | Total calls, unique tools, per-tool counts |
+| `tool_success_rate` | Success rate, failed tools list |
 | `agent_handoffs` | Sub-agent invocations |
-| `output_density` | Average output tokens |
-| `sandbox_usage` | Code execution usage |
+| `context_saturation` | Max tokens in single turn |
+| `output_density` | Average output tokens per turn |
+| `sandbox_usage` | Code execution operations |
+
+---
+
+## Implementation Notes (For Developers)
+
+### ADK Eval History Formats
+
+The converter handles two ADK output formats:
+
+| Format | Agent Type | Data Location |
+|--------|------------|---------------|
+| Format 1 | Multi-turn (customer-service) | `case["session_details"]["events"]` |
+| Format 2 | Pipeline (retail-ai) | `case["eval_metric_result_per_invocation"][0]["actual_invocation"]` |
+
+The converter auto-detects the format. If `session_details` is null, it displays an error about `app_name` mismatch.
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `evaluation/src/evaluation/core/converters.py` | ADK → JSONL conversion |
+| `evaluation/src/evaluation/core/analyzer.py` | LLM-based report generation |
+| `evaluation/src/evaluation/core/deterministic_metrics.py` | Token/latency metrics |
+| `<agent>/eval/metrics/metric_definitions.json` | Metric configurations |
+
+### Known SDK Limitations
+
+1. **TOOL_USE_QUALITY** API metric requires `tool_usage` variable the SDK doesn't provide
+2. **Tool descriptions** extracted as `"Tool: name"` instead of actual docstrings
+3. **Gemini 3 models** require `location="global"` (handled in analyzer.py)
+
+---
+
+## Session Changelog
+
+### Session 7 (2026-01-19)
+- Fixed: Single-turn vs multi-turn metric selection
+- Added: `general_quality`, `text_quality` for retail agent
+- Updated: Documentation for metric selection
+
+### Session 6 (2026-01-19)
+- Fixed: `app_name` must match folder name
+- Added: Converter error messaging for misconfiguration
+- Created: Single-scenario eval files for quick iteration
+- Fixed: Gemini 3 model location handling
+
+### Sessions 1-5
+- Built core evaluation pipeline
+- Implemented deterministic metrics
+- Created custom LLM metrics (trajectory_accuracy, tool_use_quality, capability_honesty)
+- Fixed trajectory_accuracy false negatives with available_tools context
+- Added mock data handling in metrics
