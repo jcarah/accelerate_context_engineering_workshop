@@ -27,6 +27,7 @@ Before starting, ensure you have:
 - **Google Cloud Project**:
   - **APIs enabled**: Vertex AI API, Places API 
   - **IAM Permissions**: roles/aiplatform.user, roles/resourcemanager.projectIamAdmin
+- **Development Platform**: Mac, CloudTop, CloudShell 
 
 To verify your setup after installation, run:
 ```bash
