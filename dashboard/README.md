@@ -8,6 +8,7 @@ This interactive dashboard allows users to visualize and compare metrics from mu
 - **Interactive Visualization:** Uses Plotly for zoomable, hover-capable charts.
 - **Multi-Directory Support:** Load logs from one or multiple paths simultaneously.
 - **Native File Browser:** Explore your system to find log files directly within the UI.
+- **Reactive Scorecards:** Instantly view Cost, Latency, and Quality deltas as soon as logs are selected.
 - **Production Ready:** Managed with `uv` for reproducible builds, including linting and type-checking configurations.
 
 ## Setup & Running
@@ -36,15 +37,17 @@ Open the URL provided in the console (typically `http://127.0.0.1:7860`).
 
 ## Usage
 
-1. **Locate Logs**: Use the **File Browser** accordion to navigate your system. Selecting `.json` files will automatically populate their parent directories. Alternatively, you can **manually copy and paste** directory paths (comma or newline separated) directly into the **Directory Path(s)** box.
+1. **Locate Logs**: Use the **File Browser** accordion to navigate your system. Selecting `.json` files will automatically populate their parent directories. Alternatively, you can **manually copy and paste** directory paths directly into the **Directory Path(s)** box.
 2. **Load Data**: Click **Load / Update Data** to parse all JSON files in the specified directories.
-3. **Configure Dashboard**:
-    - Select a **Baseline** for comparison.
-    - Choose **Candidate(s)** to compare against the baseline.
-    - **Pin Metrics** to select which values appear in the bar charts.
-    - Toggle **Normalize Data** to scale metrics to a 0-1 range.
-4. **Generate**: Click **Generate Dashboard** to view the scorecards, comparison charts, and raw data.
-5. **Iterate**: You can change your **Baseline**, **Candidates**, or **Pinned Metrics** at any time and click **Generate Dashboard** again to immediately update the visualizations.
+3. **Compare Experiments**:
+    - Select a **Baseline** experiment.
+    - Choose one or more **Candidate(s)**.
+    - **Note**: The **Scorecard Metrics** at the top will update **instantly** to show deltas between the baseline and the latest candidate.
+4. **Customize Scorecards**: Use the **Metric** dropdowns inside the Cost, Latency, and Quality boxes to toggle which specific data point (e.g., Total Latency vs. Time to First Token) is featured.
+5. **Generate Deep Dive**: 
+    - Use **Pin Metrics (Charts)** to select values for the bar chart.
+    - Toggle **Normalize Data** to scale values to a 0-1 range.
+    - Click **Generate Charts & Data Table** to view detailed visualizations and the full raw data grid.
 
 ## Development
 

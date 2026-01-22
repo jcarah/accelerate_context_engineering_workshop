@@ -9,11 +9,48 @@ from typing import Dict, List, Any, Optional, Tuple
 # --- Configuration ---
 
 DEFAULT_METRICS_CONFIG = {
-    "general_conversation_quality.average": {"name": "Quality", "direction": "higher"},
-    "safety.average": {"name": "Safety", "direction": "higher"},
-    "token_usage.prompt_tokens": {"name": "Prompt Tokens", "direction": "lower"},
-    "tool_success_rate.tool_success_rate": {"name": "Tool Success", "direction": "higher"},
-    "latency_metrics.total_latency_seconds": {"name": "Latency", "direction": "lower"}
+    # Cost & Efficiency
+    "token_usage.estimated_cost_usd": {"name": "Cost ($)", "direction": "lower"},
+    "token_usage.prompt_tokens": {"name": "Input Tokens", "direction": "lower"},
+    "token_usage.completion_tokens": {"name": "Output Tokens", "direction": "lower"},
+    "token_usage.cached_tokens": {"name": "Cached Tokens", "direction": "higher"},
+    "token_usage.llm_calls": {"name": "LLM Calls", "direction": "lower"},
+    
+    # Latency
+    "latency_metrics.total_latency_seconds": {"name": "Total Latency (s)", "direction": "lower"},
+    "latency_metrics.time_to_first_response_seconds": {"name": "Time to First Token (s)", "direction": "lower"},
+    "latency_metrics.average_turn_latency_seconds": {"name": "Avg Turn Latency (s)", "direction": "lower"},
+    "latency_metrics.llm_latency_seconds": {"name": "Model Latency (s)", "direction": "lower"},
+
+    # Quality
+    "general_conversation_quality.average": {"name": "Quality (General)", "direction": "higher"},
+    "instruction_following.average": {"name": "Instruction Following", "direction": "higher"},
+    "tool_success_rate.tool_success_rate": {"name": "Tool Success Rate", "direction": "higher"},
+    "grounding.average": {"name": "Grounding", "direction": "higher"},
+    "tool_usage_accuracy.average": {"name": "Tool Accuracy (LLM)", "direction": "higher"},
+    "tool_usage_effectiveness.average": {"name": "Tool Effectiveness (LLM)", "direction": "higher"},
+    "agent_hallucination.average": {"name": "Hallucination Score", "direction": "higher"},
+    "safety.average": {"name": "Safety Score", "direction": "higher"}
+}
+
+SCORECARD_GROUPS = {
+    "Cost": [
+        "token_usage.estimated_cost_usd", 
+        "token_usage.prompt_tokens", 
+        "token_usage.completion_tokens", 
+        "token_usage.cached_tokens",
+        "token_usage.llm_calls"
+    ],
+    "Latency": [
+        "latency_metrics.total_latency_seconds", 
+        "latency_metrics.time_to_first_response_seconds", 
+        "latency_metrics.average_turn_latency_seconds",
+        "latency_metrics.llm_latency_seconds"
+    ],
+    "Quality": [
+        "general_conversation_quality.average",
+        "agent_hallucination.average"
+    ]
 }
 
 COLOR_BASELINE = "#5F6368"  # Gray
@@ -137,63 +174,56 @@ def _calculate_max_values(df: pd.DataFrame, metrics: List[str]) -> Dict[str, flo
         max_values[metric] = max_val if max_val and max_val > 0 else 1.0
     return max_values
 
-def _generate_scorecard_html(df: pd.DataFrame, baseline_id: str, candidate_ids: List[str]) -> str:
-    """Generates the HTML for the Delta Metrics Scorecards."""
-    delta_metrics = [m for m in DEFAULT_METRICS_CONFIG.keys() if m in df.columns]
-    
-    if df.empty or not baseline_id or not candidate_ids or not delta_metrics:
+def _render_metric_card(df: pd.DataFrame, baseline_id: str, candidate_ids: List[str], metric: str, category_name: str) -> str:
+    """Generates the HTML for a single metric card."""
+    if df.empty or not baseline_id or not candidate_ids or not metric:
         return ""
 
     baseline_rows = df[df['experiment_id'] == baseline_id]
     if baseline_rows.empty:
         return ""
-        
+    
     baseline_row = baseline_rows.iloc[0]
     
     # Find the latest candidate run based on datetime
     candidate_rows = df[df['experiment_id'].isin(candidate_ids)].sort_values(by='datetime', ascending=False)
-    
     if candidate_rows.empty:
         return ""
 
     latest_cand_row = candidate_rows.iloc[0]
-    cards_html = ""
     
-    for metric in delta_metrics:
-        config = DEFAULT_METRICS_CONFIG.get(metric, {})
-        display_name = config.get("name", metric)
-        direction = config.get("direction", "higher")
-        b_val = baseline_row.get(metric, 0)
-        c_val = latest_cand_row.get(metric, 0)
+    config = DEFAULT_METRICS_CONFIG.get(metric, {})
+    display_name = config.get("name", metric)
+    direction = config.get("direction", "higher")
+    
+    b_val = baseline_row.get(metric, 0)
+    c_val = latest_cand_row.get(metric, 0)
+    
+    if b_val == 0:
+        pct_change = 0
+        delta_str = "N/A"
+        color = COLOR_BASELINE
+    else:
+        pct_change = ((c_val - b_val) / b_val) * 100
+        delta_str = f"{pct_change:+.1f}%"
         
-        if b_val == 0:
-            pct_change = 0
-            delta_str = "N/A"
-            color = COLOR_BASELINE # Neutral
+        if pct_change == 0:
+            color = COLOR_BASELINE
+        elif (direction == "higher" and pct_change > 0) or (direction == "lower" and pct_change < 0):
+            color = COLOR_POSITIVE
         else:
-            pct_change = ((c_val - b_val) / b_val) * 100
-            delta_str = f"{pct_change:+.1f}%"
-            
-            # Determine color based on direction
-            if pct_change == 0:
-                color = COLOR_BASELINE
-            elif (direction == "higher" and pct_change > 0) or (direction == "lower" and pct_change < 0):
-                color = COLOR_POSITIVE # Green (Good)
-            else:
-                color = COLOR_NEGATIVE # Red (Bad)
+            color = COLOR_NEGATIVE
 
-        cards_html += f"""
-        <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; flex: 1; min-width: 200px; background: white; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);">
-            <div style="font-size: 12px; color: #5f6368; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">{display_name}</div>
-            <div style="font-size: 24px; color: {color}; margin: 8px 0; font-weight: bold;">{delta_str}</div>
-            <div style="font-size: 12px; color: #70757a;">vs Baseline</div>
+    return f"""
+    <div style="padding: 16px; background: white; height: 100%;">
+        <div style="font-size: 14px; font-weight: 600; color: #202124; margin-bottom: 12px; border-bottom: 2px solid #1A73E8; padding-bottom: 4px; width: fit-content;">{category_name}</div>
+        <div style="margin-bottom: 4px;">
+            <div style="font-size: 11px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;">{display_name}</div>
+            <div style="font-size: 28px; color: {color}; font-weight: bold; line-height: 1.2;">{delta_str}</div>
         </div>
-        """
-    
-    if not cards_html:
-        return ""
-        
-    return f"<div style='display: flex; flex-wrap: wrap; gap: 16px; width: 100%; margin-bottom: 20px;'>{cards_html}</div>"
+        <div style="font-size: 11px; color: #70757a; margin-top: 4px;">vs Baseline</div>
+    </div>
+    """
 
 # --- Gradio Controller Functions ---
 
@@ -352,41 +382,80 @@ def generate_bar_chart(df: pd.DataFrame, baseline_id: str, candidate_ids: List[s
 
     return fig
 
-def generate_dashboard_view(df: pd.DataFrame, baseline_id: str, candidate_ids: List[str], pinned_metrics: List[str], normalize: bool):
+def generate_dashboard_view(
+    df: pd.DataFrame, 
+    baseline_id: str, 
+    candidate_ids: List[str], 
+    pinned_metrics: List[str], 
+    normalize: bool,
+    # Current values of the 3 dropdowns
+    cost_metric: str,
+    latency_metric: str,
+    quality_metric: str
+):
     """
-    Generates the bar chart and raw data table.
+    Generates the dashboard components:
+    1. Updates choices for the 3 scorecard dropdowns.
+    2. Updates the 3 scorecard HTML cards based on selected metrics.
+    3. Generates the main bar chart.
+    4. Generates the raw data table.
     """
-    # Generate charts using pinned metrics
+    # Default outputs if no data
+    empty_fig = go.Figure()
+    empty_fig.update_layout(title="No Data", xaxis={"visible": False}, yaxis={"visible": False})
+    
+    if df.empty or not baseline_id:
+        return (
+            gr.update(choices=[]), gr.update(value=""), # Cost
+            gr.update(choices=[]), gr.update(value=""), # Latency
+            gr.update(choices=[]), gr.update(value=""), # Quality
+            empty_fig, 
+            pd.DataFrame()
+        )
+
+    # 1. Determine valid metrics for each group based on current DF
+    valid_cost_metrics = [m for m in SCORECARD_GROUPS["Cost"] if m in df.columns]
+    valid_latency_metrics = [m for m in SCORECARD_GROUPS["Latency"] if m in df.columns]
+    valid_quality_metrics = [m for m in SCORECARD_GROUPS["Quality"] if m in df.columns]
+
+    # 2. Determine selected metric (keep current if valid, else default to first available)
+    selected_cost = cost_metric if cost_metric in valid_cost_metrics else (valid_cost_metrics[0] if valid_cost_metrics else None)
+    selected_latency = latency_metric if latency_metric in valid_latency_metrics else (valid_latency_metrics[0] if valid_latency_metrics else None)
+    selected_quality = quality_metric if quality_metric in valid_quality_metrics else (valid_quality_metrics[0] if valid_quality_metrics else None)
+
+    # 3. Generate HTML for each card
+    cost_html = _render_metric_card(df, baseline_id, candidate_ids, selected_cost, "Cost") if selected_cost else ""
+    latency_html = _render_metric_card(df, baseline_id, candidate_ids, selected_latency, "Latency") if selected_latency else ""
+    quality_html = _render_metric_card(df, baseline_id, candidate_ids, selected_quality, "Quality") if selected_quality else ""
+
+    # 4. Generate Main Bar Chart
     bar_fig = generate_bar_chart(df, baseline_id, candidate_ids, pinned_metrics, normalize)
     
-    # Generate raw data table with ALL metrics for the selected experiments
-    if df.empty or not baseline_id:
-        table_df = pd.DataFrame()
-    else:
-        selected_exp_ids = [baseline_id]
-        if candidate_ids:
-            selected_exp_ids.extend(candidate_ids)
-        
-        table_df = df[df['experiment_id'].isin(selected_exp_ids)]
-        
-        # Ensure readable column order
-        cols = table_df.columns.tolist()
-        priority_cols = ['experiment_id', 'datetime']
-        for col in reversed(priority_cols):
-            if col in cols:
-                cols.insert(0, cols.pop(cols.index(col)))
-        table_df = table_df[cols]
+    # 5. Generate Data Table
+    selected_exp_ids = [baseline_id]
+    if candidate_ids:
+        selected_exp_ids.extend(candidate_ids)
+    
+    table_df = df[df['experiment_id'].isin(selected_exp_ids)]
+    cols = table_df.columns.tolist()
+    priority_cols = ['experiment_id', 'datetime']
+    for col in reversed(priority_cols):
+        if col in cols:
+            cols.insert(0, cols.pop(cols.index(col)))
+    table_df = table_df[cols]
+    
+    numeric_cols = table_df.select_dtypes(include=['number']).columns
+    for col in numeric_cols:
+        if col != 'experiment_id':
+            table_df[col] = table_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
-        # Format numeric columns to 2 decimal places for better readability
-        numeric_cols = table_df.select_dtypes(include=['number']).columns
-        for col in numeric_cols:
-            if col != 'experiment_id':
-                table_df[col] = table_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
-
-    # Generate Delta Metrics HTML Scorecards
-    delta_html = _generate_scorecard_html(df, baseline_id, candidate_ids)
-
-    return delta_html, bar_fig, table_df
+    return (
+        gr.update(choices=valid_cost_metrics, value=selected_cost), cost_html,
+        gr.update(choices=valid_latency_metrics, value=selected_latency), latency_html,
+        gr.update(choices=valid_quality_metrics, value=selected_quality), quality_html,
+        bar_fig,
+        table_df
+    )
 
 # --- UI and Application Main ---
 
@@ -405,17 +474,24 @@ def main():
         # Determine start paths
         home_dir = os.path.expanduser("~")
         system_root = os.path.abspath(os.sep)
+        # workshop_dir is the parent of the dashboard directory
+        workshop_dir = os.path.abspath(os.path.join(os.getcwd(), ".."))
         
         # Options for the dropdown
-        root_options = [home_dir, system_root]
-        # Remove duplicates (e.g. if running in container where home is root)
-        root_options = sorted(list(set(root_options)), reverse=True) # Home usually longer, put first
+        root_options = [workshop_dir, home_dir, system_root]
+        # Remove duplicates and ensure workshop_dir is first if it exists
+        seen = set()
+        unique_options = []
+        for opt in root_options:
+            if opt not in seen:
+                unique_options.append(opt)
+                seen.add(opt)
 
         with gr.Accordion("File Browser (Click to Explore)", open=False):
             with gr.Row():
                 root_selector = gr.Dropdown(
-                    choices=root_options,
-                    value=home_dir,
+                    choices=unique_options,
+                    value=workshop_dir,
                     label="Start Location",
                     allow_custom_value=True, # Allow pasting custom paths
                     scale=1
@@ -424,7 +500,7 @@ def main():
             file_explorer = gr.FileExplorer(
                 glob="**/*.json",
                 file_count="multiple",
-                root_dir=home_dir,
+                root_dir=workshop_dir,
                 label="Select JSON Log Files",
                 height=300
             )
@@ -443,15 +519,35 @@ def main():
         with gr.Row():
             baseline_selector = gr.Dropdown(label="Select Baseline", info="Choose the baseline experiment", multiselect=False)
             candidate_selector = gr.Dropdown(label="Select Candidate(s)", info="Choose experiments to compare against baseline", multiselect=True)
-            metric_selector = gr.Dropdown(label="Pin Metrics (Charts)", info="Choose key metrics for visual comparison", multiselect=True, scale=1)
-            normalize_checkbox = gr.Checkbox(label="Normalize Data (0-1)", value=True, info="Scale metrics to 0-1 range for easier comparison")
             
-        generate_button = gr.Button("Generate Dashboard", variant="primary")
-        
-        # Scorecards at the top
-        delta_html = gr.HTML(label="Scorecard")
+        # --- Interactive Scorecards Section ---
+        gr.Markdown("### Scorecard Metrics (Latest Run vs Baseline)")
+        with gr.Row():
+            # Cost Column
+            with gr.Column():
+                with gr.Group():
+                    cost_dropdown = gr.Dropdown(label="Metric", choices=[], value=None)
+                    cost_html = gr.HTML()
+            
+            # Latency Column
+            with gr.Column():
+                with gr.Group():
+                    latency_dropdown = gr.Dropdown(label="Metric", choices=[], value=None)
+                    latency_html = gr.HTML()
+            
+            # Quality Column
+            with gr.Column():
+                with gr.Group():
+                    quality_dropdown = gr.Dropdown(label="Metric", choices=[], value=None)
+                    quality_html = gr.HTML()
         
         # A single Plot component that holds the dynamic subplots below the controls
+        with gr.Row():
+            metric_selector = gr.Dropdown(label="Pin Metrics (Charts)", info="Choose key metrics for visual comparison", multiselect=True, scale=3)
+            normalize_checkbox = gr.Checkbox(label="Normalize Data (0-1)", value=True, info="Scale metrics to 0-1 range for easier comparison", scale=1)
+
+        generate_button = gr.Button("Generate Charts & Data Table", variant="primary")
+
         bar_plot = gr.Plot(label="Metric Comparison (Bar)")
         raw_data_table = gr.Dataframe(label="Raw Data (All Metrics)", interactive=False)
 
@@ -478,14 +574,68 @@ def main():
             outputs=[message_area, baseline_selector, candidate_selector, metric_selector, df_state]
         )
 
+        # Helper to update scorecards and their dropdown choices
+        def update_scorecards_only(df, baseline, candidates, cost_m, lat_m, qual_m):
+            # Reuse the generation logic but ignore chart/table return values for now
+            # We need to return updates for dropdown choices/values and the HTML
+            (
+                cost_dd_upd, cost_h, 
+                lat_dd_upd, lat_h, 
+                qual_dd_upd, qual_h, 
+                _, _ # Ignore chart and table
+            ) = generate_dashboard_view(df, baseline, candidates, [], False, cost_m, lat_m, qual_m)
+            return cost_dd_upd, cost_h, lat_dd_upd, lat_h, qual_dd_upd, qual_h
+
+        # Wire selectors to update scorecards immediately
+        for selector in [baseline_selector, candidate_selector]:
+            selector.change(
+                fn=update_scorecards_only,
+                inputs=[df_state, baseline_selector, candidate_selector, cost_dropdown, latency_dropdown, quality_dropdown],
+                outputs=[cost_dropdown, cost_html, latency_dropdown, latency_html, quality_dropdown, quality_html]
+            )
+
+        # Main Generation Handler (Charts & Table)
         generate_button.click(
             fn=generate_dashboard_view,
-            inputs=[df_state, baseline_selector, candidate_selector, metric_selector, normalize_checkbox],
-            outputs=[delta_html, bar_plot, raw_data_table]
+            inputs=[
+                df_state, baseline_selector, candidate_selector, metric_selector, normalize_checkbox,
+                cost_dropdown, latency_dropdown, quality_dropdown
+            ],
+            outputs=[
+                cost_dropdown, cost_html,
+                latency_dropdown, latency_html,
+                quality_dropdown, quality_html,
+                bar_plot, raw_data_table
+            ]
+        )
+
+        # Individual Dropdown Handlers (for immediate update without full regen)
+        # We reuse _render_metric_card logic wrapped in simple lambdas/partials or just call specific updates
+        
+        def update_single_card(df, baseline, candidates, metric, category):
+            return _render_metric_card(df, baseline, candidates, metric, category)
+
+        cost_dropdown.change(
+            fn=lambda df, b, c, m: update_single_card(df, b, c, m, "Cost"),
+            inputs=[df_state, baseline_selector, candidate_selector, cost_dropdown],
+            outputs=[cost_html]
+        )
+
+        latency_dropdown.change(
+            fn=lambda df, b, c, m: update_single_card(df, b, c, m, "Latency"),
+            inputs=[df_state, baseline_selector, candidate_selector, latency_dropdown],
+            outputs=[latency_html]
+        )
+
+        quality_dropdown.change(
+            fn=lambda df, b, c, m: update_single_card(df, b, c, m, "Quality"),
+            inputs=[df_state, baseline_selector, candidate_selector, quality_dropdown],
+            outputs=[quality_html]
         )
 
     # Launch configuration
-    demo.launch(share=False)
+    demo.launch(share=False, theme=gr.themes.Default())
 
 if __name__ == "__main__":
     main()
+
