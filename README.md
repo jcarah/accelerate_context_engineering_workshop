@@ -24,9 +24,9 @@ Before starting, ensure you have:
 
 - **Python 3.10-3.12** (not 3.13+)
 - **uv** (Python package manager) - [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
-- **Google Cloud credentials** (one of the following):
-  - **Option A: Vertex AI** - A GCP project with Vertex AI API enabled
-  - **Option B: AI Studio** - A Google AI Studio API key
+- **Google Cloud Project**:
+  - **APIs enabled**: Vertex AI API, Places API 
+  - **IAM Permissions**: roles/aiplatform.user, roles/resourcemanager.projectIamAdmin
 
 To verify your setup after installation, run:
 ```bash
@@ -45,9 +45,6 @@ export PYTHONWARNINGS="ignore"
 gcloud auth login
 gcloud auth application-default login
 gcloud auth application-default set-quota-project $GOOGLE_CLOUD_PROJECT
-
-# Required IAM role: roles/aiplatform.user
-# Required APIs: Vertex AI, Places API (for retail agent)
 ```
 
 ---
