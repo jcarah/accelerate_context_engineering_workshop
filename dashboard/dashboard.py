@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 import plotly.graph_objects as go
-from typing import Dict, List, Any, Optional, Tuple, Union
+from typing import Dict, List, Any, Optional, Tuple
 
 # --- Configuration ---
 
@@ -15,6 +15,11 @@ DEFAULT_METRICS_CONFIG = {
     "tool_success_rate.tool_success_rate": {"name": "Tool Success", "direction": "higher"},
     "latency_metrics.total_latency_seconds": {"name": "Latency", "direction": "lower"}
 }
+
+COLOR_BASELINE = "#5F6368"  # Gray
+COLOR_CANDIDATE = "#1A73E8" # Google Blue
+COLOR_POSITIVE = "#188038"  # Green
+COLOR_NEGATIVE = "#D93025"  # Red
 
 # --- Data Processing Functions ---
 
@@ -122,7 +127,7 @@ def load_data_from_directory(directory: str) -> Tuple[pd.DataFrame, int]:
 
 def _get_color(experiment_id: str, baseline_id: str) -> str:
     """Returns the color for a given experiment (Gray for baseline, Blue for others)."""
-    return '#5F6368' if experiment_id == baseline_id else '#1A73E8'
+    return COLOR_BASELINE if experiment_id == baseline_id else COLOR_CANDIDATE
 
 def _calculate_max_values(df: pd.DataFrame, metrics: List[str]) -> Dict[str, float]:
     """Calculates max values for normalization, preventing division by zero."""
@@ -164,18 +169,18 @@ def _generate_scorecard_html(df: pd.DataFrame, baseline_id: str, candidate_ids: 
         if b_val == 0:
             pct_change = 0
             delta_str = "N/A"
-            color = "#5F6368" # Neutral
+            color = COLOR_BASELINE # Neutral
         else:
             pct_change = ((c_val - b_val) / b_val) * 100
             delta_str = f"{pct_change:+.1f}%"
             
             # Determine color based on direction
             if pct_change == 0:
-                color = "#5F6368"
+                color = COLOR_BASELINE
             elif (direction == "higher" and pct_change > 0) or (direction == "lower" and pct_change < 0):
-                color = "#188038" # Green (Good)
+                color = COLOR_POSITIVE # Green (Good)
             else:
-                color = "#D93025" # Red (Bad)
+                color = COLOR_NEGATIVE # Red (Bad)
 
         cards_html += f"""
         <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; flex: 1; min-width: 200px; background: white; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);">
@@ -192,7 +197,24 @@ def _generate_scorecard_html(df: pd.DataFrame, baseline_id: str, candidate_ids: 
 
 # --- Gradio Controller Functions ---
 
-def update_file_and_metric_lists(directory_input: str) -> Tuple[gr.update, gr.update, gr.update, gr.update, pd.DataFrame]:
+def select_directories_from_explorer(files: Optional[List[str]]) -> str:
+    """
+    Callback for FileExplorer. Extracts parent directories from selected files
+    and returns them as a comma-separated string.
+    """
+    if not files:
+        return ""
+    
+    unique_dirs = set()
+    for file_path in files:
+        if os.path.isfile(file_path):
+            unique_dirs.add(os.path.dirname(file_path))
+        elif os.path.isdir(file_path):
+            unique_dirs.add(file_path)
+            
+    return ",\n".join(sorted(list(unique_dirs)))
+
+def update_file_and_metric_lists(directory_input: str) -> Tuple[Dict, Dict, Dict, Dict, pd.DataFrame]:
     """
     Loads data from the specified directory or directories, updates UI selectors,
     and returns messages and the loaded DataFrame.
@@ -380,6 +402,33 @@ def main():
         # Hidden state to store the main DataFrame
         df_state = gr.State(pd.DataFrame())
 
+        # Determine start paths
+        home_dir = os.path.expanduser("~")
+        system_root = os.path.abspath(os.sep)
+        
+        # Options for the dropdown
+        root_options = [home_dir, system_root]
+        # Remove duplicates (e.g. if running in container where home is root)
+        root_options = sorted(list(set(root_options)), reverse=True) # Home usually longer, put first
+
+        with gr.Accordion("File Browser (Click to Explore)", open=False):
+            with gr.Row():
+                root_selector = gr.Dropdown(
+                    choices=root_options,
+                    value=home_dir,
+                    label="Start Location",
+                    allow_custom_value=True, # Allow pasting custom paths
+                    scale=1
+                )
+            
+            file_explorer = gr.FileExplorer(
+                glob="**/*.json",
+                file_count="multiple",
+                root_dir=home_dir,
+                label="Select JSON Log Files",
+                height=300
+            )
+            
         with gr.Row():
             directory_input = gr.Textbox(
                 label="Directory Path(s)", 
@@ -407,6 +456,21 @@ def main():
         raw_data_table = gr.Dataframe(label="Raw Data (All Metrics)", interactive=False)
 
         # --- Event Handlers ---
+
+        def update_explorer_root(new_root):
+            return gr.update(root_dir=new_root)
+
+        root_selector.change(
+            fn=update_explorer_root,
+            inputs=[root_selector],
+            outputs=[file_explorer]
+        )
+
+        file_explorer.change(
+            fn=select_directories_from_explorer,
+            inputs=[file_explorer],
+            outputs=[directory_input]
+        )
 
         update_button.click(
             fn=update_file_and_metric_lists,
