@@ -38,6 +38,9 @@ make verify  # Available in each agent directory
 # Set your GCP project
 export GOOGLE_CLOUD_PROJECT="your-project-id"
 
+# Optional: Suppress experimental warnings for cleaner output
+export PYTHONWARNINGS="ignore"
+
 # Authenticate with Google Cloud
 gcloud auth login
 gcloud auth application-default login
@@ -142,13 +145,11 @@ Follow these steps to establish a baseline before making optimizations.
 ```bash
 cd customer-service
 
-# Clear previous eval history (REQUIRED before each baseline)
-rm -rf customer_service/.adk/eval_history/*
-
-# Run the simulation
+# Safe Run Command: Clear history AND run simulation with explicit path
+rm -rf customer_service/.adk/eval_history/* && \
 uv run adk eval customer_service \
   --config_file_path eval/scenarios/eval_config.json \
-  eval_set_with_scenarios \
+  eval/scenarios/eval_set_with_scenarios.evalset.json \
   --print_detailed_results
 ```
 
@@ -188,13 +189,11 @@ Agent = "Retail" will set retail-ai-location-straetgy and app in below paths
 cd ../evaluation
 uv sync  # First time only
 
-
 # Convert ADK traces to evaluation format (creates timestamp folder)
 RUN_DIR=$(uv run agent-eval convert \
   --agent-dir ../customer-service/customer_service \
   --output-dir ../customer-service/eval/results \
   | awk -F': ' '/^Run folder:/ {print $2}')
-
 
 # Run metrics (deterministic + LLM-as-Judge)
 uv run agent-eval evaluate \
@@ -234,7 +233,9 @@ uv run agent-eval evaluate \
 ```bash
 uv run agent-eval analyze \
   --results-dir $RUN_DIR \
-  --agent-dir ../customer-service
+  --agent-dir ../customer-service \
+  --strategy-file ../optimization_strategy.md \
+  --location global  # Required for Gemini 3 Preview models
 ```
 
 ##### Retail Agent Commands 
@@ -242,7 +243,9 @@ uv run agent-eval analyze \
 ```bash
   uv run agent-eval analyze \
   --results-dir $RUN_DIR \
-  --agent-dir ../retail-ai-location-strategy 
+  --agent-dir ../retail-ai-location-strategy \
+  --strategy-file ../optimization_strategy.md \
+  --location global  # Required for Gemini 3 Preview models
 ```
 
 **Output files in `customer-service/eval/results/<timestamp>/`:**
