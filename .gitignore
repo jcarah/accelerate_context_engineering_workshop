@@ -192,3 +192,6 @@ evaluation/results/
 
 # Local Dev Logs
 retail-ai-location-strategy/dev_log.txt
+gitingest.txt
+.gitignore
+types.txt

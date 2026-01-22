@@ -21,7 +21,7 @@ PATH A: SIMULATION
 eval/scenarios/                   ADK Simulator      agent-eval convert
 ├── conversation_scenarios.json ──────────────────> .adk/eval_history/ ──>
 ├── eval_config.json                  (adk eval)           |
-└── eval_set.evalset.json                          processed_*.csv
+└── eval_set.evalset.json                          processed_*.jsonl
                                                            |
                                                    agent-eval evaluate
 
@@ -32,7 +32,7 @@ eval/eval_data/                   agent-eval         agent-eval interact
                                  (create-dataset)          |
                                                     Live Agent API
                                                            |
-                                                   processed_*.csv
+                                                   processed_*.jsonl
                                                            |
                                                    agent-eval evaluate
 ```
@@ -126,6 +126,19 @@ Create `session_input.json` to define initial session state:
 }
 ```
 
+> **CRITICAL: `app_name` Must Match Folder Name**
+>
+> The `app_name` value MUST match the folder name containing your agent's `agent.py` file,
+> NOT the agent's internal name defined in code.
+>
+> | Agent Location | Correct `app_name` |
+> |----------------|-------------------|
+> | `customer-service/customer_service/agent.py` | `"customer_service"` |
+> | `retail-ai-location-strategy/app/agent.py` | `"app"` |
+>
+> If this is incorrect, the converter will show an error about missing `session_details`
+> and your evaluation will have zero values for token usage and state variables.
+
 ### Step 3: Create Eval Set Definition
 
 Create `eval_set_with_scenarios.evalset.json`:
@@ -191,7 +204,7 @@ uv run agent-eval convert \
 
 # Step 3: Run evaluation
 uv run agent-eval evaluate \
-  --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_sim.csv \
+  --interaction-file ../your-agent/eval/results/<timestamp>/raw/processed_interaction_sim.jsonl \
   --metrics-files ../your-agent/eval/metrics/metric_definitions.json \
   --results-dir ../your-agent/eval/results/<timestamp>
 ```
@@ -327,7 +340,7 @@ uv run agent-eval interact \
 
 # Step 4: Run evaluation
 uv run agent-eval evaluate \
-  --interaction-file eval/results/<timestamp>/raw/processed_interaction_*.csv \
+  --interaction-file eval/results/<timestamp>/raw/processed_interaction_*.jsonl \
   --metrics-files eval/metrics/metric_definitions.json \
   --results-dir eval/results/<timestamp>
 ```
@@ -347,9 +360,9 @@ uv run agent-eval evaluate \
 
 ---
 
-## Processed CSV: Common Output Format
+## Processed JSONL: Common Output Format
 
-Both paths produce the same processed CSV format for evaluation:
+Both paths produce the same processed JSONL format for evaluation:
 
 | Column | Description |
 | :--- | :--- |

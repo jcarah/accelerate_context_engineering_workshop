@@ -18,7 +18,7 @@ uv run agent-eval <command> --help
 
 | Command | Purpose | Evaluation Path |
 |---------|---------|-----------------|
-| `convert` | Convert ADK simulator traces to CSV | Path A (Simulation) |
+| `convert` | Convert ADK simulator traces to JSONL | Path A (Simulation) |
 | `create-dataset` | Convert ADK test files to Golden Dataset | Path B (Live API) |
 | `interact` | Run interactions against live agent | Path B (Live API) |
 | `evaluate` | Run metrics on processed interactions | Both paths |
@@ -28,7 +28,7 @@ uv run agent-eval <command> --help
 
 ## `agent-eval convert`
 
-Converts ADK simulator history (`.adk/eval_history/`) to the evaluation CSV format.
+Converts ADK simulator history (`.adk/eval_history/`) to the evaluation JSONL format.
 
 ### Usage
 
@@ -43,12 +43,16 @@ uv run agent-eval convert \
 | Argument | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `--agent-dir` | Agent module directory containing `.adk/eval_history/` | Yes | - |
-| `--output-dir` | Output directory for CSV | No | `results/` |
+| `--output-dir` | Output directory for JSONL | No | `results/` |
 | `--questions-file` | Golden dataset for merging reference data | No | - |
 
 ### Output
 
-Creates `<output-dir>/<timestamp>/raw/processed_interaction_sim.csv`
+Creates `<output-dir>/<timestamp>/raw/processed_interaction_sim.jsonl`
+
+### Error Handling
+
+If the converter detects missing `session_details` in the ADK history, it will display an error message explaining that the `app_name` in your evalset file likely doesn't match the agent's folder name. See [Troubleshooting](01-GETTING-STARTED.md#troubleshooting) for details.
 
 ### Example
 
@@ -153,14 +157,14 @@ uv run agent-eval interact \
 
 ### Output
 
-Creates `<results-dir>/<timestamp>/raw/processed_interaction_<app_name>.csv`
+Creates `<results-dir>/<timestamp>/raw/processed_interaction_<app_name>.jsonl`
 
 The CLI prints the next command to run:
 ```
 Run folder: ../your-agent/eval/results/20260114_143022
 
 To evaluate, run:
-agent-eval evaluate --interaction-file .../raw/processed_interaction_my_agent.csv ...
+agent-eval evaluate --interaction-file .../raw/processed_interaction_my_agent.jsonl ...
 ```
 
 ### Example
@@ -188,7 +192,7 @@ Runs evaluation metrics on processed interaction data.
 
 ```bash
 uv run agent-eval evaluate \
-  --interaction-file path/to/processed_interaction.csv \
+  --interaction-file path/to/processed_interaction.jsonl \
   --metrics-files path/to/metric_definitions.json \
   --results-dir path/to/results/<timestamp>
 ```
@@ -197,7 +201,7 @@ uv run agent-eval evaluate \
 
 | Argument | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `--interaction-file` | Path to processed_interaction CSV | Yes | - |
+| `--interaction-file` | Path to processed_interaction JSONL | Yes | - |
 | `--metrics-files` | Metric definition JSON file(s) | Yes | - |
 | `--results-dir` | Output directory (use same timestamp folder) | Yes | - |
 | `--input-label` | Run label (e.g., `baseline`, `v2`) | No | - |
@@ -219,7 +223,7 @@ Adds to the results folder:
 RUN_DIR=../customer-service/eval/results/20260114_143022
 
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR \
   --input-label baseline \
@@ -246,6 +250,7 @@ uv run agent-eval analyze \
 |----------|-------------|----------|---------|
 | `--results-dir` | Directory containing eval results | Yes | - |
 | `--agent-dir` | Agent source directory (adds context to AI analysis) | No | - |
+| `--strategy-file` | Path to a markdown file defining the optimization strategy/framework | No | - |
 | `--model` | Gemini model for AI analysis | No | `gemini-2.5-pro` |
 | `--skip-gemini` | Skip AI analysis (generate Q&A log only) | No | `false` |
 
@@ -299,7 +304,7 @@ uv run agent-eval convert \
 # 3. Evaluate (use timestamp from step 2)
 RUN_DIR=../customer-service/eval/results/20260114_143022
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_sim.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR \
   --input-label baseline
@@ -331,7 +336,7 @@ uv run agent-eval interact \
 # 3. Evaluate (use timestamp from step 2)
 RUN_DIR=../customer-service/eval/results/20260114_150000
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_customer_service.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR
 

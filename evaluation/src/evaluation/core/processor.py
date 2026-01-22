@@ -90,6 +90,37 @@ async def enrich_single_interaction(
         sub_agent_trace = AgentClient.get_sub_agent_trace(final_session_state)
         extracted_data["sub_agent_trace"] = sub_agent_trace
 
+        # Build conversation_history for multi-turn metrics
+        # Format: List of Content dicts with role (user/model) and parts
+        user_inputs = row.get("user_inputs", [])
+        if isinstance(user_inputs, str):
+            try:
+                user_inputs = json.loads(user_inputs)
+            except (json.JSONDecodeError, TypeError):
+                user_inputs = [user_inputs] if user_inputs else []
+
+        conversation_history = []
+        # Interleave user inputs and model responses
+        # sub_agent_trace has: {"text_response": "...", "agent_name": "...", "timestamp": ...}
+        text_responses = [t.get("text_response", "") for t in sub_agent_trace if t.get("text_response")]
+
+        # Build conversation pairs (user input -> model response)
+        # The last user input is the "prompt", so exclude it from history
+        for i, user_input in enumerate(user_inputs[:-1] if len(user_inputs) > 1 else []):
+            # Add user turn
+            conversation_history.append({
+                "role": "user",
+                "parts": [{"text": user_input}]
+            })
+            # Add corresponding model response if available
+            if i < len(text_responses):
+                conversation_history.append({
+                    "role": "model",
+                    "parts": [{"text": text_responses[i]}]
+                })
+
+        extracted_data["conversation_history"] = conversation_history
+
         row["extracted_data"] = json.dumps(extracted_data)
 
         # Extract final_response (last agent text response) for response_correctness metric

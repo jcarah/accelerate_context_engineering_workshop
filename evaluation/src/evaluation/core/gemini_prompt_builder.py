@@ -16,34 +16,31 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 class GeminiAnalysisPrompter:
     """Constructs a detailed prompt for the Gemini analysis report."""
 
+    # Default values
+    DEFAULT_AUDIENCE = "technical stakeholders"
+    DEFAULT_TONE = "objective, analytical, and professional"
+    DEFAULT_LENGTH = "comprehensive"
+
     BASE_TEMPLATE = """
-You are an expert AI evaluation analyst. Your task is to produce a deep technical diagnosis of an AI agent's performance. You MUST base your analysis exclusively on the context provided below.
+You are an expert AI evaluation analyst. Your task is to produce a deep technical diagnosis of an AI agent's performance for {audience}.
+
+**Tone:** {tone}
+**Report Length:** {length}
+
+{custom_strategy_section}
 
 **CRITICAL INSTRUCTIONS:**
-1.  **Focus on Diagnosis, Not Recommendations:** Your primary goal is to explain *why* the metrics are what they are. Do not provide a future-looking action plan or make recommendations about business decisions. Stick to a root cause analysis of the current state.
+1.  **Focus on Diagnosis, Not Recommendations:** Your primary goal is to explain *why* the metrics are what they are. Do not provide a future-looking action plan unless the Strategic Framework above explicitly guides it.
 2.  **Synthesize, Don't Summarize:** Do not simply repeat the scores. Your value is in synthesizing insights by connecting the metric scores, the metric definitions, the source code, and the raw explanations.
 3.  **Reference Your Sources:** When you make a claim or analyze a metric, you MUST reference the specific source file (e.g., `metric_definitions.json`, `deterministic_metrics.py`, `agent.py`).
 4.  **Analyze Calculation Methods:** For each metric you discuss, you MUST explain how its calculation method (deterministic vs. LLM-judged) influences its interpretation.
-5.  **CRITICAL: Diagnose the Evaluation Itself:** Your analysis is not limited to the agent's code. You MUST also diagnose potential flaws in the evaluation setup. If a metric score seems incorrect or misleading, investigate the interaction between the question's metadata, the agent's expected behavior, and the metric's calculation logic.
-
----
-
-**Technical Performance Diagnosis**
-
-*   **Objective:** Provide a detailed root cause analysis of the agent's performance by linking metric scores to the agent's underlying source code, prompts, and execution logic. This includes identifying when low scores are caused by flaws in the evaluation methodology itself.
-
-*   **Structure:**
-    1.  **Overall Performance Summary:** Briefly state the agent's key strengths and weaknesses, supported by 2-3 primary metrics. Highlight any metrics that may be misleading due to evaluation flaws.
-    2.  **Deep Dive Diagnosis:** For each major finding, present a detailed hypothesis.
-        *   **Finding:** State the observation.
-        *   **Supporting Metrics:** List the specific metrics and scores that support this finding.
-        *   **Root Cause Hypothesis:** Provide a detailed, evidence-based hypothesis connecting the metric, the source code, and the evaluation data.
+5.  **Cite Quantitative and Qualitative Evidence:** You MUST quote specific examples from the conversation logs (user inputs, tool calls, or agent responses) AND cite the corresponding metric scores to justify your findings. Don't just say "the agent failed"; say "The agent's score of 1.2 on `tool_usage_accuracy` is justified by question `q_billing_01`, where it failed to call `lookup_invoice` despite the user explicitly asking for it."
 
 ---
 
@@ -84,12 +81,22 @@ Format your entire response as a single Markdown document.
         context_files: Dict[str, str],
         question_file_path: str,
         consolidated_metrics_path: str,
+        # Customizable parameters
+        audience: Optional[str] = None,
+        tone: Optional[str] = None,
+        length: Optional[str] = None,
+        custom_strategy_content: Optional[str] = None,
     ):
         self.summary_data = summary_data
         self.analysis_content = analysis_content
         self.context_files = context_files
         self.question_file_path = question_file_path
         self.consolidated_metrics_path = consolidated_metrics_path
+        
+        self.audience = audience or self.DEFAULT_AUDIENCE
+        self.tone = tone or self.DEFAULT_TONE
+        self.length = length or self.DEFAULT_LENGTH
+        self.custom_strategy_content = custom_strategy_content
 
     def _format_context_section(self, title: str, content: str, lang: str = "") -> str:
         return f"**{title}**\n```{lang}\n{content}\n```"
@@ -140,8 +147,22 @@ Format your entire response as a single Markdown document.
             ),
             "json",
         )
+        
+        # Format the custom strategy section if provided
+        custom_strategy_section = ""
+        if self.custom_strategy_content:
+            custom_strategy_section = (
+                f"**STRATEGIC FRAMEWORK:**\n"
+                f"Please adhere to the following framework when analyzing the agent:\n\n"
+                f"{self.custom_strategy_content}\n\n"
+                f"---"
+            )
 
         return self.BASE_TEMPLATE.format(
+            audience=self.audience,
+            tone=self.tone,
+            length=self.length,
+            custom_strategy_section=custom_strategy_section,
             summary_section=summary_section,
             explanations_section=explanations_section,
             metric_definitions_section=metric_definitions_section,

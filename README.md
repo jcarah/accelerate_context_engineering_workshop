@@ -1,6 +1,5 @@
 # Agent Optimization & Evaluation Workshop (Accelerate '26)
 
-**Status:** Implementation Guide
 **Focus:** Context Engineering & Quantitative Evaluation
 **Target Audience:** Technical GTM Practitioners
 
@@ -8,127 +7,266 @@
 
 ## 1. Overview
 
-This workshop guide is designed for technical experts to master the transition from **Prompt Engineering** (stateless, token-heavy) to **Context Engineering** (stateful, architectural optimization).
+This workshop teaches you to move from **Prompt Engineering** (stateless, token-heavy) to **Context Engineering** (stateful, architectural optimization).
 
-### The Objective
-By the end of this workshop, you will learn to:
-1.  **Iteratively improve agent performance** using the "Five Pillars" of Context Engineering (Offload, Reduce, Retrieve, Isolate, Cache).
-2.  **Measure performance** across Quality, Cost, and Latency axes using a production-grade evaluation framework.
+**By the end, you will:**
+1. **Iteratively improve agent performance** using the "Five Pillars" of Context Engineering (Offload, Reduce, Retrieve, Isolate, Cache).
+2. **Measure performance** across Quality, Cost, and Latency axes using a production-grade evaluation framework.
 
 ### The Execution Framework: "The Hill Climb"
-We will achieve this through a "hill climbing" exercise. We start with functional but unoptimized "Base Camp" agents. We establish evaluation baselines, identify failure signals (e.g., hallucinations, latency spikes), and iteratively apply architectural patterns to climb toward a production-ready system.
+We start with functional but unoptimized "Base Camp" agents. We establish evaluation baselines, identify failure signals (e.g., hallucinations, latency spikes), and iteratively apply architectural patterns to climb toward a production-ready system.
 
 ---
 
-## 2. The Test Subjects (Agents)
+## 2. Prerequisites
+
+Before starting, ensure you have:
+
+- **Python 3.10-3.12** (not 3.13+)
+- **uv** (Python package manager) - [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
+- **Google Cloud Project**:
+  - **APIs enabled**: Vertex AI API, Places API 
+  - **IAM Permissions**: roles/aiplatform.user, roles/resourcemanager.projectIamAdmin
+- **Development Platform**: Mac, CloudTop, CloudShell 
+
+To verify your setup after installation, run:
+```bash
+make verify  # Available in each agent directory
+```
+
+**Required Setup:**
+```bash
+# Set your GCP project
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+
+# Optional: Suppress experimental warnings for cleaner output
+export PYTHONWARNINGS="ignore"
+
+# Authenticate with Google Cloud
+gcloud auth login
+gcloud auth application-default login
+gcloud auth application-default set-quota-project $GOOGLE_CLOUD_PROJECT
+```
+
+---
+
+## 3. The Test Subjects (Agents)
 
 We use two distinct agents to demonstrate different classes of problems.
 
 ### Agent A: Customer Service (The "Naive Monolith")
-*   **Location:** `customer-service/`
-*   **The Problem:** A single agent trying to do too much (12+ tools). It suffers from **Logic Errors**, **Hallucinations**, and **Routing Failures**.
-*   **The Fix:** We will use this agent to practice **Reliability Optimizations** (Schema Hardening, Functional Isolation, Reflexion).
-*   **Setup:**
-    ```bash
-    cd customer-service
-    make install
-    make playground
-    # See customer-service/README.md for architecture details
-    ```
+
+| | |
+|---|---|
+| **Location** | `customer-service/` |
+| **The Problem** | A single agent trying to do too much (12+ tools). Suffers from **Logic Errors**, **Hallucinations**, and **Routing Failures**. |
+| **The Fix** | Practice **Reliability Optimizations** (Schema Hardening, Functional Isolation, Reflexion). |
+| **Runs on** | `http://localhost:8501` |
+
+**Setup:**
+```bash
+cd customer-service
+
+# 1. Configure credentials
+cp .env.example .env
+# Edit .env and set:
+#   GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+#   GOOGLE_CLOUD_LOCATION=us-central1
+#   GOOGLE_GENAI_USE_VERTEXAI=TRUE
+
+# 2. Install dependencies and run
+make install
+make playground   # or: make dev
+```
 
 ### Agent B: Retail AI Location Strategy (The "Context Dumper")
-*   **Location:** `retail-ai-location-strategy/`
-*   **The Problem:** A complex multi-agent pipeline that processes massive datasets (Google Maps API). It suffers from **Token Bloat**, **High Latency**, and **High Cost**.
-*   **The Fix:** We will use this agent to practice **Scale Optimizations** (Offloading state to files, Code Execution, Prefix Caching).
-*   **Setup:**
-    ```bash
-    cd retail-ai-location-strategy
-    make ag-ui-install # or make install
-    make ag-ui # or make dev
-    # See retail-ai-location-strategy/README.md for deep dives
-    ```
+
+| | |
+|---|---|
+| **Location** | `retail-ai-location-strategy/` |
+| **The Problem** | A complex multi-agent pipeline that processes massive datasets (Google Maps API). Suffers from **Token Bloat**, **High Latency**, and **High Cost**. |
+| **The Fix** | Practice **Scale Optimizations** (Offloading state to files, Code Execution, Prefix Caching). |
+| **Runs on** | `http://localhost:8502` |
+
+**Setup:**
+```bash
+cd retail-ai-location-strategy
+
+# 1. Configure credentials (note: .env is in project root, not app/)
+cp .env.example .env
+# Edit .env and set ONE of:
+#   Option A (Vertex AI):
+#     GOOGLE_GENAI_USE_VERTEXAI=TRUE
+#     GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+#     GOOGLE_CLOUD_LOCATION=us-central1
+#   Option B (AI Studio):
+#     GOOGLE_GENAI_USE_VERTEXAI=FALSE
+#     GOOGLE_API_KEY=your-ai-studio-api-key
+#
+# Also set: MAPS_API_KEY=your-maps-api-key
+
+# 2. Install dependencies and run
+make install
+make dev          # ADK web UI at http://localhost:8502
+
+# OR use the interactive AG-UI dashboard (optional):
+make ag-ui-install
+make ag-ui        # Frontend at http://localhost:3000, backend at :8502
+```
 
 ---
 
-## 3. The Lab: Production Evaluation Framework
+## 4. Running Evaluations
 
-Instead of simple "print statement" debugging, we have built a custom, reusable evaluation pipeline located in `evaluation/`. This serves as a reference architecture for how you might implement CI/CD for agents in the real world.
-
-> **👉 GO DEEPER:** Check out the **[Evaluation README](evaluation/README.md)**.
-> It covers the full CLI reference, both evaluation paths (Simulation vs Live), and how to define custom LLM-as-a-Judge metrics.
+We use a custom evaluation pipeline in `evaluation/` as a reference architecture for agent CI/CD.
 
 **Key Components:**
-*   **Simulation Scenarios:** Test scenarios for ADK simulator in `[agent]/eval/scenarios/` ([ADK User Simulation Docs](https://google.github.io/adk-docs/evaluate/user-sim/))
-*   **Metric Definitions:** Custom rubrics (e.g., "Did the agent use the correct tool?") in `[agent]/eval/metrics/`
-*   **CLI Tool (`agent-eval`):** Unified commands for convert, evaluate, and analyze (use `--help` for options)
+- **Simulation Scenarios:** Test scenarios in `[agent]/eval/scenarios/` ([ADK Docs](https://google.github.io/adk-docs/evaluate/user-sim/))
+- **Metric Definitions:** Custom rubrics in `[agent]/eval/metrics/`
+- **CLI Tool (`agent-eval`):** Commands for `convert`, `evaluate`, and `analyze`
 
-### Running a Baseline Evaluation (Customer Service)
+> **📚 Advanced Topics:** See **[Evaluation README](evaluation/README.md)** for the full CLI reference, live/remote evaluation, and custom LLM-as-a-Judge metrics.
+
+---
+
+### Baseline Evaluation Quickstart (Customer Service)
 
 Follow these steps to establish a baseline before making optimizations.
 
 #### Step 1: Run ADK Simulator
 
-Generate agent interactions using the native ADK simulator.
+> ⚠️ **CRITICAL:** Always clear `eval_history` before running a new baseline. The ADK simulator *appends* to this folder on every run. Without clearing, your baseline will include stale data from previous runs, corrupting all metrics.
 
+> **📝 Before running:** Review `eval/scenarios/conversation_scenarios.json` (test conversations) and `eval/metrics/metric_definitions.json` (scoring rubrics) to understand what's being tested.
+
+##### Customer Service Agent Commands 
 ```bash
 cd customer-service
 
-# IMPORTANT: Clear previous eval history before each baseline
-rm -rf customer_service/.adk/eval_history/*
-
-# Run the simulation (scenarios are in eval/scenarios/)
+# Safe Run Command: Clear history AND run simulation with explicit path
+rm -rf customer_service/.adk/eval_history/* && \
 uv run adk eval customer_service \
   --config_file_path eval/scenarios/eval_config.json \
-  eval_set_with_scenarios \
+  eval/scenarios/eval_set_with_scenarios.evalset.json \
   --print_detailed_results
 ```
 
-> **Why clear `.adk/eval_history/`?** The simulator accumulates traces from ALL runs.
-> Without clearing, your new baseline will include stale data from previous runs.
+NOTE: to change the conversation scenarios
+
+- Delete eval_set_with_scenarios.evalset.json 
+- update conversation_scenarios.json 
+- uv run adk eval_set create app eval_set_with_scenarios
+- uv run adk eval_set add_eval_case app eval_set_with_scenarios --scenarios_file eval/scenarios/conversation_scenarios.json --session_input_file eval/scenarios/session_input.json
+
+##### Retail Agent commands 
+```bash
+cd retail-ai-location-strategy
+
+# Clear previous eval history (REQUIRED before each baseline)
+rm -rf app/.adk/eval_history/*
+
+# Run the simulation
+uv run adk eval app \
+  --config_file_path eval/scenarios/eval_config.json \
+  eval_set_with_scenarios \
+  --print_detailed_results
+  ```
 
 #### Step 2: Convert Traces & Run Evaluation
+
+> **Note:** Ensure `GOOGLE_CLOUD_PROJECT` is set in your environment before running.
+
+TODO: instead of having separate commands for CS and Retail agent - parameterize paths 
+Agent = "CS" will set customer-service and customer_service in below paths 
+Agent = "Retail" will set retail-ai-location-straetgy and app in below paths 
+
+
+##### Customer Service Agent Commands 
 
 ```bash
 cd ../evaluation
 uv sync  # First time only
 
 # Convert ADK traces to evaluation format (creates timestamp folder)
-uv run agent-eval convert \
+RUN_DIR=$(uv run agent-eval convert \
   --agent-dir ../customer-service/customer_service \
-  --output-dir ../customer-service/eval/results
-
-# The CLI prints the next command. Use the timestamp folder:
-RUN_DIR=../customer-service/eval/results/<timestamp>
+  --output-dir ../customer-service/eval/results \
+  | awk -F': ' '/^Run folder:/ {print $2}')
 
 # Run metrics (deterministic + LLM-as-Judge)
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_sim.csv \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
   --results-dir $RUN_DIR \
   --input-label baseline \
   --test-description "Customer Service Baseline"
 ```
 
+##### Retail Agent Commands 
+
+```bash
+cd ../evaluation
+uv sync  # First time only
+
+
+# Convert ADK traces to evaluation format (creates timestamp folder)
+RUN_DIR=$(uv run agent-eval convert \
+  --agent-dir ../retail-ai-location-strategy/app \
+  --output-dir ../retail-ai-location-strategy/eval/results \
+  | awk -F': ' '/^Run folder:/ {print $2}')
+
+
+uv run agent-eval evaluate \
+  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
+  --metrics-files ../retail-ai-location-strategy/eval/metrics/metric_definitions.json \
+  --results-dir $RUN_DIR \
+  --input-label baseline \
+  --test-description "Retail Baseline"
+```
+
 #### Step 3: Analyze Results
 
-Generate human-readable reports and AI-powered root cause analysis.
+##### Customer Service Agent Commands 
 
 ```bash
 uv run agent-eval analyze \
   --results-dir $RUN_DIR \
-  --agent-dir ../customer-service
+  --agent-dir ../customer-service \
+  --strategy-file ../optimization_strategy.md \
+  --location global  # Required for Gemini 3 Preview models
 ```
 
-**Output:** Results in `customer-service/eval/results/<timestamp>/`
+##### Retail Agent Commands 
+
+```bash
+  uv run agent-eval analyze \
+  --results-dir $RUN_DIR \
+  --agent-dir ../retail-ai-location-strategy \
+  --strategy-file ../optimization_strategy.md \
+  --location global  # Required for Gemini 3 Preview models
 ```
-<timestamp>/
-├── eval_summary.json           # Aggregated metrics
-├── question_answer_log.md      # Detailed Q&A transcript
-├── gemini_analysis.md          # AI root cause diagnosis
-└── raw/
-    ├── processed_interaction_sim.csv
-    └── evaluation_results_*.csv
-```
+
+**Output files in `customer-service/eval/results/<timestamp>/`:**
+
+| File | Purpose |
+|------|---------|
+| `eval_summary.json` | Aggregated metrics - **start here** |
+| `gemini_analysis.md` | AI-generated root cause diagnosis |
+| `question_answer_log.md` | Detailed Q&A transcript |
+| `raw/` | Raw data (processed interactions, evaluation results) |
+
+#### Step 4: Interpret Your Results
+
+**Start with `eval_summary.json`** and look for these red flags:
+
+| Metric | Threshold | If Below, Try... |
+|--------|-----------|------------------|
+| `tool_usage_accuracy` | < 3.0 | Tool Schema Hardening (optimization 01) |
+| `trajectory_accuracy` | < 3.0 | Functional Isolation (optimization 04) |
+| `state_management_fidelity` | < 3.0 | Context Compaction (optimization 02) |
+| `input_tokens` | > 10,000/turn | Offload to Code Execution (optimization 03) |
+
+Then read `gemini_analysis.md` for AI-identified root causes and specific fix suggestions.
 
 ### Pre-Computed Baseline Results
 
@@ -176,7 +314,7 @@ For convenience, we include pre-computed baseline results in `[agent]/eval/resul
 
 ---
 
-## 4. Workshop Curriculum: The Optimization Loop
+## 5. Workshop Curriculum: The Optimization Loop
 
 We will follow a strict **Signal-Driven Engineering** loop:
 1.  **Measure:** Run the eval pipeline (Steps 1-3 above).
@@ -259,7 +397,7 @@ Each optimization is isolated in its own branch, driven by a specific failure si
 
 ---
 
-## 5. Signal Identification Cheatsheet
+## 6. Signal Identification Cheatsheet
 
 Use the generated `eval_summary.json` to pick your battle.
 
@@ -271,3 +409,43 @@ Use the generated `eval_summary.json` to pick your battle.
 | **Slow Recovery** | High "Reflexion" count (retries) in traces. | **Reflexion Loop** |
 | **High Cost** | Low `KV-Cache Hit Rate` (< 50%). | **Prefix Caching** |
 | **General Failure** | Low `Pass^k` (consistency) across diverse tasks. | **Functional Isolation (Sub-agents)** |
+
+---
+
+## 7. Troubleshooting
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| `ModuleNotFoundError: No module named 'customer_service'` | Running from wrong directory | `cd customer-service` before running commands |
+| `GOOGLE_CLOUD_PROJECT not set` | Missing or misconfigured `.env` | Check `.env` exists and has correct values (see Section 3) |
+| `Port already in use` | Another agent or process on the port | Customer Service uses 8501, Retail uses 8502. Kill conflicting process or change port in Makefile |
+| ADK evaluation shows no/stale results | Didn't clear `eval_history` | Run `rm -rf customer_service/.adk/eval_history/*` before each baseline |
+| `uv: command not found` | uv not installed | Install via `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| Vertex AI authentication errors | Missing ADC or wrong project | Run `gcloud auth application-default login` and verify `GOOGLE_CLOUD_PROJECT` |
+
+---
+
+## 8. Project Structure
+
+```
+accelerate_context_engineering_workshop/
+├── README.md                          ← You are here
+├── customer-service/                  ← Agent A (port 8501)
+│   ├── .env.example
+│   ├── Makefile
+│   ├── customer_service/
+│   │   ├── *.evalset.json             ← ADK eval sets live here
+│   │   └── .adk/eval_history/         ← Clear before each baseline!
+│   └── eval/
+│       ├── scenarios/                 ← ADK config & conversation plans
+│       ├── metrics/                   ← Metric definitions
+│       └── results/<timestamp>/       ← Evaluation outputs
+├── retail-ai-location-strategy/       ← Agent B (port 8502)
+│   ├── .env                           ← Note: in root, not app/
+│   ├── .env.example
+│   ├── Makefile
+│   └── app/
+└── evaluation/                        ← Shared eval CLI
+    ├── README.md                      ← Full CLI reference
+    └── src/evaluation/cli/
+```

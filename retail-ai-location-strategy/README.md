@@ -97,7 +97,7 @@ make install && make dev
 
 #### What You'll See
 
-1. Open `http://localhost:8501` in your browser
+1. Open `http://localhost:8502` in your browser
 2. Select **"app"** from the agent dropdown
 3. Type a query like: *"I want to open a coffee shop in Indiranagar, Bangalore"*
 4. Watch the 7-stage pipeline execute:
@@ -113,7 +113,7 @@ make install && make dev
   <img src="assets/gifs/adk-web-demo.gif" alt="ADK Web Demo" width="700">
 </p>
 
-Your agent is now running at `http://localhost:8501`.
+Your agent is now running at `http://localhost:8502`.
 
 ---
 
@@ -170,7 +170,7 @@ Navigate into your **newly created project folder**, then install dependencies a
 ```bash
 cd my-retail-agent && make install && make dev
 ```
-Your agent is now running at `http://localhost:8501`.
+Your agent is now running at `http://localhost:8502`.
 
 ## Cloud Deployment
 
