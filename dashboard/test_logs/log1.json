@@ -1,0 +1,18 @@
+{
+    "experiment_id": "eval-20260112_000001",
+    "run_type": "manual",
+    "test_description": "Automated evaluation",
+    "interaction_datetime": "2026-01-13T08:17:36",
+    "overall_summary": {
+        "deterministic_metrics": {
+            "token_usage.total_tokens": 12273,
+            "latency_metrics.total_latency_seconds": 7.11,
+            "cache_efficiency.cache_hit_rate": 0.43
+        },
+        "llm_based_metrics": {
+            "response_correctness": 0.5,
+            "tool_usage_accuracy": 3.91,
+            "trajectory_accuracy": 0.97
+        }
+    }
+}
