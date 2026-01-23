@@ -20,11 +20,11 @@ from google.adk.tools import ToolContext
 
 
 def search_places(query: str, tool_context: ToolContext) -> dict:
-    """Search for places using Google Maps Places API.
+    """Search for places using Google Maps Places API and save results to disk.
 
     This tool searches for businesses/places matching the query using the
-    Google Maps Places API. It returns real competitor data including names,
-    addresses, ratings, and other relevant information.
+    Google Maps Places API. It saves the full results to 'competitors.json'
+    and returns a summary and preview to save context tokens.
 
     Args:
         query: Search query combining business type and location.
@@ -33,8 +33,10 @@ def search_places(query: str, tool_context: ToolContext) -> dict:
     Returns:
         dict: A dictionary containing:
             - status: "success" or "error"
-            - results: List of places found with details
+            - message: Status message with file path
+            - file_path: Absolute path to competitors.json
             - count: Number of results found
+            - preview: First 3 results for context
             - error_message: Error details if status is "error"
     """
     try:
@@ -42,14 +44,12 @@ def search_places(query: str, tool_context: ToolContext) -> dict:
 
         # Get API key from session state first, then fall back to environment variable
         maps_api_key = tool_context.state.get("maps_api_key", "") or os.environ.get("MAPS_API_KEY", "")
-        
-        print(f"DEBUG: search_places is using MAPS_API_KEY: {maps_api_key}")
 
         if not maps_api_key:
             return {
                 "status": "error",
                 "error_message": "Maps API key not found. Set MAPS_API_KEY environment variable or 'maps_api_key' in session state.",
-                "results": [],
+                "preview": [],
                 "count": 0,
             }
 
@@ -77,14 +77,19 @@ def search_places(query: str, tool_context: ToolContext) -> dict:
                 "place_id": place.get("place_id", ""),
             })
 
-        # Save to artifact file for offloading
-        with open("competitors.json", "w") as f:
+        # Offload: Save full results to disk
+        filename = "competitors.json"
+        with open(filename, "w") as f:
             json.dump(places, f, indent=2)
+        
+        file_path = os.path.abspath(filename)
 
         return {
             "status": "success",
-            "message": f"Found {len(places)} competitors and saved details to 'competitors.json'.",
+            "message": f"Saved {len(places)} results to {file_path}",
+            "file_path": file_path,
             "count": len(places),
+            "preview": places[:3],  # Return only top 3 to keep context window clean
             "next_page_token": result.get("next_page_token"),
         }
 
@@ -92,6 +97,6 @@ def search_places(query: str, tool_context: ToolContext) -> dict:
         return {
             "status": "error",
             "error_message": str(e),
-            "results": [],
+            "preview": [],
             "count": 0,
         }

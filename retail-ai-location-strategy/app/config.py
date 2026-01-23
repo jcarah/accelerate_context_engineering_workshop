@@ -54,16 +54,6 @@ else:
 # Maps API Key (required for both modes)
 MAPS_API_KEY = os.environ.get("MAPS_API_KEY", "")
 
-# --- DEBUGGING INFO ---
-print("--- [CONFIG] Loaded Environment Variables ---")
-print(f"USE_VERTEX_AI: {USE_VERTEX_AI}")
-print(f"GOOGLE_CLOUD_PROJECT: {GOOGLE_CLOUD_PROJECT}")
-print(f"GOOGLE_CLOUD_LOCATION: {GOOGLE_CLOUD_LOCATION}")
-# Mask API keys for security in logs
-masked_maps_key = f"{MAPS_API_KEY[:4]}...{MAPS_API_KEY[-4:]}" if MAPS_API_KEY and len(MAPS_API_KEY) > 8 else "Not Set"
-print(f"MAPS_API_KEY: {masked_maps_key}")
-print("---------------------------------------------")
-
 # Model Configuration
 # ============================================================================
 # Uncomment the model set you want to use. Only one set should be active.
@@ -75,7 +65,7 @@ print("---------------------------------------------")
 FAST_MODEL = "gemini-2.5-pro"
 PRO_MODEL = "gemini-2.5-pro"
 CODE_EXEC_MODEL = "gemini-2.5-pro"
-IMAGE_MODEL = "gemini-2.5-flash-image"  # Switched to 2.5 Flash Image for better availability
+IMAGE_MODEL = "gemini-2.5-flash-image"  # Gemini 3 for native image generation
 
 # Option 2: Gemini 3 Pro Preview (latest features, may have availability issues)
 # FAST_MODEL = "gemini-3-pro-preview"

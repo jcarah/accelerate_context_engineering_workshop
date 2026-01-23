@@ -2,18 +2,17 @@
 
 ## 1. Metrics Comparison Table
 
-| Metric Category | Metric Name | Baseline (v0) | Iteration 1 | Iteration 2 | Delta (v0 ⮕ v1) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Strategy (Judge)** | Strategic Rec Quality (General) | 0.08 | - | - | - |
-| | Tool Use Quality (0-5) | 5.0 | - | - | - |
-| | Trajectory Accuracy (0-5) | 4.0 | - | - | - |
-| | Pipeline Integrity (0-5) | 2.0 | - | - | - |
-| **Trust (Judge)** | Hallucinations (0-1) | 1.0 | - | - | - |
-| | Safety (0-1) | 1.0 | - | - | - |
-| **Scale (Det.)** | Avg Input Tokens | 135,448 | - | - | - |
-| | Avg Turn Latency (s) | 325.48 | - | - | - |
-| | KV-Cache Hit Rate (%) | 0.0% | - | - | - |
-| | Total Cost ($) | 0.00 | - | - | - |
+| Metric Category | Metric Name | Baseline (v0) | Iteration 1 (Offload) | Delta (v0 ⮕ v1) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Strategy (Judge)** | Strategic Rec Quality (0-1) | 0.08 | **0.14** | +0.06 ⚪ |
+| | Tool Use Quality (0-5) | 5.0 | **5.0** | 0.0 ⚪ |
+| | Trajectory Accuracy (0-5) | 4.0 | **4.0** | 0.0 ⚪ |
+| | Pipeline Integrity (0-5) | 2.0 | **2.0** | 0.0 🔴 |
+| **Trust (Judge)** | Hallucinations (0-1) | 1.0 | **1.0** | 0.0 ⚪ |
+| | Safety (0-1) | 1.0 | **1.0** | 0.0 ⚪ |
+| **Scale (Det.)** | Avg Input Tokens | 135,448 | **53,515** | -81,933 🟢 |
+| | Avg Turn Latency (s) | 325.48s | **197.89s** | -127.59s 🟢 |
+| | KV-Cache Hit Rate (%) | 0.0% | **13.15%** | +13.15% 🟢 |
 
 ---
 
@@ -23,14 +22,24 @@
 *   **Optimization Path:** Baseline (Initial State)
 *   **Status:** 🔴 **Critical Failure**
 *   **Implementation Details:**
-    *   Initial evaluation of the unoptimized `SequentialAgent` pipeline.
-    *   Full context history enabled (`include_contents='default'`).
-    *   Tools (`search_places`) return raw JSON directly into the context window.
-    *   No caching or event compaction configured.
-
+    *   Unoptimized `SequentialAgent` pipeline.
+    *   Tools return raw JSON directly into the context window.
+    *   No caching or event compaction.
 *   **Analysis of Variance:**
-    *   **Analyze Quality:** 🔴 **Critical Failure.** The agent got "dumber." `general_quality` scored **0.08** (Failing). It failed to produce *any* text analysis, returning only a meta-comment about an image.
-    *   **Analyze Trust:** 🟢 **High Safety, Low Integrity.** `safety` scored **1.0**, but `pipeline_integrity` was **2.0**. The agent "hallucinated" that it had performed the `GapAnalysis` and `MarketResearch` steps without actually calling those tools.
-    *   **Analyze Scale:** 🔴 **Bloated.** Input tokens reached **135,448**, causing a massive **325s** latency. `cache_hit_rate` was **0.0%**.
-    *   **Evidence:** In question `seattle_coffee_001`, the user asked to "analyze location viability." The agent ignored this and replied: *"The infographic... has been successfully generated,"* effectively skipping the core analysis task because the context was flooded with `search_places` data.
-    *   **Conclusion:** The agent suffers from severe **Context Saturation**. The strategy for the next step is **Reduce** (specifically **Offload**): modify the tools to save data to artifacts instead of dumping it into the prompt.
+    *   **Context Saturation:** Extreme token usage (~135k) caused massive latency (~325s).
+    *   **Integrity Failure:** The agent failed to perform analysis, often returning only meta-comments about generated images because the context was flooded.
+    *   **Conclusion:** The agent suffered from severe context saturation.
+
+### Iteration 1: Offload & Minify Data
+*   **Optimization Path:** Optimization 01: Offload Data (Pillar: Reduce)
+*   **Status:** 🟠 **Partial Success (Scale Win, Integrity Fail)**
+*   **Implementation Details:**
+    1.  **Offload:** Modified `search_places` tool in `places_search.py` to save `competitors.json` to disk/artifacts instead of returning the full payload.
+    2.  **Minify:** Updated `pipeline_callbacks.py` to read the artifact and inject a *minified* preview into the context state.
+    3.  **Instruction Update:** Updated `GapAnalysis` agent to load the full data from disk using `json.loads(COMPETITORS_JSON)` for code execution.
+*   **Analysis of Variance:**
+    1.  **Scale (Efficiency):** **Massive Win.** Input tokens dropped by **60%** (135k ⮕ 53k) and latency improved by **~40%** (325s ⮕ 197s). The "Offload" strategy successfully decongested the prompt.
+    2.  **Integrity (Reliability):** **Persistent Failure.** `pipeline_integrity` remained low (2.0). The underlying cause is a broken tool (`search_places` returns `REQUEST_DENIED`).
+    3.  **Hallucination:** Because the tool failed, the agent "hallucinated" the middle of the pipeline (claiming to analyze data it never received) to satisfy the downstream report generation steps.
+*   **Conclusion:** The **Optimization** worked (tokens are down), but the **Application** is broken (API key/Tool error). We have successfully optimized a broken agent.
+    *   **Next Step:** Fix the `search_places` tool or mock the data to verify the pipeline's logic.

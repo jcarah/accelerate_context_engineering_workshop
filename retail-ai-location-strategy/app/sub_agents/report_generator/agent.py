@@ -83,7 +83,6 @@ report_generator_agent = LlmAgent(
             ),
         ),
     ),
-    include_contents='none',  # Isolate from previous history
     tools=[generate_html_report],
     output_key="report_generation_result",
     before_agent_callback=before_report_generator,

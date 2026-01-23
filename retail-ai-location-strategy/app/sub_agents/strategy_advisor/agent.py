@@ -110,12 +110,11 @@ strategy_advisor_agent = LlmAgent(
     ),
     planner=BuiltInPlanner(
         thinking_config=ThinkingConfig(
-            include_thoughts=False,
-            thinking_budget=-1,
+            include_thoughts=False,  # Must be False when using output_schema
+            thinking_budget=-1,  # -1 means unlimited thinking budget
         )
     ),
-    include_contents='none',  # Isolate from previous history
-    # output_schema=LocationIntelligenceReport, # Removed to avoid API error
+    output_schema=LocationIntelligenceReport,
     output_key="strategic_report",
     before_agent_callback=before_strategy_advisor,
     after_agent_callback=after_strategy_advisor,

@@ -86,7 +86,6 @@ market_research_agent = LlmAgent(
         ),
     ),
     tools=[google_search],
-    include_contents='none',  # Isolate from previous history
     output_key="market_research_findings",
     before_agent_callback=before_market_research,
     after_agent_callback=after_market_research,

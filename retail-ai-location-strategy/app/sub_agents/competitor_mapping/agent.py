@@ -28,7 +28,7 @@ from ...callbacks import before_competitor_mapping, after_competitor_mapping
 
 COMPETITOR_MAPPING_INSTRUCTION = """You are a market intelligence analyst specializing in competitive landscape analysis.
 
-Your task is to map all competitors in the target area using real Google Maps data.
+Your task is to map and analyze all competitors in the target area using real Google Maps data.
 
 TARGET LOCATION: {target_location}
 BUSINESS TYPE: {business_type}
@@ -36,21 +36,33 @@ CURRENT DATE: {current_date}
 
 ## Your Mission
 Use the search_places function to get REAL data from Google Maps about existing competitors.
-The data will be automatically saved to a file (`competitors.json`) for the quantitative analyst to process.
 
 ## Step 1: Search for Competitors
-Call the search_places function with queries like:
-- "{business_type} near {target_location}"
-- Related business types in the same area
+Call the search_places function. It will return a preview of the results and save the full dataset to a local file named 'competitors.json'.
 
-## Step 2: Confirm Data Collection
-Once the tool confirms the data is saved, your job is complete.
-Do NOT attempt to list the competitors or analyze them here, as the full data is offloaded to the file.
-Simply confirm that the competitor mapping is complete and the data is ready for the Gap Analysis stage.
+## Step 2: Analyze the Results
+Based on the preview data and the confirmation of the saved file:
+- Note the total number of competitors found.
+- Confirm that 'competitors.json' has been successfully created for the next stage (Gap Analysis).
+- Analyze the sample of competitors provided in the tool's 'preview' field.
 
-## Output
-Provide a brief confirmation:
-"Competitor data collection complete. [Count] competitors identified and saved to 'competitors.json' for analysis."
+## Step 3: Identify Patterns (Qualitative)
+Analyze the competitive landscape based on the available data:
+- Geographic Clustering: Are there clear clusters mentioned in addresses?
+- Quality Segmentation: What is the rating trend in the preview?
+
+## Step 4: Strategic Assessment
+Provide insights on:
+- Preliminary underserved opportunities.
+- Quality gaps noticed in the sample.
+- **IMPORTANT**: Explicitly state that the full quantitative analysis will be performed by the GapAnalysisAgent using the offloaded 'competitors.json' file.
+
+## Output Format
+Provide a summary including:
+1. Total count of competitors found and location of the data file ('competitors.json').
+2. Qualitative breakdown of the previewed competitors.
+3. High-level pattern analysis.
+4. Strategic instructions for the GapAnalysisAgent.
 """
 
 competitor_mapping_agent = LlmAgent(
@@ -67,7 +79,6 @@ competitor_mapping_agent = LlmAgent(
         ),
     ),
     tools=[search_places],
-    include_contents='none',  # Isolate from previous history
     output_key="competitor_analysis",
     before_agent_callback=before_competitor_mapping,
     after_agent_callback=after_competitor_mapping,

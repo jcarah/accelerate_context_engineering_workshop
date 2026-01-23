@@ -82,15 +82,41 @@ def before_competitor_mapping(callback_context: CallbackContext) -> Optional[typ
 
 
 def before_gap_analysis(callback_context: CallbackContext) -> Optional[types.Content]:
-    """Log start of gap analysis phase."""
+    """Log start of gap analysis and inject MINIFIED competitor data."""
     logger.info("=" * 60)
     logger.info("STAGE 2B: GAP ANALYSIS - Starting")
-    logger.info("  Executing Python code for quantitative market analysis...")
+    logger.info("  Injecting minified competitor data for remote Python analysis...")
     logger.info("=" * 60)
 
-    # Set current date for state injection in agent instruction
+    # Set current date for state injection
     callback_context.state["current_date"] = datetime.now().strftime("%Y-%m-%d")
     callback_context.state["pipeline_stage"] = "gap_analysis"
+
+    # Read competitors.json, MINIFY it, and inject into state
+    try:
+        if os.path.exists("competitors.json"):
+            with open("competitors.json", "r") as f:
+                raw_data = json.load(f)
+            
+            # Minification: Keep only fields needed for math/analysis
+            minified_data = []
+            for item in raw_data:
+                minified_data.append({
+                    "name": item.get("name", "Unknown"),
+                    "rating": item.get("rating", 0),
+                    "reviews": item.get("user_ratings_total", 0), # Renamed for brevity
+                    "price": item.get("price_level", "N/A"),      # Renamed for brevity
+                    "loc": item.get("location", {})               # Renamed for brevity
+                })
+            
+            # Dump the minified list to a string
+            callback_context.state["competitors_json_data"] = json.dumps(minified_data)
+            logger.info(f"  Minified data size: {len(callback_context.state['competitors_json_data'])} chars")
+        else:
+            callback_context.state["competitors_json_data"] = "[]"
+    except Exception as e:
+        logger.error(f"Failed to process competitors.json: {e}")
+        callback_context.state["competitors_json_data"] = "[]"
 
     # Workaround for AG-UI middleware issue: initialize state variable
     if "gap_analysis" not in callback_context.state:
@@ -273,7 +299,7 @@ def _extract_python_code_from_content(content: str) -> str:
     return "\n\n# ---\n\n".join(code_blocks)
 
 
-async def after_strategy_advisor(callback_context: CallbackContext) -> Optional[types.Content]:
+def after_strategy_advisor(callback_context: CallbackContext) -> Optional[types.Content]:
     """Log completion and save JSON artifact."""
     report = callback_context.state.get("strategic_report", {})
     logger.info("STAGE 3: COMPLETE - Strategic report generated")
@@ -290,9 +316,9 @@ async def after_strategy_advisor(callback_context: CallbackContext) -> Optional[
             json_str = json.dumps(report_dict, indent=2, default=str)
             json_artifact = types.Part.from_bytes(
                 data=json_str.encode('utf-8'),
-                mime_type="text/plain"  # Changed from application/json to avoid API error
+                mime_type="text/plain"
             )
-            await callback_context.save_artifact("intelligence_report.json", json_artifact)
+            callback_context.save_artifact("intelligence_report.json", json_artifact)
             logger.info("  Saved artifact: intelligence_report.json")
         except Exception as e:
             logger.warning(f"  Failed to save JSON artifact: {e}")

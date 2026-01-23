@@ -61,10 +61,9 @@ async def generate_infographic(data_summary: str, tool_context: ToolContext) -> 
     try:
         from google import genai
 
-        # Initialize Gemini client
-        # Force location="global" for Gemini 3 Image model as it is a global resource
-        # This overrides the default us-central1 location from environment variables
-        client = genai.Client(location="global")
+        # Initialize Gemini client using AI Studio (not Vertex AI)
+        # This uses GOOGLE_API_KEY from environment automatically
+        client = genai.Client()
 
         # Create the prompt for infographic generation
         prompt = f"""Generate a professional business infographic for a location intelligence report.
