@@ -364,10 +364,10 @@ You can re-use your existing processed interactions - no need to restart the age
 cd evaluation
 
 # Use the baseline run folder from Section 3
-BASELINE_RUN=../retail-ai-location-strategy/eval/results/20260128_002521  # Use your actual folder
+BASELINE_RUN=../retail-ai-location-strategy/eval/results/baseline
 
 # Create a new results folder for comparison
-NEW_RUN=${BASELINE_RUN}_recommendation
+NEW_RUN=../retail-ai-location-strategy/eval/results/with_custom_metric
 mkdir -p $NEW_RUN
 
 # Evaluate with new metric file
