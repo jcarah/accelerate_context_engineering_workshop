@@ -27,8 +27,8 @@ This is the **Agent Optimization & Evaluation Workshop** for Google Cloud Accele
 
 ```
 accelerate_context_engineering_workshop/
-├── WORKSHOP_OVERVIEW.md      # Conceptual guide - start here
-├── HOW_TO_USE_REPO.md        # Complete practical guide
+├── README.md                  # Workshop guide (linear flow)
+├── REFERENCE.md               # Deep dive (CLI, metrics, customization)
 ├── customer-service/          # Agent A: Multi-turn, reliability focus
 ├── retail-ai-location-strategy/  # Agent B: Pipeline, scale focus
 └── evaluation/                # Shared evaluation CLI (agent-eval)
@@ -71,20 +71,19 @@ Metrics go in `eval/metrics/metric_definitions.json`. Help participants write cu
 ### Understanding Results
 - `eval_summary.json` → Aggregated metrics
 - `gemini_analysis.md` → Root cause analysis
-- Low scores → Map to optimization patterns (see WORKSHOP_OVERVIEW.md)
+- Low scores → Map to optimization patterns (see README.md Section 5)
 
 ---
 
 ## Optimization Branches
 
-| Branch | Optimization | Focus |
-|--------|--------------|-------|
-| `main` | Baseline | Establish metrics |
-| `optimizations/01-tool-definition` | Tool Hardening | Fix hallucinated parameters |
-| `optimizations/02-context-compaction` | Reduce Context | Fix "lost in the middle" |
-| `optimizations/03-code-execution` | Offload to Sandbox | Fix token bloat |
-| `optimizations/04-functional-isolation` | Sub-agents | Fix routing confusion |
-| `optimizations/05-prefix-caching` | Cache Static Content | Fix latency/cost |
+| Branch | Optimization | Agent | Focus |
+|--------|--------------|-------|-------|
+| `main` | Baseline | Both | Establish metrics |
+| `optimizations/01-tool-definition` | Tool Hardening | Customer Service | Fix hallucinated parameters |
+| `optimizations/02-context-compaction` | Reduce Context | Customer Service | Fix "lost in the middle" |
+| `optimizations/03-functional-isolation` | Sub-agents | Customer Service | Fix routing confusion |
+| `optimizations/04-offload-and-reduce` | Offload & Reduce | Retail AI | Fix token bloat |
 
 ---
 
@@ -97,9 +96,153 @@ Metrics go in `eval/metrics/metric_definitions.json`. Help participants write cu
 
 ---
 
+## Creating Optimization Logs (Comparing Results)
+
+When participants run evaluations on baseline vs optimized code, help them create an **OPTIMIZATION_LOG.md** that compares results. This is the key deliverable for understanding what changed.
+
+### Location
+Save optimization logs to: `[agent]/eval/results/OPTIMIZATION_LOG.md`
+
+### How to Generate
+
+**Step 1: Extract ALL metrics from eval_summary.json files**
+
+The `eval_summary.json` contains two metric categories:
+- `deterministic_metrics` - Token usage, latency, cache efficiency (same for all agents)
+- `llm_based_metrics` - LLM-as-Judge scores (vary by agent)
+
+```python
+import json
+
+def load_summary(path):
+    with open(path) as f:
+        return json.load(f)
+
+def get_det_metric(data, key):
+    """Get deterministic metric by key"""
+    return data.get('overall_summary', {}).get('deterministic_metrics', {}).get(key)
+
+def get_llm_metric(data, key):
+    """Get LLM metric average by key"""
+    m = data.get('overall_summary', {}).get('llm_based_metrics', {}).get(key, {})
+    return m.get('average') if isinstance(m, dict) else None
+
+# Load both summaries
+baseline = load_summary('eval/results/baseline/eval_summary.json')
+optimization = load_summary('eval/results/optimization/eval_summary.json')
+
+# === DETERMINISTIC METRICS (same for all agents) ===
+det_metrics = [
+    ('token_usage.total_tokens', 'Avg Total Tokens', 'lower'),
+    ('token_usage.prompt_tokens', 'Avg Prompt Tokens', 'lower'),
+    ('latency_metrics.average_turn_latency_seconds', 'Avg Turn Latency (s)', 'lower'),
+    ('cache_efficiency.cache_hit_rate', 'Cache Hit Rate', 'higher'),
+    ('thinking_metrics.reasoning_ratio', 'Reasoning Ratio', 'lower'),
+    ('tool_success_rate.tool_success_rate', 'Tool Success Rate', 'higher'),
+]
+
+print("| Metric | Baseline | Optimization | Delta |")
+print("|--------|----------|--------------|-------|")
+for key, name, better in det_metrics:
+    b, o = get_det_metric(baseline, key), get_det_metric(optimization, key)
+    if b is not None and o is not None:
+        delta = o - b
+        # Determine emoji based on what's "better"
+        if better == 'lower':
+            emoji = "🟢" if delta < 0 else ("🔴" if delta > 0 else "⚪")
+        else:
+            emoji = "🟢" if delta > 0 else ("🔴" if delta < 0 else "⚪")
+        print(f"| {name} | {b:.2f} | {o:.2f} | {delta:+.2f} {emoji} |")
+
+# === LLM METRICS (vary by agent - check what exists) ===
+llm_keys = list(baseline.get('overall_summary', {}).get('llm_based_metrics', {}).keys())
+print(f"\nLLM Metrics available: {llm_keys}")
+
+for key in llm_keys:
+    b, o = get_llm_metric(baseline, key), get_llm_metric(optimization, key)
+    if b is not None and o is not None:
+        delta = o - b
+        emoji = "🟢" if delta > 0 else ("🔴" if delta < 0 else "⚪")
+        print(f"| {key} | {b:.2f} | {o:.2f} | {delta:+.2f} {emoji} |")
+```
+
+### Agent-Specific LLM Metrics
+
+**Customer Service Agent:**
+| Metric | Description | Range |
+|--------|-------------|-------|
+| `tool_use_quality` | Did agent use tools correctly? | 0-5 |
+| `trajectory_accuracy` | Did agent follow correct steps? | 0-5 |
+| `capability_honesty` | Did agent only claim real capabilities? | 0-5 |
+| `multi_turn_general_quality` | Overall multi-turn conversation quality | 0-1 |
+| `multi_turn_text_quality` | Text quality across turns | 0-1 |
+
+**Retail AI Agent:**
+| Metric | Description | Range |
+|--------|-------------|-------|
+| `tool_use_quality` | Did agent use tools correctly? | 0-5 |
+| `trajectory_accuracy` | Did agent follow correct steps? | 0-5 |
+| `pipeline_integrity` | Did agent run all stages without hallucination? | 0-5 |
+| `general_quality` | Overall response quality | 0-1 |
+| `text_quality` | Text quality and clarity | 0-1 |
+
+**Step 2: Read the gemini_analysis.md files** for qualitative insights:
+- `baseline/gemini_analysis.md` - What problems exist?
+- `optimization/gemini_analysis.md` - What improved? What's still an issue?
+
+**Step 3: Create the OPTIMIZATION_LOG.md with this structure:**
+
+```markdown
+# Optimization Log: [Agent Name]
+
+**Branch:** `optimizations/XX-name`
+**Optimization:** [Name] (Pillar: Offload/Reduce/Retrieve/Isolate/Cache)
+**Date:** YYYY-MM-DD
+
+## 1. Metrics Comparison Table
+
+### Deterministic Metrics (Scale)
+| Metric | Baseline | Optimization | Delta |
+|--------|----------|--------------|-------|
+| Total Tokens | X | Y | -Z 🟢 |
+| Turn Latency | Xs | Ys | +Zs 🔴 |
+
+### LLM-as-Judge Metrics (Quality)
+| Metric | Baseline | Optimization | Delta |
+|--------|----------|--------------|-------|
+| tool_use_quality | 3.6 | 4.2 | +0.6 🟢 |
+| capability_honesty | 2.2 | 4.2 | +2.0 🟢 |
+
+## 2. Iteration History
+
+### Baseline (M0)
+- Key diagnostic signals from AI analysis
+- Root causes identified
+
+### Optimization XX
+- What was implemented
+- What improved (with evidence)
+- What trade-offs occurred
+
+## 3. Conclusions
+- What worked
+- What needs attention
+- Recommended next optimization
+```
+
+### Example Output
+See: `customer-service/eval/results/OPTIMIZATION_LOG.md` for a complete example.
+
+### Emoji Legend for Deltas
+- 🟢 = Improvement (lower tokens/latency OR higher quality scores)
+- 🔴 = Regression (higher tokens/latency OR lower quality scores)
+- ⚪ = Neutral/unchanged
+
+---
+
 ## Key Files to Reference
 
-- `WORKSHOP_OVERVIEW.md` - Conceptual understanding
-- `HOW_TO_USE_REPO.md` - All practical instructions
-- `optimization_strategy.md` - Context engineering principles
+- `README.md` - Workshop guide (linear flow)
+- `REFERENCE.md` - Deep dive (CLI, metrics, customization)
+- `[agent]/eval/results/OPTIMIZATION_LOG.md` - Optimization comparison reports
 - `[agent]/eval/metrics/metric_definitions.json` - Metric configurations
