@@ -200,18 +200,59 @@ class AdkHistoryConverter:
         extracted_rows = []
 
         for case in case_results:
-            if not case.get("session_details"):
+            eval_id = case.get("eval_id")
+            session_id = case.get("session_id")
+
+            # Try two different data formats:
+            # Format 1: session_details (customer-service style)
+            # Format 2: eval_metric_result_per_invocation (retail-ai style)
+
+            session_details = case.get("session_details")
+
+            if not session_details:
+                # session_details is None - this indicates a configuration problem
+                # The most common cause is app_name in evalset.json not matching the folder name
+                print("\n" + "=" * 70)
+                print("ERROR: session_details is empty for eval case: " + str(eval_id))
+                print("=" * 70)
+                print("\nThis usually means the 'app_name' in your evalset.json file")
+                print("does not match the folder name containing your agent.")
+                print("\nThe app_name MUST match the folder name, NOT the agent's internal name.")
+                print("\nExample:")
+                print("  If your agent is in: retail-ai-location-strategy/app/agent.py")
+                print("  Then app_name must be: \"app\"")
+                print("")
+                print("  If your agent is in: customer-service/customer_service/agent.py")
+                print("  Then app_name must be: \"customer_service\"")
+                print("\nTo fix this:")
+                print("  1. Open your evalset.json file")
+                print("  2. Find the 'session_input' section")
+                print("  3. Change 'app_name' to match your agent's folder name")
+                print("  4. Clear the .adk folder: rm -rf <agent-dir>/.adk")
+                print("  5. Re-run the ADK simulation: uv run adk eval <folder> ...")
+                print("  6. Re-run this converter")
+                print("\nWithout session_details, critical data is missing:")
+                print("  - Token usage (prompt_tokens, completion_tokens)")
+                print("  - Session state variables")
+                print("  - Proper latency measurements")
+                print("=" * 70 + "\n")
+
+                # Skip this case - don't process with incomplete data
                 continue
 
-            session_details = case["session_details"]
+            # Format 1: session_details is available (correct configuration)
             events = session_details.get("events", [])
             state = session_details.get("state", {})
-            eval_id = case.get("eval_id")
+            app_name = session_details.get("app_name")
+            session_id = session_details.get("id") or session_id
+            user_id = session_details.get("user_id")
+
+            if not events:
+                continue
 
             # 1. Synthesize Trace
-            app_name = session_details.get("app_name")
             synthetic_trace = synthesize_trace_from_events(
-                events, session_details.get("id"), app_name
+                events, session_id, app_name
             )
 
             # 2. Analyze Trace (using AgentClient logic)
@@ -222,9 +263,9 @@ class AdkHistoryConverter:
             # 3. Reconstruct Session Object (CamelCase for consistency with runtime)
             camel_events = convert_keys_to_camel_case(events)
             final_session_state = {
-                "id": session_details.get("id"),
+                "id": session_id,
                 "appName": app_name,
-                "userId": session_details.get("user_id"),
+                "userId": user_id,
                 "state": state,
                 "events": camel_events,
                 "lastUpdateTime": events[-1].get("timestamp") if events else None,
@@ -252,7 +293,7 @@ class AdkHistoryConverter:
                 })
 
             # 4b. Generate system_instruction from app_name
-            # In a full implementation, this would come from the agent definition
+            # In a full implementation, this could come from the agent definition
             system_instruction = f"You are the {app_name} agent."
 
             # --- NEW DATA EXTRACTION FOR OPTIMIZATION SIGNALS ---
@@ -369,10 +410,10 @@ class AdkHistoryConverter:
                 "response": gemini_response,
                 # Metadata fields
                 "question_id": eval_id,
-                "session_id": session_details.get("id"),
+                "session_id": session_id,
                 "base_url": "simulation",
                 "app_name": app_name,
-                "ADK_USER_ID": session_details.get("user_id"),
+                "ADK_USER_ID": user_id,
                 "status": {"boolean": "success"},
                 "run_id": str(uuid.uuid4()),
                 "agents_evaluated": [app_name],
