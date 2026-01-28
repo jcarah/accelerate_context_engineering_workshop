@@ -20,7 +20,6 @@ Deep-dive documentation for the `agent-eval` CLI, metrics, and customization. Fo
 12. [Understanding Trade-offs](#understanding-trade-offs)
 13. [Context Engineering Principles](#context-engineering-principles)
 14. [AI Assistant Setup (Optional)](#ai-assistant-setup-optional)
-15. [Internal Notes (Appendix)](#internal-notes-appendix)
 
 ---
 
@@ -429,6 +428,41 @@ Use `:` to access nested fields within JSON responses:
 4. **Filter by agent** - Use `agents` array for agent-specific metrics
 5. **Include available_tools** - Prevents penalizing for non-existent tools
 6. **Use compound mapping** - For large state objects, select specific fields
+
+### Binary Decomposition (Recommended Approach)
+
+Instead of asking an LLM for a vague "Quality" score (1-5), break requirements into specific True/False assertions:
+
+**Step 1: Decompose into Binary Assertions**
+- ❌ Vague: "Is the response helpful?"
+- ✅ Binary:
+  - Did the agent provide a direct answer? (Yes/No)
+  - Did the agent mention the user's specific product? (Yes/No)
+  - Did the agent provide a 'next step'? (Yes/No)
+
+**Step 2: Map the Evidence**
+Identify which columns prove/disprove your assertions:
+- `user_query` → `user_inputs`
+- `agent_reply` → `final_response`
+- `product_context` → `extracted_data:product_name`
+
+**Step 3: Construct the Summation Prompt**
+Write the prompt as a calculator, not a critic:
+
+```json
+"my_checklist_metric": {
+  "metric_type": "llm",
+  "score_range": {"min": 0, "max": 3, "description": "Sum of 3 binary checks"},
+  "dataset_mapping": {
+    "prompt": {"source_column": "user_inputs"},
+    "response": {"source_column": "final_response"}
+  },
+  "template": "Evaluate the response.\n\nUser: {prompt}\nAgent: {response}\n\nChecklist:\n1. [_] Greeting provided?\n2. [_] Solution offered?\n3. [_] Closing statement?\n\nMark [x] for each Yes. Sum the total.\n\nScore: [0-3]\nExplanation: [Show your checklist]"
+}
+```
+
+**Step 4: Enforce "Show Your Work"**
+Force the LLM to output the checklist itself. This makes results auditable.
 
 ---
 
@@ -903,6 +937,12 @@ Do NOT penalize the agent for correctly relaying mock data.
 | Token usage exploding | `input_tokens` > 10,000 | 04 - Offloading |
 | High latency, low cache hits | `cache_hit_rate` < 50% | 05 - Prefix Caching |
 
+### Diagnostic Patterns
+
+**Tool Hardening (Poka-Yoke):** Look for "High Technical Success, Low Semantic Honesty" - the agent calls valid tools (100% success rate) but lies about what it did (`capability_honesty` < 2.0). Fix with Pydantic schemas and `Literal` types.
+
+**Functional Isolation (Triage/Worker):** Look for "High Technical Success, Low Logical Coherence" - the agent takes noisy paths with irrelevant tool calls (`trajectory_accuracy` < 2.0, `reasoning_ratio` > 0.6). Fix by splitting into specialized sub-agents.
+
 ---
 
 ## Understanding Trade-offs
@@ -940,166 +980,106 @@ Action: Tune compaction strategy to preserve key context
 
 ## AI Assistant Setup (Optional)
 
-Use AI coding assistants for faster iteration during the workshop.
-
-### Gemini CLI
-
-```bash
-# Install Node.js 18+ first, then Gemini CLI
-npm install -g @anthropic-ai/claude-code  # or gemini equivalent
-
-# Provide repo context via gitingest
-# Visit: https://gitingest.com/your-org/your-repo
-# Copy the output and paste as context
-```
-
-### Claude Code with Vertex AI
-
-If you prefer Claude, you can connect it to Vertex AI:
-
-1. Enable the Anthropic model in Vertex AI Model Garden
-2. Configure Claude Code to use Vertex AI as the backend
-3. See: [Step-by-step guide](https://medium.com/@dan.avila7/step-by-step-guide-to-connect-claude-code-with-google-cloud-vertex-ai-17e7916e711e)
-
-### Using AI Assistants Effectively
-
-When working with AI assistants on this codebase:
-
-1. **Provide context:** Share `REFERENCE.md` and relevant metric definitions
-2. **Be specific:** "Improve trajectory_accuracy by fixing tool selection" is better than "make it better"
-3. **Iterate with data:** Share `eval_summary.json` and `gemini_analysis.md` outputs
+Use AI coding assistants for faster iteration during the workshop. Both options below work with Vertex AI, which is ideal for enterprise/Argolis environments.
 
 ---
 
-## Internal Notes (Appendix)
+### Gemini CLI
 
-*Technical details for workshop developers.*
+**Prerequisites:**
+- Node.js 20+ ([download](https://nodejs.org/))
+- Google Cloud SDK with `gcloud auth application-default login` completed
 
-### ADK Eval History Structure
-
-When you run `adk eval`, ADK creates JSON files in `.adk/eval_history/`:
-
-```json
-{
-  "eval_set_result_id": "...",
-  "eval_case_results": [
-    {
-      "eval_id": "scenario_001",
-      "session_id": "___eval___session___...",
-      "session_details": { ... },
-      "user_id": "eval_user",
-      "eval_metric_results": [...],
-      "eval_metric_result_per_invocation": [...]
-    }
-  ]
-}
-```
-
-### session_details Fields
-
-| Field | Type | Extracted To |
-|-------|------|--------------|
-| `id` | string | `session_id` |
-| `app_name` | string | `app_name` |
-| `user_id` | string | `ADK_USER_ID` |
-| `state` | object | `extracted_data.state_variables` |
-| `events` | array | Processed into traces, tool_interactions |
-
-### usage_metadata
-
-```json
-{
-  "prompt_token_count": 8547,
-  "candidates_token_count": 1234,
-  "total_token_count": 9781,
-  "cached_content_token_count": 0,
-  "thoughts_token_count": 150
-}
-```
-
-### Project Structure
-
-```
-evaluation/
-├── src/evaluation/
-│   ├── cli/main.py             # CLI commands
-│   ├── core/
-│   │   ├── evaluator.py        # Metric evaluation
-│   │   ├── analyzer.py         # Gemini analysis
-│   │   ├── converters.py       # ADK trace converter
-│   │   ├── data_mapper.py      # Column mapping
-│   │   └── deterministic_metrics.py
-│   └── interaction/
-│       └── agent_client.py     # API client
-└── tests/
-```
-
-### Development Setup
+**Installation:**
 
 ```bash
-cd evaluation
-uv sync --dev
-uv run pytest tests/ -v
-uv run ruff check src/
-uv run ruff format src/
+# Option 1: Quick start (no install needed)
+npx @google/gemini-cli
+
+# Option 2: Global install
+npm install -g @google/gemini-cli
+
+# Option 3: Homebrew (macOS/Linux)
+brew install gemini-cli
 ```
 
-### Event Structure in ADK Traces
+**Configure for Vertex AI (Recommended for workshop):**
 
-Each event in `session_details.events`:
+```bash
+# Set environment variables for Vertex AI
+export GOOGLE_CLOUD_PROJECT=your-project-id
+export GOOGLE_CLOUD_LOCATION=us-central1
+export GOOGLE_GENAI_USE_VERTEXAI=true
 
-| Field | Extracted? | Usage |
-|-------|------------|-------|
-| `author` | Yes | Agent identification, sub_agent_trace |
-| `content.parts` | Yes | Text responses, function calls |
-| `content.role` | Yes | user/model classification |
-| `timestamp` | Yes | Latency calculations |
-| `usage_metadata` | Yes | Token metrics |
-| `model_version` | Yes | Model tracking |
-| `finish_reason` | Yes | stop_reasons |
-
-### Fallback Format
-
-When `session_details` is null (due to `app_name` mismatch), data comes from:
-
-```
-eval_metric_result_per_invocation[0].actual_invocation:
-  ├── user_content
-  ├── final_response
-  ├── intermediate_data.invocation_events
-  └── app_details.agent_details (contains tool_declarations!)
+# Run from project root - GEMINI.md is loaded automatically
+cd accelerate_context_engineering_workshop
+gemini
 ```
 
-**Note:** This format has `tool_declarations` and `instructions` that the primary format doesn't have, but lacks `usage_metadata`.
+**Useful Commands:**
+- `/memory show` — See loaded context from GEMINI.md
+- `/memory refresh` — Reload after editing GEMINI.md
+- `/help` — See all available commands
 
-### Adding New CLI Commands
+> **Note:** This repo includes a `.gemini/settings.json` that configures context loading. The `GEMINI.md` file is automatically loaded when you run `gemini` from the project root.
 
-```python
-# In src/evaluation/cli/main.py
-@app.command()
-def my_command(arg: str = typer.Option(..., help="Description")):
-    """Command description."""
-    pass
+---
+
+### Claude Code
+
+**Prerequisites:**
+- Node.js 18+ ([download](https://nodejs.org/))
+- Anthropic API key or Vertex AI with Claude enabled
+
+**Installation:**
+
+```bash
+npm install -g @anthropic-ai/claude-code
 ```
 
-### Adding Deterministic Metrics
+**Option A: With Vertex AI (Recommended for workshop)**
 
-```python
-# In src/evaluation/core/deterministic_metrics.py
-def calculate_my_metric(trace: List[Dict]) -> Dict[str, Any]:
-    return {"my_value": 123, "my_rate": 0.95}
+```bash
+# Enable Claude in Vertex AI Model Garden first
+# Then configure Claude Code to use Vertex AI
+export ANTHROPIC_VERTEX_PROJECT_ID=your-project-id
+export CLOUD_ML_REGION=us-central1
 
-# Register in calculate_all_deterministic_metrics()
+# Run from project root
+cd accelerate_context_engineering_workshop
+claude
 ```
 
-### Key Development Decisions
+See: [Step-by-step Vertex AI guide](https://docs.anthropic.com/en/docs/build-with-claude/claude-code/bedrock-vertex)
 
-| Decision | Rationale |
-|----------|-----------|
-| JSONL over CSV | Nested JSON requires proper serialization |
-| `read_jsonl` over pandas | Avoids ujson "Value is too big" errors |
-| Skip auth for localhost | DIY path shouldn't require gcloud token |
-| `final_response` as dict | Enables fine-grained field evaluation |
+**Option B: With API Key**
+
+```bash
+export ANTHROPIC_API_KEY=your-api-key
+claude
+```
+
+**Passing Context:**
+
+Claude Code automatically reads `CLAUDE.md` files, but this repo uses `GEMINI.md`. To load context:
+
+```bash
+# Option 1: Reference in conversation
+# "Read GEMINI.md for project context, then help me with..."
+
+# Option 2: Use gitingest for full repo context
+# Visit: https://gitingest.com/jcarah/accelerate_context_engineering_workshop
+# Paste output into Claude
+```
+
+---
+
+### Tips for Using AI Assistants
+
+1. **Be specific:** "Improve trajectory_accuracy by fixing tool selection" beats "make it better"
+2. **Share data:** Paste `eval_summary.json` and `gemini_analysis.md` for data-driven help
+3. **Iterate:** Run eval → share results → get suggestions → implement → repeat
+4. **Smart context loading:** Instead of pasting the full gitingest output, download it as a text file and add it to your project. Then ask the assistant to "search the gitingest file for X" - this lets the AI look up what's needed rather than loading everything into context (better for token efficiency!)
 
 ---
 

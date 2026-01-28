@@ -132,9 +132,114 @@ Key sections:
 
 ---
 
-## Contacts
+## Team Contacts
 
-- **Dani** - Evaluation framework, documentation
-- **John** - Customer Service optimizations (01-03)
-- **Hugo** - Retail AI optimizations (04)
-- **Liz** - Testing, validation
+| Person | Responsibilities |
+|--------|------------------|
+| **Jesse** | Project lead, workshop objectives & core narrative |
+| **John** | Context engineering techniques, agents design, hill climbing exercise (all branches 01-05) |
+| **Hugo** | Technical aspects of branches 04-05, adapting the evaluation framework to external agents |
+| **Liz** | Workshop management, testing, train-the-trainers, development experience, internal release coordination |
+| **Dani** | Evaluation framework and CLI (`agent-eval`) |
+
+---
+
+## Technical Reference (For Developers)
+
+### ADK Eval History Structure
+
+When you run `adk eval`, ADK creates JSON files in `.adk/eval_history/`:
+
+```json
+{
+  "eval_set_result_id": "...",
+  "eval_case_results": [
+    {
+      "eval_id": "scenario_001",
+      "session_id": "___eval___session___...",
+      "session_details": { ... },
+      "user_id": "eval_user",
+      "eval_metric_results": [...],
+      "eval_metric_result_per_invocation": [...]
+    }
+  ]
+}
+```
+
+### session_details Fields
+
+| Field | Type | Extracted To |
+|-------|------|--------------|
+| `id` | string | `session_id` |
+| `app_name` | string | `app_name` |
+| `user_id` | string | `ADK_USER_ID` |
+| `state` | object | `extracted_data.state_variables` |
+| `events` | array | Processed into traces, tool_interactions |
+
+### usage_metadata
+
+```json
+{
+  "prompt_token_count": 8547,
+  "candidates_token_count": 1234,
+  "total_token_count": 9781,
+  "cached_content_token_count": 0,
+  "thoughts_token_count": 150
+}
+```
+
+### Evaluation CLI Project Structure
+
+```
+evaluation/
+├── src/evaluation/
+│   ├── cli/main.py             # CLI commands
+│   ├── core/
+│   │   ├── evaluator.py        # Metric evaluation
+│   │   ├── analyzer.py         # Gemini analysis
+│   │   ├── converters.py       # ADK trace converter
+│   │   ├── data_mapper.py      # Column mapping
+│   │   └── deterministic_metrics.py
+│   └── interaction/
+│       └── agent_client.py     # API client
+└── tests/
+```
+
+### Development Setup
+
+```bash
+cd evaluation
+uv sync --dev
+uv run pytest tests/ -v
+uv run ruff check src/
+uv run ruff format src/
+```
+
+### Adding New CLI Commands
+
+```python
+# In src/evaluation/cli/main.py
+@app.command()
+def my_command(arg: str = typer.Option(..., help="Description")):
+    """Command description."""
+    pass
+```
+
+### Adding Deterministic Metrics
+
+```python
+# In src/evaluation/core/deterministic_metrics.py
+def calculate_my_metric(trace: List[Dict]) -> Dict[str, Any]:
+    return {"my_value": 123, "my_rate": 0.95}
+
+# Register in calculate_all_deterministic_metrics()
+```
+
+### Key Development Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| JSONL over CSV | Nested JSON requires proper serialization |
+| `read_jsonl` over pandas | Avoids ujson "Value is too big" errors |
+| Skip auth for localhost | DIY path shouldn't require gcloud token |
+| `final_response` as dict | Enables fine-grained field evaluation |

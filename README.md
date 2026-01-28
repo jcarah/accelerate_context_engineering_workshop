@@ -8,6 +8,8 @@ Learn to move from trial-and-error prompt engineering to systematic, measurable 
 
 > **Note for Testers (Jan 2026):** The optimization branches (e.g., `optimizations/01-*`) are being updated with the latest evaluation framework. They may not be ready yet. For now, test on `main` by running the baseline evaluation, making changes to agent source code, and re-running to see metrics change.
 
+> **💡 AI Assistant Available:** This repo is configured for [Gemini CLI](https://github.com/google-gemini/gemini-cli). Run `gemini` from the project root to get AI assistance with workshop tasks. See [REFERENCE.md - AI Assistant Setup](REFERENCE.md#ai-assistant-setup-optional) for installation instructions.
+
 ---
 
 ## What You'll Learn
@@ -449,9 +451,9 @@ Now apply optimization patterns and measure their impact.
 | M0 | `main` | Baseline (Naive Monolith) | Establish baseline scores |
 | M1 | `optimizations/01-tool-definition` | Tool Schema Hardening | `tool_use_quality` > 4.0 |
 | M2 | `optimizations/02-context-compaction` | Context Compaction | Reduce context rot over turns |
-| M3 | `optimizations/03-code-execution` | Offload to Python Sandbox | `input_tokens` < 4000/turn |
-| M4 | `optimizations/04-functional-isolation` | Split into Sub-Agents | `trajectory_accuracy` = 5/5 |
-| M5 | `optimizations/05-prefix-caching` | Prefix Caching | `cache_hit_rate` > 75% |
+| M3 | `optimizations/03-functional-isolation` | Functional Isolation (Sub-Agents) | `trajectory_accuracy` = 5/5 |
+| M4 | `optimizations/04-offload-and-reduce` | Offload & Reduce | `input_tokens` < 4000/turn |
+| M5 | *(coming soon)* | Prefix Caching | `cache_hit_rate` > 75% |
 
 ### The Optimization Loop
 
@@ -460,6 +462,18 @@ For each branch, you'll:
 2. **Run** the evaluation pipeline
 3. **Compare** metrics with baseline
 4. **Understand** what improved (and any trade-offs)
+
+> **💡 Tip: Use Gemini CLI to Generate Optimization Logs**
+>
+> If you're using the Gemini CLI, it has access to `GEMINI.md` which contains instructions for comparing evaluation results. Ask the CLI to create an optimization log:
+>
+> ```
+> "Compare the eval results in customer-service/eval/results/baseline/ vs
+> customer-service/eval/results/optimization/ and create an OPTIMIZATION_LOG.md
+> summarizing the metrics changes and what improved"
+> ```
+>
+> The CLI can read the `eval_summary.json` files, extract metrics programmatically, and generate a formatted comparison report.
 
 ### Example: Branch 01 - Tool Hardening
 
@@ -512,15 +526,15 @@ git checkout optimizations/02-context-compaction
 # ... run pipeline ...
 
 # Branch 03
-git checkout optimizations/03-code-execution
+git checkout optimizations/03-functional-isolation
 # ... run pipeline ...
 
 # Branches 04-05 (Retail AI)
-git checkout optimizations/04-functional-isolation
+git checkout optimizations/04-offload-and-reduce
 cd retail-ai-location-strategy
 # Use DIY path: make dev, then interact/evaluate/analyze
 
-git checkout optimizations/05-prefix-caching
+# git checkout optimizations/05-prefix-caching  # Coming soon
 # ... run pipeline ...
 ```
 
