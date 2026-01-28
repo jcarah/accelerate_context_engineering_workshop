@@ -1,590 +1,73 @@
-# Agent Optimization & Evaluation Workshop
+# Branch 01: Tool Schema Hardening
 
-**Google Cloud Accelerate '26**
-
-Learn to move from trial-and-error prompt engineering to systematic, measurable agent optimization.
+**Optimization Focus:** Reduce hallucinated capabilities through stricter tool definitions
 
 ---
 
-> **Note for Testers (Jan 2026):** The optimization branches (e.g., `optimizations/01-*`) are being updated with the latest evaluation framework. They may not be ready yet. For now, test on `main` by running the baseline evaluation, making changes to agent source code, and re-running to see metrics change.
+## What You'll Do on This Branch
 
-> **💡 AI Assistant Available:** This repo is configured for [Gemini CLI](https://github.com/google-gemini/gemini-cli). Run `gemini` from the project root to get AI assistance with workshop tasks. See [REFERENCE.md - AI Assistant Setup](REFERENCE.md#ai-assistant-setup-optional) for installation instructions.
+In this optimization, we tackle a common agent problem: **the agent lies about what it can do**.
 
----
+The baseline agent has a `capability_honesty` score of just 2.2/5 - it claims to send emails, apply discounts, and perform actions that its tools don't actually support.
 
-## What You'll Learn
-
-By the end of this workshop, you will:
-
-1. **Measure agent performance** across three dimensions: Quality, Cost, and Latency
-2. **Identify failure signals** from evaluation data (hallucinations, context rot, tool errors)
-3. **Apply optimization patterns** based on Context Engineering principles
-4. **Validate improvements** by comparing before/after metrics
+The fix? **Tool Schema Hardening** - adding explicit limitations to tool docstrings so the model knows what it *cannot* do.
 
 ---
 
-## The Agent Performance Paradox
+## Step 1: Explore the Changes
 
-Prototyping an agent is easy. Graduating it to production is where things fall apart.
+Before running evaluation, take a moment to see what was changed in the agent code.
 
-| Challenge | The Problem |
-|-----------|-------------|
-| **The Visibility Gap** | When an agent fails, it doesn't throw a stack trace. It drifts, hallucinates, or gets lost. |
-| **The Prompt Trap** | Most optimization stops at prompt engineering. But prompts are fragile. Real improvement requires architectural shifts. |
-| **The Validation Hurdle** | Fixing one edge case often degrades another. Without objective measurement, you can't prove optimizations work. |
+### 1.1 View the Code Diff
 
-This workshop gives you the tools to close these gaps.
+```bash
+# See all files changed from main
+git diff main...HEAD --stat
+
+# See specific tool changes
+git diff main...HEAD -- customer-service/customer_service/tools/tools.py
+```
+
+### 1.2 Key Changes to Look For
+
+Open `customer-service/customer_service/tools/tools.py` and look for:
+
+1. **Pydantic Models** - Strict type validation for tool arguments
+2. **`KNOWN LIMITATIONS`** - Explicit statements in docstrings about what the tool CANNOT do
+3. **Negative Constraints** - Clear boundaries for the model
+
+Example from the code:
+```python
+"""
+...
+**KNOWN LIMITATIONS:**
+- Cannot send emails
+- Cannot apply discounts without user confirmation
+- Does not have access to external systems
+"""
+```
+
+### 1.3 Prompt Changes
+
+```bash
+git diff main...HEAD -- customer-service/customer_service/prompts.py
+```
+
+Look for "CORE OPERATIONAL BOUNDARIES" section added to the system prompt.
 
 ---
 
-## The Evaluation Framework
+## Step 2: Run Evaluation
 
-We use a **Build, Test, Learn, Deploy** cycle with a 3-step evaluation process:
+Now run the evaluation to see if the changes improved the metrics.
 
-```
-1/3 Run Interactions  →  2/3 Run Evaluation  →  3/3 Analyze Results
-   (ADK User Sim or       (Vertex AI Metrics)    (Reports + AI Analysis)
-    DIY Interactions)
-```
-
-| Step | What Happens | Output |
-|------|--------------|--------|
-| **1/3 Interactions** | Generate traces by running agent through test scenarios | `.adk/eval_history/` or JSONL |
-| **2/3 Evaluation** | Grade interactions using deterministic + LLM metrics | `eval_summary.json` |
-| **3/3 Analysis** | Turn numbers into decisions with AI root cause analysis | `gemini_analysis.md` |
-
----
-
-## The Test Subjects
-
-We use two agents to demonstrate different optimization challenges:
-
-| | Customer Service Agent | Retail AI Agent |
-|---|---|---|
-| **Focus** | Reliability | Scale |
-| **Problem** | Single agent with 12+ tools. Suffers from logic errors, hallucinations, routing failures. | Processes massive datasets (Google Maps API). Suffers from token bloat, high latency, high cost. |
-| **Conversation Type** | Multi-turn (user ↔ agent ↔ user) | Single-turn pipeline (user → pipeline → response) |
-| **Evaluation Mode** | ADK User Sim | DIY Interactions |
-| **Key Metrics** | `multi_turn_general_quality`, `trajectory_accuracy` | `general_quality`, `pipeline_integrity` |
-
----
-
-## Workshop Flow
-
-This workshop takes approximately 90 minutes:
-
-| Section | Time | What You'll Do |
-|---------|------|----------------|
-| [1. Setup](#1-setup) | 10 min | Prerequisites, credentials, verify environment |
-| [2. Baseline: Customer Service](#2-baseline-customer-service) | 15 min | Run evaluation using ADK User Sim |
-| [3. Baseline: Retail AI](#3-baseline-retail-ai) | 15 min | Run evaluation using DIY Interactions |
-| [4. Add Custom Metric](#4-add-custom-metric) | 10 min | Create a fine-grained metric for structured responses |
-| [5. Optimization Branches](#5-optimization-branches) | 35 min | Apply optimizations, compare before/after |
-| [6. Wrap-up](#6-wrap-up) | 5 min | Summary, next steps |
-
----
-
-## 1. Setup
-
-### Prerequisites Checklist
-
-```
-[ ] Python 3.10-3.12 (not 3.13+)
-[ ] uv package manager
-[ ] Google Cloud project with Vertex AI API enabled
-[ ] Authenticated with gcloud
-```
-
-### Quick Verification
+### 2A: Run Interactions
 
 ```bash
-python3 --version  # Must be 3.10, 3.11, or 3.12
-uv --version
-gcloud auth list
-```
-
-### Install uv (if needed)
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### Google Cloud Authentication
-
-```bash
-gcloud auth login
-gcloud auth application-default login
-export GOOGLE_CLOUD_PROJECT="your-project-id"
-gcloud auth application-default set-quota-project $GOOGLE_CLOUD_PROJECT
-```
-
-### Clone and Configure
-
-```bash
-git clone <repo-url>
-cd accelerate
-
-# Verify environment
-./setup_workshop.sh
-```
-
-### Configure Agent Credentials
-
-**Customer Service:**
-```bash
-cd customer-service
-cp .env.example .env
-# Edit .env and set:
-#   GOOGLE_CLOUD_PROJECT=your-project-id
-#   GOOGLE_CLOUD_LOCATION=us-central1
-#   GOOGLE_GENAI_USE_VERTEXAI=TRUE
-```
-
-**Retail AI:**
-```bash
-cd ../retail-ai-location-strategy
-cp .env.example .env
-# Edit .env and set:
-#   GOOGLE_CLOUD_PROJECT=your-project-id
-#   GOOGLE_CLOUD_LOCATION=us-central1
-#   GOOGLE_GENAI_USE_VERTEXAI=TRUE
-#   MAPS_API_KEY=your-maps-api-key  # Required for competitor mapping
-```
-
-### Install Evaluation CLI
-
-```bash
-cd ../evaluation
-uv sync
-```
-
-You're ready to run evaluations.
-
----
-
-## 2. Baseline: Customer Service
-
-The Customer Service agent is a multi-turn chatbot. We use **ADK User Sim** to generate realistic conversations because:
-- It solves the "cold start" problem - no need for hand-crafted golden datasets
-- It tests conversation flows with realistic multi-turn interactions
-- It explores agent behavior across many scenarios automatically
-
-### Step 2.1: Run ADK Simulator
-
-```bash
-cd customer-service
-
-# Create eval set
-uv run adk eval_set create customer_service eval_set_with_scenarios
-
-# Add test scenarios
-uv run adk eval_set add_eval_case customer_service eval_set_with_scenarios \
-  --scenarios_file eval/scenarios/conversation_scenarios.json \
-  --session_input_file eval/scenarios/session_input.json
-
-# Run simulation (generates traces)
-uv run adk eval customer_service eval_set_with_scenarios
-```
-
-This takes 2-3 minutes. You'll see the simulated conversations in real-time.
-
-### Step 2.2: Convert Traces
-
-```bash
-cd ../evaluation
-
-RUN_DIR=$(uv run agent-eval convert \
-  --agent-dir ../customer-service/customer_service \
-  --output-dir ../customer-service/eval/results \
-  | awk -F': ' '/^Run folder:/ {print $2}')
-
-echo "Results will be saved to: $RUN_DIR"
-```
-
-### Step 2.3: Run Evaluation
-
-```bash
-uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
-  --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
-  --results-dir $RUN_DIR \
-  --input-label baseline
-```
-
-### Step 2.4: Analyze Results
-
-```bash
-uv run agent-eval analyze \
-  --results-dir $RUN_DIR \
-  --agent-dir ../customer-service \
-  --location global
-```
-
-### Step 2.5: Review Your Baseline
-
-```bash
-# View summary metrics
-cat $RUN_DIR/eval_summary.json | head -50
-
-# View AI-generated analysis
-cat $RUN_DIR/gemini_analysis.md
-```
-
-**Key metrics to note for later comparison:**
-- `multi_turn_general_quality` - Overall conversation quality
-- `trajectory_accuracy` - Did the agent follow correct steps?
-- `tool_use_quality` - Were tools used correctly?
-- `token_usage.total_tokens` - Cost indicator
-
----
-
-## 3. Baseline: Retail AI
-
-The Retail AI agent is a single-turn pipeline that analyzes locations. We use **DIY Interactions** because:
-- ADK User Sim is overkill for single-turn pipelines (no multi-turn conversation to simulate)
-- Specific queries against a running agent are faster than full simulation
-- DIY works against any agent URL (localhost, deployed, or remote) - not just ADK source code
-
-> **MAPS_API_KEY Required:** The Retail AI agent uses Google Maps Places API. Without a valid `MAPS_API_KEY` in your `.env`, the competitor mapping stage will fail. Get your key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and enable "Places API".
-
-### Step 3.1: Start the Agent
-
-```bash
-cd ../retail-ai-location-strategy
-uv sync
-make dev  # Starts on port 8502
-```
-
-**Keep this terminal running.** Open a new terminal for the next steps.
-
-### Step 3.2: Run Interactions
-
-```bash
-cd evaluation
-
-RUN_DIR=$(uv run agent-eval interact \
-  --app-name app \
-  --questions-file ../retail-ai-location-strategy/eval/eval_data/golden_dataset.json \
-  --base-url http://localhost:8502 \
-  --results-dir ../retail-ai-location-strategy/eval/results \
-  | awk -F': ' '/^Run folder:/ {print $2}')
-
-echo "Results will be saved to: $RUN_DIR"
-```
-
-This takes 3-5 minutes as the agent runs its full analysis pipeline.
-
-### Step 3.3: Run Evaluation
-
-```bash
-uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_app.jsonl \
-  --metrics-files ../retail-ai-location-strategy/eval/metrics/metric_definitions.json \
-  --results-dir $RUN_DIR \
-  --input-label baseline
-```
-
-### Step 3.4: Analyze Results
-
-```bash
-uv run agent-eval analyze \
-  --results-dir $RUN_DIR \
-  --agent-dir ../retail-ai-location-strategy \
-  --location global
-```
-
-### Step 3.5: Review Your Baseline
-
-```bash
-cat $RUN_DIR/gemini_analysis.md
-```
-
-**Key metrics for Retail AI:**
-- `general_quality` - Response quality
-- `pipeline_integrity` - Did the agent actually run all stages?
-- `tool_use_quality` - Were tools called correctly?
-- `latency_metrics.total_latency_seconds` - Pipeline duration
-
-You can now stop the agent in the first terminal (`Ctrl+C`).
-
----
-
-## 4. Add Custom Metric
-
-The Retail AI agent returns structured JSON responses. Let's create a custom metric that evaluates a specific field: `top_recommendation`.
-
-This demonstrates **fine-grained evaluation** of structured outputs.
-
-### Step 4.1: View the Existing Metrics
-
-```bash
-# View current metrics
-cat ../retail-ai-location-strategy/eval/metrics/metric_definitions.json
-```
-
-Note the existing metrics: `general_quality`, `text_quality`, `trajectory_accuracy`, `tool_use_quality`, `pipeline_integrity`.
-
-### Step 4.2: Create a New Metrics File with Your Custom Metric
-
-Instead of modifying the original, create a new file. This lets you compare results with and without your metric.
-
-We've already created `metric_definitions_with_recommendation.json` for you. View it:
-
-```bash
-cat ../retail-ai-location-strategy/eval/metrics/metric_definitions_with_recommendation.json | grep -A 30 recommendation_quality
-```
-
-**Key elements of the custom metric:**
-
-```json
-"recommendation_quality": {
-  "metric_type": "llm",
-  "agents": ["retail_location_strategy", "app"],
-  "score_range": {"min": 0, "max": 5, "description": "0=Poor, 5=Excellent"},
-
-  "dataset_mapping": {
-    "prompt": {"source_column": "user_inputs"},
-    "response": {"source_column": "trace_summary"},
-    "top_recommendation": {"source_column": "final_response:top_recommendation"},
-    "total_competitors": {"source_column": "final_response:total_competitors_found"},
-    "zones_analyzed": {"source_column": "final_response:zones_analyzed"}
-  },
-  "template": "...{prompt}...{response}...{top_recommendation}...{total_competitors}...{zones_analyzed}..."
-}
-```
-
-**Important notes:**
-- `dataset_mapping` defines placeholders for the template
-- `final_response:top_recommendation` extracts a nested field from the JSON response
-- Every field in `dataset_mapping` must be used in the template (e.g., `{response}`)
-
-### Step 4.3: Run Evaluation with New Metric
-
-You can re-use your existing processed interactions - no need to restart the agent!
-
-```bash
-cd evaluation
-
-# Use the baseline run folder from Section 3
-BASELINE_RUN=../retail-ai-location-strategy/eval/results/baseline
-
-# Create a new results folder for comparison
-NEW_RUN=../retail-ai-location-strategy/eval/results/with_custom_metric
-mkdir -p $NEW_RUN
-
-# Evaluate with new metric file
-uv run agent-eval evaluate \
-  --interaction-file $BASELINE_RUN/raw/processed_interaction_app.jsonl \
-  --metrics-files ../retail-ai-location-strategy/eval/metrics/metric_definitions_with_recommendation.json \
-  --results-dir $NEW_RUN \
-  --input-label with-custom-metric
-
-# Analyze
-uv run agent-eval analyze \
-  --results-dir $NEW_RUN \
-  --agent-dir ../retail-ai-location-strategy \
-  --location global
-```
-
-### Step 4.4: See Your Custom Metric
-
-```bash
-cat $NEW_RUN/eval_summary.json | grep -A8 recommendation_quality
-```
-
-You should see scores like:
-```json
-"recommendation_quality": {
-    "average": 3.33,
-    "score_range": {"min": 0, "max": 5, "description": "0=Poor, 5=Excellent"}
-}
-```
-
-### Step 4.5: Review Per-Question Scores
-
-```bash
-# See detailed scores and explanations
-cat $NEW_RUN/question_answer_log.md
-```
-
-Example output:
-- Capitol Hill coffee shop: **Score 5.0** - Specific location, evidence-based
-- Indiranagar bakery: **Score 5.0** - Clear recommendation with data
-- Vague "open a shop": **Score 0.0** - No recommendation provided
-
-**Understanding the Score 0.0 for "open a shop":**
-
-This test case (`retail_003_clarifying`) intentionally sends a vague request to test if the agent asks clarifying questions. The agent correctly responded:
-
-> "Hello! I can help with that. To get started, I need a bit more information. First, where are you thinking of opening this shop? Second, what type of shop do you want to open?"
-
-The metric scored 0 because:
-1. `final_response` for this case is a **string** (the clarifying question), not a structured JSON
-2. When accessing `final_response:top_recommendation`, it returns empty - strings don't have nested fields
-3. The metric sees no recommendation and scores 0
-
-**This is expected behavior for this test design.** To properly evaluate clarifying question scenarios, you could:
-1. Create a separate metric that evaluates the `final_response` directly (as a string)
-2. Or add `final_response` as another template field to give the LLM judge full context
-
-**Key takeaways:**
-- `final_response:field_name` syntax extracts nested fields from **structured JSON** responses
-- For **string responses** (like clarifying questions), access the full `final_response` directly
-- Design your metrics based on the response format your agent produces
-
----
-
-## 5. Optimization Branches
-
-Now apply optimization patterns and measure their impact.
-
-### Context Engineering Principles
-
-> "Context Engineering is the systematic management of the model's context window to maximize Signal-to-Noise Ratio, protecting the model from Context Rot."
->
-> **More Context != More Intelligence**
-
-### The Optimization Milestones
-
-| Milestone | Branch | Optimization | Target Metric |
-|-----------|--------|--------------|---------------|
-| M0 | `main` | Baseline (Naive Monolith) | Establish baseline scores |
-| M1 | `optimizations/01-tool-definition` | Tool Schema Hardening | `tool_use_quality` > 4.0 |
-| M2 | `optimizations/02-context-compaction` | Context Compaction | Reduce context rot over turns |
-| M3 | `optimizations/03-functional-isolation` | Functional Isolation (Sub-Agents) | `trajectory_accuracy` = 5/5 |
-| M4 | `optimizations/04-offload-and-reduce` | Offload & Reduce | `input_tokens` < 4000/turn |
-| M5 | *(coming soon)* | Prefix Caching | `cache_hit_rate` > 75% |
-
-### The Optimization Loop
-
-For each branch, you'll:
-1. **Checkout** the optimization branch
-2. **Run** the evaluation pipeline
-3. **Compare** metrics with baseline
-4. **Understand** what improved (and any trade-offs)
-
-> **💡 Tip: Use Gemini CLI to Generate Optimization Logs**
->
-> If you're using the Gemini CLI, it has access to `GEMINI.md` which contains instructions for comparing evaluation results. Ask the CLI to create an optimization log:
->
-> ```
-> "Compare the eval results in customer-service/eval/results/baseline/ vs
-> customer-service/eval/results/optimization/ and create an OPTIMIZATION_LOG.md
-> summarizing the metrics changes and what improved"
-> ```
->
-> The CLI can read the `eval_summary.json` files, extract metrics programmatically, and generate a formatted comparison report.
-
-### Example: Branch 01 - Tool Hardening
-
-```bash
-# 1. Checkout the branch
-git checkout optimizations/01-tool-definition
 cd customer-service
 uv sync
 
-# 2. Clear previous eval data
-rm -rf customer_service/.adk/eval_history/*
-
-# 3. Run simulation
-uv run adk eval customer_service eval_set_with_scenarios
-
-# 4. Convert, Evaluate, Analyze
-cd ../evaluation
-
-RUN_DIR=$(uv run agent-eval convert \
-  --agent-dir ../customer-service/customer_service \
-  --output-dir ../customer-service/eval/results \
-  | awk -F': ' '/^Run folder:/ {print $2}')
-
-uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
-  --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
-  --results-dir $RUN_DIR \
-  --input-label optimization-01
-
-uv run agent-eval analyze \
-  --results-dir $RUN_DIR \
-  --agent-dir ../customer-service \
-  --location global
-
-# 5. Compare with baseline
-cat $RUN_DIR/gemini_analysis.md
-```
-
-**What to look for:**
-- `tool_use_quality` should improve (stricter schemas = fewer tool errors)
-- Check `gemini_analysis.md` for specific improvements noted
-
-### Continue with Other Branches
-
-Repeat the process for each optimization branch:
-
-```bash
-# Branch 02
-git checkout optimizations/02-context-compaction
-# ... run pipeline ...
-
-# Branch 03
-git checkout optimizations/03-functional-isolation
-# ... run pipeline ...
-
-# Branches 04-05 (Retail AI)
-git checkout optimizations/04-offload-and-reduce
-cd retail-ai-location-strategy
-# Use DIY path: make dev, then interact/evaluate/analyze
-
-# git checkout optimizations/05-prefix-caching  # Coming soon
-# ... run pipeline ...
-```
-
-### Signal Identification Cheatsheet
-
-| Symptom | Metric to Check | Fix (Branch) |
-|---------|-----------------|--------------|
-| Agent invents tool parameters | `tool_use_quality` < 3.0 | 01 - Tool Hardening |
-| Agent forgets earlier context | Quality drops over turns | 02 - Context Compaction |
-| Agent chooses wrong tools | `trajectory_accuracy` < 3.0 | 03 - Functional Isolation |
-| Token usage exploding | `input_tokens` > 10,000 | 04 - Offloading |
-| High latency, low cache hits | `cache_hit_rate` < 50% | 05 - Prefix Caching |
-
----
-
-## 6. Wrap-up
-
-### What You Learned
-
-1. **Measure** - Run evaluations to get objective metrics
-2. **Identify** - Use `gemini_analysis.md` to find root causes
-3. **Optimize** - Apply Context Engineering patterns
-4. **Verify** - Compare before/after metrics
-
-### Key Files to Remember
-
-| File | Purpose |
-|------|---------|
-| `eval_summary.json` | Aggregated metrics (the numbers) |
-| `gemini_analysis.md` | AI root cause analysis (the why) |
-| `question_answer_log.md` | Detailed Q&A transcript |
-
-### Next Steps
-
-1. **Customize metrics** - Add metrics specific to your agent's domain
-2. **Add scenarios** - Create conversation scenarios for edge cases
-3. **Integrate CI/CD** - Run evaluations on every PR
-4. **Apply to your agents** - See [REFERENCE.md](REFERENCE.md) for adapting to external agents
-
----
-
-## Quick Reference
-
-### Full Pipeline: Customer Service (ADK User Sim)
-
-```bash
-# === From customer-service folder ===
-cd customer-service
-
-# Clear previous data
+# Clear previous evaluation data
 rm -rf customer_service/.adk/eval_history/*
 rm -f customer_service/*.evalset.json
 
@@ -594,140 +77,167 @@ uv run adk eval_set add_eval_case customer_service eval_set_with_scenarios \
   --scenarios_file eval/scenarios/conversation_scenarios.json \
   --session_input_file eval/scenarios/session_input.json
 
-# Run simulation
+# Run the simulation
 uv run adk eval customer_service eval_set_with_scenarios
+```
 
-# === From evaluation folder ===
+### 2B: Run Evaluation
+
+```bash
 cd ../evaluation
 
 # Convert traces
-RUN_DIR=$(uv run agent-eval convert \
+uv run agent-eval convert \
   --agent-dir ../customer-service/customer_service \
-  --output-dir ../customer-service/eval/results \
-  | awk -F': ' '/^Run folder:/ {print $2}')
+  --output-dir ../customer-service/eval/results/my_optimization_01
 
-# Evaluate
+# Run metrics
 uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_sim.jsonl \
+  --interaction-file ../customer-service/eval/results/my_optimization_01/raw/processed_interaction_sim.jsonl \
   --metrics-files ../customer-service/eval/metrics/metric_definitions.json \
-  --results-dir $RUN_DIR
+  --results-dir ../customer-service/eval/results/my_optimization_01 \
+  --input-label optimization-01
+```
 
-# Analyze
+### 2C: Analyze Results
+
+```bash
 uv run agent-eval analyze \
-  --results-dir $RUN_DIR \
+  --results-dir ../customer-service/eval/results/my_optimization_01 \
   --agent-dir ../customer-service \
   --location global
-
-# View results
-cat $RUN_DIR/eval_summary.json | head -50
-cat $RUN_DIR/gemini_analysis.md
 ```
 
-### Full Pipeline: Retail AI (DIY Interactions)
+---
+
+## Step 3: Review Results
+
+> **Note on Non-Determinism:** LLM-as-judge metrics (like `capability_honesty`, `trajectory_accuracy`) are inherently non-deterministic. Your results may differ from the pre-computed values below due to the probabilistic nature of both the agent and the evaluation model. This is expected - focus on the *direction* of change (improvement vs regression) rather than exact numbers.
+
+---
+
+### Option A: If You Ran the Evaluation
+
+Compare your results against the baseline:
 
 ```bash
-# === Terminal 1: Start the agent ===
-cd retail-ai-location-strategy
-uv sync
-make dev  # Keep running
+# View your results
+cat ../customer-service/eval/results/my_optimization_01/gemini_analysis.md
 
-# === Terminal 2: Run evaluation ===
-cd evaluation
-
-# Run interactions
-RUN_DIR=$(uv run agent-eval interact \
-  --app-name app \
-  --questions-file ../retail-ai-location-strategy/eval/eval_data/golden_dataset.json \
-  --base-url http://localhost:8502 \
-  --results-dir ../retail-ai-location-strategy/eval/results \
-  | awk -F': ' '/^Run folder:/ {print $2}')
-
-# Evaluate
-uv run agent-eval evaluate \
-  --interaction-file $RUN_DIR/raw/processed_interaction_app.jsonl \
-  --metrics-files ../retail-ai-location-strategy/eval/metrics/metric_definitions.json \
-  --results-dir $RUN_DIR
-
-# Analyze
-uv run agent-eval analyze \
-  --results-dir $RUN_DIR \
-  --agent-dir ../retail-ai-location-strategy \
-  --location global
-
-# View results
-cat $RUN_DIR/gemini_analysis.md
+# View baseline for comparison
+cat ../customer-service/eval/results/baseline/eval_summary.json | head -60
 ```
 
-### Re-running After Changes (Hillclimbing)
+**What to look for:**
+- Did `capability_honesty` improve? (Baseline was ~2.2/5)
+- Did `trajectory_accuracy` improve? (Baseline was ~3.6/5)
+- Did `token_usage.prompt_tokens` decrease? (Baseline was ~22,000)
 
-**Customer Service:**
+Note the deltas you observe - they may differ from our pre-computed results but should trend in the same direction.
+
+---
+
+### Option B: Following Along (Pre-Computed Results)
+
+If you're following the presentation without running commands, here are our pre-computed results:
+
+**Key Metrics Comparison:**
+
+| Metric | Baseline | Optimization 01 | Delta |
+|--------|----------|-----------------|-------|
+| `capability_honesty` | 2.2/5 | 4.2/5 | +2.0 |
+| `trajectory_accuracy` | 3.6/5 | 4.6/5 | +1.0 |
+| `token_usage.prompt_tokens` | ~22,000 | ~14,000 | -37% |
+| `latency_metrics.avg_turn_latency` | 11.0s | 12.9s | +1.9s |
+
+**View full pre-computed results:**
+
 ```bash
-cd customer-service
-rm -rf customer_service/.adk/eval_history/*
-uv run adk eval customer_service eval_set_with_scenarios
-cd ../evaluation
-# ... convert, evaluate, analyze (same commands as above)
+cat ../customer-service/eval/results/optimization/eval_summary.json | head -60
+cat ../customer-service/eval/results/OPTIMIZATION_LOG.md
 ```
 
-**Retail AI:**
+---
+
+## Step 4: Understand the Optimization Log
+
+We've prepared a detailed analysis of the optimization. Read through it to understand the changes and their impact:
+
 ```bash
-# Stop agent (Ctrl+C), make changes, restart
-cd retail-ai-location-strategy && make dev
-# In another terminal, run interact → evaluate → analyze
+cat ../customer-service/eval/results/OPTIMIZATION_LOG.md
 ```
 
-### More Information
+### Key Insights (Summary)
 
-See [REFERENCE.md](REFERENCE.md) for:
-- Complete CLI reference with all flags
-- All metric types explained
-- Creating custom simulations
+1. **What Worked:**
+   - Token usage dropped 35% due to clearer tool definitions
+   - Agent now correctly says "I cannot email the QR code" instead of lying
+   - 100% tool success rate maintained
+
+2. **Trade-offs Observed:**
+   - Turn latency increased slightly (11s → 13s)
+   - Reasoning ratio increased (agent "over-thinking")
+
+3. **Mechanism Discovery:**
+   > Embedding `**KNOWN LIMITATIONS**` directly into Python docstrings is highly effective. The agent successfully internalizes these warnings into response generation.
+
+---
+
+## Step 5: Think Through It
+
+Before moving to the next branch, consider these questions:
+
+1. **Why did capability_honesty improve?**
+   - The agent now has explicit constraints in tool docstrings
+   - It can reference what it *cannot* do, not just what it *can* do
+
+2. **Why did latency increase slightly?**
+   - More reasoning tokens as the agent evaluates constraints
+   - Trade-off: slower but more honest
+
+3. **What's still missing?**
+   - Agent sometimes uses workaround tools (e.g., `get_product_recommendations` to find a product ID)
+   - A dedicated `search_product_by_name` tool would improve trajectory accuracy
+
+---
+
+## Step 6: Next Steps
+
+You've completed the Tool Schema Hardening optimization!
+
+**Continue to Branch 02: Context Compaction**
+
+```bash
+git checkout optimizations/02-context-compaction
+cat README.md
+```
+
+Branch 02 addresses the latency and reasoning ratio issues observed in this optimization by compressing conversation history.
+
+---
+
+## Quick Reference
+
+### Files Changed in This Branch
+
+| File | What Changed |
+|------|--------------|
+| `customer_service/tools/tools.py` | Added Pydantic validation, `KNOWN LIMITATIONS` docstrings |
+| `customer_service/prompts.py` | Added "CORE OPERATIONAL BOUNDARIES" section |
+| `customer_service/agent.py` | Updated tool descriptions |
+
+### Results Locations
+
+| What | Where |
+|------|-------|
+| Baseline results | `customer-service/eval/results/baseline/` |
+| Pre-computed optimization results | `customer-service/eval/results/optimization/` |
+| Your results | `customer-service/eval/results/my_optimization_01/` |
+| Optimization log | `customer-service/eval/results/OPTIMIZATION_LOG.md` |
+
+### Need Help?
+
+See [REFERENCE.md](REFERENCE.md) on the main branch for:
+- Complete CLI reference
+- Metrics glossary
 - Troubleshooting guide
-- Adapting the framework for your own agents
-- Understanding optimization trade-offs
-
----
-
-## Repository Structure
-
-```
-accelerate/
-├── README.md                      # This file - workshop guide
-├── REFERENCE.md                   # Deep dive - CLI, metrics, customization
-├── setup_workshop.sh              # Environment verification
-│
-├── customer-service/              # Agent A (multi-turn, reliability)
-│   ├── customer_service/          # Agent code
-│   └── eval/                      # Scenarios, metrics, results
-│
-├── retail-ai-location-strategy/   # Agent B (pipeline, scale)
-│   ├── app/                       # Agent code
-│   └── eval/                      # Golden dataset, metrics, results
-│
-└── evaluation/                    # Shared evaluation CLI
-    └── src/evaluation/cli/        # agent-eval commands
-```
-
----
-
-## Critical Requirement
-
-```
-+------------------------------------------------------------------+
-|  You MUST use Vertex AI for the evaluation pipeline to work.     |
-|                                                                   |
-|  Set: GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION             |
-|  Do NOT use: GOOGLE_API_KEY                                       |
-|                                                                   |
-|  API keys bypass Vertex AI, resulting in empty metrics.          |
-+------------------------------------------------------------------+
-```
-
----
-
-## Additional Resources
-
-- [REFERENCE.md](REFERENCE.md) - Complete CLI and customization guide
-- [ADK Documentation](https://google.github.io/adk-docs/)
-- [ADK User Simulation](https://google.github.io/adk-docs/evaluate/user-sim/)
-- [Vertex AI Evaluation](https://cloud.google.com/vertex-ai/docs/generative-ai/evaluation/)
