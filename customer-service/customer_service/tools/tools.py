@@ -19,6 +19,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Literal, Optional, List
 from pydantic import BaseModel, Field
+from google.adk.tools import ToolContext
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,6 @@ class DiscountApprovalRequest(BaseModel):
 
 class QRGenerationRequest(BaseModel):
     """Schema for generating a discount QR code."""
-    customer_id: str = Field(description="The ID of the customer.")
     discount_value: float = Field(description="Value of the discount (e.g. 10 for 10%).")
     discount_type: Literal["percentage", "fixed"] = Field(description="The type of discount.")
     expiration_days: int = Field(default=30, description="Days until the QR code expires.")
@@ -224,7 +224,7 @@ def send_care_instructions(customer_id: str, plant_type: str, delivery_method: L
     return {"status": "success", "message": f"Sent via {delivery_method}."}
 
 
-def generate_qr_code(request: QRGenerationRequest) -> dict:
+def generate_qr_code(request: QRGenerationRequest, tool_context: ToolContext) -> dict:
     """
     Generates a discount QR code.
 
@@ -233,13 +233,33 @@ def generate_qr_code(request: QRGenerationRequest) -> dict:
 
     Args:
         request (QRGenerationRequest): Structured QR request.
+        tool_context (ToolContext): Runtime context.
     """
+    # Defensive: Ensure request is a Pydantic model
+    if isinstance(request, dict):
+        try:
+            request = QRGenerationRequest(**request)
+        except Exception as e:
+            return {"status": "error", "message": f"Invalid request format: {e}"}
+
+    # Retrieve customer_id from state, fallback to "unknown" if missing
+    customer_profile = tool_context.state.get("customer_profile", {})
+    # Handle case where profile might be a JSON string or dict
+    if isinstance(customer_profile, str):
+        import json
+        try:
+            customer_profile = json.loads(customer_profile)
+        except:
+            customer_profile = {}
+            
+    customer_id = customer_profile.get("customer_id", "unknown_customer")
+
     if request.discount_type == "percentage" and request.discount_value > 10:
         return {"status": "error", "message": "percentage must be <= 10%"}
     
     expiration_date = (datetime.now() + timedelta(days=request.expiration_days)).strftime("%Y-%m-%d")
     return {
         "status": "success",
-        "qr_code_data": "MOCK_QR_CODE_DATA",
+        "qr_code_data": f"MOCK_QR_{customer_id}_DATA",
         "expiration_date": expiration_date,
     }
