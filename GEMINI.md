@@ -1,12 +1,6 @@
-# AI Assistant Context for Workshop
+# Agent Optimization Workshop Context
 
-This file provides context for AI coding assistants (Gemini CLI, Claude Code, etc.) to help workshop participants effectively.
-
----
-
-## Quick Context Load
-
-For full repository context, use [gitingest](https://gitingest.com/jcarah/accelerate_context_engineering_workshop) to generate a context dump you can paste into your AI assistant.
+> This file provides context for AI assistants. For setup instructions, see [REFERENCE.md](REFERENCE.md#ai-assistant-setup).
 
 ---
 
