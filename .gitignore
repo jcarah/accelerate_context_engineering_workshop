@@ -196,3 +196,6 @@ retail-ai-location-strategy/dev_log.txt
 gitingest.txt
 .gitignore
 types.txt
+
+# Working files (not for commit)
+BRANCH_UPDATE_PLAN.md
