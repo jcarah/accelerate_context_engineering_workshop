@@ -75,6 +75,12 @@ root_agent = Agent(
     before_model_callback=rate_limit_callback,
 )
 
-from google.adk.apps.app import App
+from google.adk.apps.app import App, EventsCompactionConfig
 
-app = App(root_agent=root_agent, name="customer_service")
+app = App(
+    root_agent=root_agent,
+    name="customer_service",
+    events_compaction_config=EventsCompactionConfig(
+        compaction_interval=10, overlap_size=1
+    ),
+)

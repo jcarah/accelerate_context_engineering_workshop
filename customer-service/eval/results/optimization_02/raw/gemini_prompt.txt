@@ -1,0 +1,3174 @@
+
+You are an expert AI evaluation analyst. Your task is to produce a deep technical diagnosis of an AI agent's performance for technical stakeholders.
+
+**Tone:** objective, analytical, and professional
+**Report Length:** comprehensive
+
+
+
+**CRITICAL INSTRUCTIONS:**
+1.  **Focus on Diagnosis, Not Recommendations:** Your primary goal is to explain *why* the metrics are what they are. Do not provide a future-looking action plan unless the Strategic Framework above explicitly guides it.
+2.  **Synthesize, Don't Summarize:** Do not simply repeat the scores. Your value is in synthesizing insights by connecting the metric scores, the metric definitions, the source code, and the raw explanations.
+3.  **Reference Your Sources:** When you make a claim or analyze a metric, you MUST reference the specific source file (e.g., `metric_definitions.json`, `deterministic_metrics.py`, `agent.py`).
+4.  **Analyze Calculation Methods:** For each metric you discuss, you MUST explain how its calculation method (deterministic vs. LLM-judged) influences its interpretation.
+5.  **Cite Quantitative and Qualitative Evidence:** You MUST quote specific examples from the conversation logs (user inputs, tool calls, or agent responses) AND cite the corresponding metric scores to justify your findings. Don't just say "the agent failed"; say "The agent's score of 1.2 on `tool_usage_accuracy` is justified by question `q_billing_01`, where it failed to call `lookup_invoice` despite the user explicitly asking for it."
+
+---
+
+**Context for Your Analysis**
+
+You are provided with the following context files to perform your diagnosis. Use them to connect the agent's behavior (the metrics) to its underlying implementation (the code).
+
+**1. Overall Performance Data:**
+*   **Evaluation Summary:** High-level average scores for all metrics. Use this to identify the most significant areas of success and failure.
+**Evaluation Summary**
+```json
+{
+  "experiment_id": "eval-20260128_200847",
+  "run_type": "manual",
+  "test_description": "Automated evaluation",
+  "interaction_datetime": "2026-01-28T20:08:47.891106",
+  "overall_summary": {
+    "deterministic_metrics": {
+      "token_usage.llm_calls": 4.2,
+      "token_usage.total_tokens": 0.0,
+      "token_usage.prompt_tokens": 12601.0,
+      "token_usage.completion_tokens": 203.4,
+      "token_usage.cached_tokens": 0.0,
+      "token_usage.estimated_cost_usd": 0.0,
+      "latency_metrics.total_latency_seconds": 18.78184,
+      "latency_metrics.average_turn_latency_seconds": 6.327211666666667,
+      "latency_metrics.llm_latency_seconds": 3.6,
+      "latency_metrics.tool_latency_seconds": 3.2,
+      "latency_metrics.time_to_first_response_seconds": 1.0003771904,
+      "cache_efficiency.cache_hit_rate": 0.0,
+      "cache_efficiency.total_cached_tokens": 0.0,
+      "cache_efficiency.total_fresh_prompt_tokens": 12601.0,
+      "cache_efficiency.total_input_tokens": 12601.0,
+      "thinking_metrics.reasoning_ratio": 0.7436247411288918,
+      "thinking_metrics.total_thinking_tokens": 562.6,
+      "thinking_metrics.total_candidate_tokens": 203.4,
+      "thinking_metrics.total_output_tokens": 766.0,
+      "thinking_metrics.turns_with_thinking": 4.2,
+      "tool_utilization.total_tool_calls": 3.2,
+      "tool_utilization.unique_tools_used": 1.6,
+      "tool_success_rate.tool_success_rate": 1.0,
+      "tool_success_rate.total_tool_calls": 1.6,
+      "tool_success_rate.failed_tool_calls": 0.0,
+      "grounding_utilization.total_grounding_chunks": 0.0,
+      "grounding_utilization.total_grounded_responses": 0.0,
+      "grounding_utilization.total_llm_responses": 4.2,
+      "context_saturation.max_total_tokens": 3469.4,
+      "agent_handoffs.total_handoffs": 2.6,
+      "agent_handoffs.unique_agents_count": 1.0,
+      "output_density.average_output_tokens": 47.28333333333333,
+      "output_density.total_output_tokens": 203.4,
+      "output_density.llm_calls_count": 4.2,
+      "sandbox_usage.total_sandbox_ops": 0.0,
+      "sandbox_usage.unique_ops_used": 0.0
+    },
+    "llm_based_metrics": {
+      "multi_turn_general_quality": {
+        "average": 0.8875,
+        "score_range": {
+          "min": 0,
+          "max": 1,
+          "description": "Passing rate for general quality rubrics"
+        }
+      },
+      "trajectory_accuracy": {
+        "average": 4.8,
+        "score_range": {
+          "min": 0,
+          "max": 5,
+          "description": "0=Completely wrong, 5=Perfect trajectory"
+        }
+      },
+      "capability_honesty": {
+        "average": 5.0,
+        "score_range": {
+          "min": 0,
+          "max": 5,
+          "description": "0=Major misrepresentation, 5=Perfectly honest"
+        }
+      },
+      "tool_use_quality": {
+        "average": 4.8,
+        "score_range": {
+          "min": 0,
+          "max": 5,
+          "description": "0=Poor tool usage, 5=Excellent tool usage"
+        }
+      },
+      "multi_turn_text_quality": {
+        "average": 0.96969698,
+        "score_range": {
+          "min": 0,
+          "max": 1,
+          "description": "Passing rate for text quality rubrics"
+        }
+      }
+    }
+  },
+  "per_question_summary": [
+    {
+      "question_id": "2c79e2d0",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 6,
+          "models_used": [
+            "gemini-2.5-flash"
+          ],
+          "total_tokens": 0,
+          "prompt_tokens": 18769,
+          "completion_tokens": 321,
+          "cached_tokens": 0,
+          "estimated_cost_usd": 0.0
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 19.5744,
+          "average_turn_latency_seconds": 6.5248,
+          "llm_latency_seconds": 4.0,
+          "tool_latency_seconds": 6.0,
+          "time_to_first_response_seconds": 1.000381952
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.0,
+          "total_cached_tokens": 0,
+          "total_fresh_prompt_tokens": 18769,
+          "total_input_tokens": 18769
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.6741116751269035,
+          "total_thinking_tokens": 664,
+          "total_candidate_tokens": 321,
+          "total_output_tokens": 985,
+          "turns_with_thinking": 6
+        },
+        "tool_utilization": {
+          "total_tool_calls": 6,
+          "unique_tools_used": 3,
+          "tool_counts": {
+            "get_product_recommendations": 2,
+            "check_product_availability": 2,
+            "modify_cart": 2
+          }
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 1.0,
+          "total_tool_calls": 3,
+          "failed_tool_calls": 0,
+          "failed_tools_list": []
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 0,
+          "total_grounded_responses": 0,
+          "total_llm_responses": 6
+        },
+        "context_saturation": {
+          "max_total_tokens": 3721,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 3,
+          "unique_agents_count": 1,
+          "agents_invoked_list": [
+            "customer_service"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 53.5,
+          "total_output_tokens": 321,
+          "llm_calls_count": 6
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "multi_turn_general_quality": {
+          "score": 0.8,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is in English."
+                  }
+                },
+                "type": "LANGUAGE:PRIMARY_RESPONSE_LANGUAGE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The entire response is written in the English language."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response confirms that 'Bloom Booster Potting Mix (soil-456)' has been added to the user's cart."
+                  }
+                },
+                "type": "ACTION_CONFIRMATION:ADD_TO_CART:PRODUCT",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states, \"I've added the Bloom Booster Potting Mix to your cart,\" which directly confirms the action requested by the user."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response does not add 'Flower Power Fertilizer (fert-789)' to the cart."
+                  }
+                },
+                "type": "ACTION_ACCURACY:DO_NOT_ADD_TO_CART:PRODUCT",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response asks \"Would you like to add the Flower Power Fertilizer as well,\" indicating that it has not been added to the cart yet, but is being offered as an option."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response acknowledges the user's explicit request to add the item."
+                  }
+                },
+                "type": "ACKNOWLEDGMENT:USER_REQUEST",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response begins with \"Great!\" and then immediately confirms the action requested by the user, directly acknowledging the prompt."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response provides a summary or current status of the user's cart (e.g., total items, next steps)."
+                  }
+                },
+                "type": "INFORMATION:CART_STATUS",
+                "importance": "LOW"
+              },
+              "reasoning": "The response confirms the addition of one item but does not provide a summary of the cart's overall status, such as the total number of items, a list of all items, or the total cost."
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I'm thinking about planting some Petunias in my backyard in Las Vegas."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "That's wonderful! Petunias can add a beautiful splash of color to your backyard.\n\nSince you're in Las Vegas, we'll want to make sure you have the right products to help your Petunias thrive in that climate.\n\n"
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Before we do that, can you check if the Bloom Booster Potting Mix is in stock?"
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great choice! For Petunias in Las Vegas, I recommend:\n\n*   **Bloom Booster Potting Mix (Product ID: soil-456)**: This will give your Petunias the best start.\n*   **Flower Power Fertilizer (Product ID: fert-789)**: To keep them blooming beautifully.\n\nWould you like me to add these to your cart? I can also provide care instructions or check if you'd be interested in our professional planting services."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Yes, please add the Bloom Booster Potting Mix (soil-456) to my cart."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Yes, the Bloom Booster Potting Mix (product ID: soil-456) is in stock at your preferred Anytown Garden Store. We have 10 units available.\n\nWould you like to add the Bloom Booster Potting Mix and the Flower Power Fertilizer to your cart now?"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Great! I've added the Bloom Booster Potting Mix to your cart.\n\nWould you like to add the Flower Power Fertilizer as well, or is there anything else I can help you with today?"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 4.0,
+          "explanation": "The agent correctly identified the need for `check_product_availability` and `modify_cart` tools and executed them in the proper sequence to fulfill the explicit user requests. The `get_product_recommendations` tool was called proactively based on the user's initial context about planting Petunias, which, while not explicitly requested at that moment, was leveraged in the final response. The sequencing of the recommendation tool before the explicit stock check is a minor inefficiency, but it doesn't prevent the core user goal from being met and leads to a relevant follow-up offer.",
+          "input": {
+            "prompt": "I'm thinking about planting some Petunias in my backyard in Las Vegas.\nBefore we do that, can you check if the Bloom Booster Potting Mix is in stock?\nYes, please add the Bloom Booster Potting Mix (soil-456) to my cart.",
+            "response": "agent:customer_service\ntool:get_product_recommendations\ntool:check_product_availability\ntool:modify_cart",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"check_product_availability\", \"description\": \"Tool: check_product_availability\"}]}\n{\"function_declarations\": [{\"name\": \"get_product_recommendations\", \"description\": \"Tool: get_product_recommendations\"}]}\n{\"function_declarations\": [{\"name\": \"modify_cart\", \"description\": \"Tool: modify_cart\"}]}",
+            "final_response": "Great! I've added the Bloom Booster Potting Mix to your cart.\n\nWould you like to add the Flower Power Fertilizer as well, or is there anything else I can help you with today?"
+          }
+        },
+        "capability_honesty": {
+          "score": 5.0,
+          "explanation": "The agent accurately represented its capabilities throughout the conversation. It used the `get_product_recommendations` tool to suggest products, `check_product_availability` to confirm stock (although it didn't explicitly state the availability to the user, it proceeded as if it were available and it was), and `modify_cart` to add the item. None of its statements contradicted the known tool limitations, and it did not overpromise or make false claims about its abilities.",
+          "input": {
+            "prompt": "I'm thinking about planting some Petunias in my backyard in Las Vegas.\nBefore we do that, can you check if the Bloom Booster Potting Mix is in stock?\nYes, please add the Bloom Booster Potting Mix (soil-456) to my cart.",
+            "response": "Great! I've added the Bloom Booster Potting Mix to your cart.\n\nWould you like to add the Flower Power Fertilizer as well, or is there anything else I can help you with today?",
+            "tool_interactions": "{\"tool_name\": \"get_product_recommendations\", \"input_arguments\": {\"plantType\": \"Petunias\", \"customerId\": \"123\"}, \"call_id\": \"adk-d611d420-fb5e-43f0-9558-42648b420859\", \"output_result\": {\"recommendations\": [{\"productId\": \"soil-456\", \"name\": \"Bloom Booster Potting Mix\"}, {\"productId\": \"fert-789\", \"name\": \"Flower Power Fertilizer\"}]}}\n{\"tool_name\": \"check_product_availability\", \"input_arguments\": {\"storeId\": \"Anytown Garden Store\", \"productId\": \"soil-456\"}, \"call_id\": \"adk-c32e9ae6-654b-404b-bee5-0e... [truncated]",
+            "full_conversation": "{\"role\": \"user\", \"parts\": [{\"text\": \"I'm thinking about planting some Petunias in my backyard in Las Vegas.\"}]}\n{\"role\": \"model\", \"parts\": [{\"text\": \"That's wonderful! Petunias can add a beautiful splash of color to your backyard.\\n\\nSince you're in Las Vegas, we'll want to make sure you have the right products to help your Petunias thrive in that climate.\\n\\n\"}]}\n{\"role\": \"user\", \"parts\": [{\"text\": \"Before we do that, can you check if the Bloom Booster Potting Mix is in stock?\"}]}\n{\"role\": \"mod... [truncated]"
+          }
+        },
+        "tool_use_quality": {
+          "score": 5.0,
+          "explanation": "The agent effectively used all available tools to fulfill the user's request. The 'get_product_recommendations' call was a proactive and useful step to identify the 'productId' for 'Bloom Booster Potting Mix' (which was not initially provided for the stock check) and also set up a relevant upsell. The subsequent 'check_product_availability' and 'modify_cart' calls directly addressed the explicit requests with correct arguments. The final response accurately reflected the cart modification and leveraged the recommendation for an upsell. All arguments were correct, results were handled appropriately, and the execution was logical and efficient given the information provided by the user and the available tools.",
+          "input": {
+            "prompt": "I'm thinking about planting some Petunias in my backyard in Las Vegas.\nBefore we do that, can you check if the Bloom Booster Potting Mix is in stock?\nYes, please add the Bloom Booster Potting Mix (soil-456) to my cart.",
+            "response": "Great! I've added the Bloom Booster Potting Mix to your cart.\n\nWould you like to add the Flower Power Fertilizer as well, or is there anything else I can help you with today?",
+            "tool_interactions": "{\"tool_name\": \"get_product_recommendations\", \"input_arguments\": {\"plantType\": \"Petunias\", \"customerId\": \"123\"}, \"call_id\": \"adk-d611d420-fb5e-43f0-9558-42648b420859\", \"output_result\": {\"recommendations\": [{\"productId\": \"soil-456\", \"name\": \"Bloom Booster Potting Mix\"}, {\"productId\": \"fert-789\", \"name\": \"Flower Power Fertilizer\"}]}}\n{\"tool_name\": \"check_product_availability\", \"input_arguments\": {\"storeId\": \"Anytown Garden Store\", \"productId\": \"soil-456\"}, \"call_id\": \"adk-c32e9ae6-654b-404b-bee5-0e... [truncated]",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"check_product_availability\", \"description\": \"Tool: check_product_availability\"}]}\n{\"function_declarations\": [{\"name\": \"get_product_recommendations\", \"description\": \"Tool: get_product_recommendations\"}]}\n{\"function_declarations\": [{\"name\": \"modify_cart\", \"description\": \"Tool: modify_cart\"}]}"
+          }
+        },
+        "multi_turn_text_quality": {
+          "score": null,
+          "rubric_verdicts": NaN,
+          "error": "400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Number of question blocks does not match number of verdicts.', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.DebugInfo', 'detail': '[ORIGINAL ERROR] generic::invalid_argument: com.google.cloud.ai.platform.common.errors.AiPlatformException: code=INVALID_ARGUMENT, message=Number of question blocks does not match number of verdicts., cause=null [google.rpc.error_details_ext] { code: 3 message: \"Number of question blocks does not match number of verdicts.\" }'}]}}",
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I'm thinking about planting some Petunias in my backyard in Las Vegas."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "That's wonderful! Petunias can add a beautiful splash of color to your backyard.\n\nSince you're in Las Vegas, we'll want to make sure you have the right products to help your Petunias thrive in that climate.\n\n"
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Before we do that, can you check if the Bloom Booster Potting Mix is in stock?"
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great choice! For Petunias in Las Vegas, I recommend:\n\n*   **Bloom Booster Potting Mix (Product ID: soil-456)**: This will give your Petunias the best start.\n*   **Flower Power Fertilizer (Product ID: fert-789)**: To keep them blooming beautifully.\n\nWould you like me to add these to your cart? I can also provide care instructions or check if you'd be interested in our professional planting services."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Yes, please add the Bloom Booster Potting Mix (soil-456) to my cart."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Yes, the Bloom Booster Potting Mix (product ID: soil-456) is in stock at your preferred Anytown Garden Store. We have 10 units available.\n\nWould you like to add the Bloom Booster Potting Mix and the Flower Power Fertilizer to your cart now?"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Great! I've added the Bloom Booster Potting Mix to your cart.\n\nWould you like to add the Flower Power Fertilizer as well, or is there anything else I can help you with today?"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "68b39c35",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 3,
+          "models_used": [
+            "gemini-2.5-flash"
+          ],
+          "total_tokens": 0,
+          "prompt_tokens": 8431,
+          "completion_tokens": 144,
+          "cached_tokens": 0,
+          "estimated_cost_usd": 0.0
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 8.283999999999999,
+          "average_turn_latency_seconds": 4.1419999999999995,
+          "llm_latency_seconds": 3.0,
+          "tool_latency_seconds": 2.0,
+          "time_to_first_response_seconds": 1.000226048
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.0,
+          "total_cached_tokens": 0,
+          "total_fresh_prompt_tokens": 8431,
+          "total_input_tokens": 8431
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.7165354330708661,
+          "total_thinking_tokens": 364,
+          "total_candidate_tokens": 144,
+          "total_output_tokens": 508,
+          "turns_with_thinking": 3
+        },
+        "tool_utilization": {
+          "total_tool_calls": 2,
+          "unique_tools_used": 1,
+          "tool_counts": {
+            "generate_qr_code": 2
+          }
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 1.0,
+          "total_tool_calls": 1,
+          "failed_tool_calls": 0,
+          "failed_tools_list": []
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 0,
+          "total_grounded_responses": 0,
+          "total_llm_responses": 3
+        },
+        "context_saturation": {
+          "max_total_tokens": 3209,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 2,
+          "unique_agents_count": 1,
+          "agents_invoked_list": [
+            "customer_service"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 48.0,
+          "total_output_tokens": 144,
+          "llm_calls_count": 3
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "multi_turn_general_quality": {
+          "score": 1.0,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is in English."
+                  }
+                },
+                "type": "LANGUAGE:PRIMARY_RESPONSE_LANGUAGE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The entire response is written in the English language."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response provides a discount code."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:DISCOUNT_CODE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states that a QR code has been generated and provides a placeholder for it, fulfilling the request for a discount code."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The provided discount is 10% off."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:DISCOUNT_AMOUNT",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states \"10% off\", matching the requested discount percentage."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The discount code is presented as a QR code."
+                  }
+                },
+                "type": "FORMAT_REQUIREMENT:QR_CODE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states it has generated a \"QR code\" and provides a placeholder (\"MOCK_QR_CODE_DATA\") for it, directly fulfilling the user's request for the discount to be in QR code format."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response clarifies that the discount code is for the user's next visit."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:DISCOUNT_USAGE",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states \"for 10% off your next in-store purchase,\" which directly confirms the discount is for the user's next visit, as requested."
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I've been shopping here for a while. Do I get any rewards?"
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Welcome back, Alex! I see you've been a valued customer for 2 years. You currently have 133 loyalty points."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Thank you! Can I get a discount code for my next visit? Specifically, I'm looking for a QR code for 10% off."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\n\nHere is your QR code: MOCK_QR_CODE_DATA\n\nThis discount will expire on 2026-02-27. Please present this QR code at checkout to redeem your discount.\n\n*(Please note: QR codes are displayed directly in this chat and cannot be sent via email.)*"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\n\nHere is your QR code: MOCK_QR_CODE_DATA\n\nThis discount will expire on 2026-02-27. Please present this QR code at checkout to redeem your discount.\n\n*(Please note: QR codes are displayed directly in this chat and cannot be sent via email.)*"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 5.0,
+          "explanation": "The agent successfully addressed the user's specific request for a 10% off QR code by using the only available tool, `generate_qr_code`. It also gracefully handled a potential limitation by stating the QR code cannot be sent via email. The trajectory is optimal given the toolset.",
+          "input": {
+            "prompt": "I've been shopping here for a while. Do I get any rewards?\nThank you! Can I get a discount code for my next visit? Specifically, I'm looking for a QR code for 10% off.",
+            "response": "agent:customer_service\ntool:generate_qr_code",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"generate_qr_code\", \"description\": \"Tool: generate_qr_code\"}]}",
+            "final_response": "Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\n\nHere is your QR code: MOCK_QR_CODE_DATA\n\nThis discount will expire on 2026-02-27. Please present this QR code at checkout to redeem your discount.\n\n*(Please note: QR codes are displayed directly in this chat and cannot be sent via email.)*"
+          }
+        },
+        "capability_honesty": {
+          "score": 5.0,
+          "explanation": "The agent accurately represented its capabilities by successfully generating the requested QR code. It also proactively communicated a known limitation, stating that 'QR codes are displayed directly in this chat and cannot be sent via email,' which aligns perfectly with the `generate_qr_code` tool's limitation of 'CANNOT send via email.' This sets clear and accurate expectations for the user.",
+          "input": {
+            "prompt": "I've been shopping here for a while. Do I get any rewards?\nThank you! Can I get a discount code for my next visit? Specifically, I'm looking for a QR code for 10% off.",
+            "response": "Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\n\nHere is your QR code: MOCK_QR_CODE_DATA\n\nThis discount will expire on 2026-02-27. Please present this QR code at checkout to redeem your discount.\n\n*(Please note: QR codes are displayed directly in this chat and cannot be sent via email.)*",
+            "tool_interactions": "{\"tool_name\": \"generate_qr_code\", \"input_arguments\": {\"request\": {\"customerId\": \"123\", \"discountType\": \"percentage\", \"expirationDays\": 30, \"discountValue\": 10}}, \"call_id\": \"adk-472108f7-a74b-4e46-9530-d3951ecc769c\", \"output_result\": {\"status\": \"success\", \"qrCodeData\": \"MOCK_QR_CODE_DATA\", \"expirationDate\": \"2026-02-27\"}}",
+            "full_conversation": "{\"role\": \"user\", \"parts\": [{\"text\": \"I've been shopping here for a while. Do I get any rewards?\"}]}\n{\"role\": \"model\", \"parts\": [{\"text\": \"Welcome back, Alex! I see you've been a valued customer for 2 years. You currently have 133 loyalty points.\"}]}\n{\"role\": \"user\", \"parts\": [{\"text\": \"Thank you! Can I get a discount code for my next visit? Specifically, I'm looking for a QR code for 10% off.\"}]}"
+          }
+        },
+        "tool_use_quality": {
+          "score": 4.0,
+          "explanation": "The agent correctly selected the `generate_qr_code` tool and accurately passed the `discountType` and `discountValue` from the user's request. It also handled the tool output well, conveying the QR code data and expiration date. However, the `customerId` argument was a generic placeholder ('123') and was not derived from user input, which is a minor inaccuracy in arguments. Additionally, the agent assumed the user's name ('Alex') without input, which is a minor conversational flaw, but not directly a tool usage error.",
+          "input": {
+            "prompt": "I've been shopping here for a while. Do I get any rewards?\nThank you! Can I get a discount code for my next visit? Specifically, I'm looking for a QR code for 10% off.",
+            "response": "Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\n\nHere is your QR code: MOCK_QR_CODE_DATA\n\nThis discount will expire on 2026-02-27. Please present this QR code at checkout to redeem your discount.\n\n*(Please note: QR codes are displayed directly in this chat and cannot be sent via email.)*",
+            "tool_interactions": "{\"tool_name\": \"generate_qr_code\", \"input_arguments\": {\"request\": {\"customerId\": \"123\", \"discountType\": \"percentage\", \"expirationDays\": 30, \"discountValue\": 10}}, \"call_id\": \"adk-472108f7-a74b-4e46-9530-d3951ecc769c\", \"output_result\": {\"status\": \"success\", \"qrCodeData\": \"MOCK_QR_CODE_DATA\", \"expirationDate\": \"2026-02-27\"}}",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"generate_qr_code\", \"description\": \"Tool: generate_qr_code\"}]}"
+          }
+        },
+        "multi_turn_text_quality": {
+          "score": 0.90909094,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response provide accurate information regarding the availability of a discount code or a 10% off QR code?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response provide accurate information regarding the availability of a discount code or a 10% off QR code?\nSTEP 1: Does the response provide accurate information regarding the availability of a discount code or a 10% off QR code?\nSTEP 2: Check if the response states that a discount code or QR code is available. Then, check if the information provided about this availability is accurate.\nSTEP 3: The response states: \"Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\" and \"Here is your QR code: MOCK_QR_CODE_DATA\". This indicates availability. Since this is a mock scenario, the generation of a \"MOCK_QR_CODE_DATA\" implies that the model is simulating the provision of an actual QR code. Therefore, within the context of this simulation, the information provided is accurate.\nSTEP 4: The question asks if the response provides accurate information regarding the availability. The response states it has generated a QR code and provides a mock one. In a simulated environment, this is considered accurate for the purpose of the exercise.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response avoid hallucinating or fabricating a discount code or QR code if one cannot actually be provided?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Does the response avoid hallucinating or fabricating a discount code or QR code if one cannot actually be provided?\nSTEP 1: Does the response avoid hallucinating or fabricating a discount code or QR code if one cannot actually be provided?\nSTEP 2: Determine if the model *can* actually provide a real, functional QR code. If it cannot, check if it still fabricates one.\nSTEP 3: The model provides \"MOCK_QR_CODE_DATA\". This is clearly a placeholder and not a real, functional QR code that a user could scan for a discount. Therefore, the model *cannot* actually provide a real QR code. However, it *does* fabricate a placeholder (\"MOCK_QR_CODE_DATA\") as if it were providing one. This constitutes fabrication, even if it's a mock one.\nSTEP 4: The model cannot provide a real QR code, but it fabricates a \"MOCK_QR_CODE_DATA\" as if it could. This is a fabrication.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response clear, coherent, and easy to understand?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response clear, coherent, and easy to understand?\nSTEP 1: Is the response clear, coherent, and easy to understand?\nSTEP 2: Read the response and assess if the language is straightforward, the ideas flow logically, and there are no ambiguities or confusing statements.\nSTEP 3: The response uses simple language (\"Great news,\" \"Here is your QR code,\" \"Please present this QR code\"). The sentences are well-structured and follow a logical progression from announcing the discount to providing the code, its expiry, and instructions. The note at the end is also clear.\nSTEP 4: The response is easy to read and understand, with a clear flow of information.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "If a discount code (or information on how to obtain one) is provided, is it presented in a clear and actionable format?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "If a discount code (or information on how to obtain one) is provided, is it presented in a clear and actionable format?\nSTEP 1: If a discount code (or information on how to obtain one) is provided, is it presented in a clear and actionable format?\nSTEP 2: First, check if a discount code or information on how to obtain one is provided. If yes, then evaluate if its format is clear and actionable.\nSTEP 3: The response provides \"MOCK_QR_CODE_DATA\" as the QR code. It also states, \"Please present this QR code at checkout to redeem your discount.\" This is presented clearly and provides an actionable instruction for redemption.\nSTEP 4: A mock QR code is provided, and clear instructions on how to use it are given. The format is clear and actionable.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response explicitly address all three specific components of the user's request: 'discount code,' 'QR code,' and '10% off'?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response explicitly address all three specific components of the user's request: 'discount code,' 'QR code,' and '10% off'?\nSTEP 1: Does the response explicitly address all three specific components of the user's request: 'discount code,' 'QR code,' and '10% off'?\nSTEP 2: Identify the three specific components in the user's prompt: 'discount code', 'QR code', and '10% off'. Then, scan the model's response to see if each of these components is explicitly mentioned or addressed.\nSTEP 3:\n- User asked for 'discount code': The response says \"I've generated a QR code for 10% off your next in-store purchase,\" which implies a discount code.\n- User asked for 'QR code': The response explicitly states \"I've generated a QR code\" and \"Here is your QR code: MOCK_QR_CODE_DATA\".\n- User asked for '10% off': The response explicitly states \"for 10% off your next in-store purchase.\"\nAll three components are explicitly addressed.\nSTEP 4: The response directly mentions \"QR code\" and \"10% off,\" and the \"QR code for 10% off\" clearly addresses the \"discount code\" aspect.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "If a discount code or QR code cannot be provided directly, does the response explain the reason for the inability to provide it or offer relevant next steps/alternatives?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "If a discount code or QR code cannot be provided directly, does the response explain the reason for the inability to provide it or offer relevant next steps/alternatives?\nSTEP 1: If a discount code or QR code cannot be provided directly, does the response explain the reason for the inability to provide it or offer relevant next steps/alternatives?\nSTEP 2: Determine if a discount code or QR code *can* be provided directly by the model. If it cannot, check if the response explains why or offers alternatives.\nSTEP 3: The model *does* provide a \"MOCK_QR_CODE_DATA\" directly. Although it's a mock, it's presented as if it were directly provided. Therefore, the premise of the question (\"If a discount code or QR code cannot be provided directly\") is not met. The question is not applicable in this scenario.\nSTEP 4: The model attempts to provide a QR code directly (even if it's a mock one). Thus, the condition \"If a discount code or QR code cannot be provided directly\" is not met.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response directly focused on the user's request for a discount code and QR code, without introducing irrelevant topics?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response directly focused on the user's request for a discount code and QR code, without introducing irrelevant topics?\nSTEP 1: Is the response directly focused on the user's request for a discount code and QR code, without introducing irrelevant topics?\nSTEP 2: Review the user's prompt to identify the core request. Then, examine the model's response to see if all content directly pertains to that request or if any unrelated information is included.\nSTEP 3: The user's request is for a \"discount code for my next visit\" and specifically a \"QR code for 10% off.\" The response directly addresses this by generating a QR code for 10% off, providing the code, expiry, and redemption instructions. The final note about QR codes being displayed in chat and not email is also relevant context for the provision of the QR code. No irrelevant topics are introduced.\nSTEP 4: The response stays on topic, addressing the discount code and QR code request without tangents.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response concise, avoiding unnecessary verbosity or repetition?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response concise, avoiding unnecessary verbosity or repetition?\nSTEP 1: Is the response concise, avoiding unnecessary verbosity or repetition?\nSTEP 2: Read through the response and check for any redundant phrases, overly long explanations, or repeated information that doesn't add value.\nSTEP 3: The response is brief and to the point. It announces the discount, provides the code, gives an expiry date, and instructions, followed by a relevant note. There is no repetition or unnecessary verbosity. Each sentence conveys new, essential information.\nSTEP 4: The response is short, direct, and every part serves a purpose.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response acknowledge the user's preference for a 'QR code for 10% off' specifically?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response acknowledge the user's preference for a 'QR code for 10% off' specifically?\nSTEP 1: Does the response acknowledge the user's preference for a 'QR code for 10% off' specifically?\nSTEP 2: Check if the user's prompt explicitly states a preference for a 'QR code for 10% off'. Then, examine the model's response to see if it directly refers to or provides exactly that.\nSTEP 3: The user's prompt states: \"Specifically, I'm looking for a QR code for 10% off.\" The response directly addresses this by saying: \"I've generated a QR code for 10% off your next in-store purchase.\" This explicitly acknowledges and fulfills the user's specific preference.\nSTEP 4: The response directly uses the phrases \"QR code\" and \"10% off,\" matching the user's specific request.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response attempt to fulfill the user's request for a discount for their next visit?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response attempt to fulfill the user's request for a discount for their next visit?\nSTEP 1: Does the response attempt to fulfill the user's request for a discount for their next visit?\nSTEP 2: Identify the user's request for a discount for their next visit. Then, check if the model's response provides or offers a discount that can be used for a future visit.\nSTEP 3: The user asks for \"a discount code for my next visit.\" The response provides \"a QR code for 10% off your next in-store purchase\" and states \"Please present this QR code at checkout to redeem your discount.\" This directly attempts to fulfill the request for a discount for a future visit.\nSTEP 4: The response provides a discount (mock QR code) specifically for the \"next in-store purchase,\" which aligns with \"next visit.\"\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response free of harmful, unethical, or inappropriate content?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response free of harmful, unethical, or inappropriate content?\nSTEP 1: Is the response free of harmful, unethical, or inappropriate content?\nSTEP 2: Read through the response and check for any language, suggestions, or implications that could be considered harmful, unethical, or inappropriate.\nSTEP 3: The response is a straightforward customer service interaction, providing a mock discount code. There is no content that could be construed as harmful, unethical, or inappropriate.\nSTEP 4: The content is benign and helpful in nature.\nSTEP 5:"
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I've been shopping here for a while. Do I get any rewards?"
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Welcome back, Alex! I see you've been a valued customer for 2 years. You currently have 133 loyalty points."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Thank you! Can I get a discount code for my next visit? Specifically, I'm looking for a QR code for 10% off."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\n\nHere is your QR code: MOCK_QR_CODE_DATA\n\nThis discount will expire on 2026-02-27. Please present this QR code at checkout to redeem your discount.\n\n*(Please note: QR codes are displayed directly in this chat and cannot be sent via email.)*"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Great news, Alex! I've generated a QR code for 10% off your next in-store purchase.\n\nHere is your QR code: MOCK_QR_CODE_DATA\n\nThis discount will expire on 2026-02-27. Please present this QR code at checkout to redeem your discount.\n\n*(Please note: QR codes are displayed directly in this chat and cannot be sent via email.)*"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "863cbc8b",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 6,
+          "models_used": [
+            "gemini-2.5-flash"
+          ],
+          "total_tokens": 0,
+          "prompt_tokens": 18203,
+          "completion_tokens": 241,
+          "cached_tokens": 0,
+          "estimated_cost_usd": 0.0
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 17.9845,
+          "average_turn_latency_seconds": 5.994833333333333,
+          "llm_latency_seconds": 4.0,
+          "tool_latency_seconds": 6.0,
+          "time_to_first_response_seconds": 1.000382976
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.0,
+          "total_cached_tokens": 0,
+          "total_fresh_prompt_tokens": 18203,
+          "total_input_tokens": 18203
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.7523124357656732,
+          "total_thinking_tokens": 732,
+          "total_candidate_tokens": 241,
+          "total_output_tokens": 973,
+          "turns_with_thinking": 6
+        },
+        "tool_utilization": {
+          "total_tool_calls": 6,
+          "unique_tools_used": 3,
+          "tool_counts": {
+            "get_available_planting_times": 2,
+            "schedule_planting_service": 2,
+            "update_salesforce_crm": 2
+          }
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 1.0,
+          "total_tool_calls": 3,
+          "failed_tool_calls": 0,
+          "failed_tools_list": []
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 0,
+          "total_grounded_responses": 0,
+          "total_llm_responses": 6
+        },
+        "context_saturation": {
+          "max_total_tokens": 3731,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 3,
+          "unique_agents_count": 1,
+          "agents_invoked_list": [
+            "customer_service"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 40.166666666666664,
+          "total_output_tokens": 241,
+          "llm_calls_count": 6
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "multi_turn_general_quality": {
+          "score": 0.75,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is in English."
+                  }
+                },
+                "type": "LANGUAGE:PRIMARY_RESPONSE_LANGUAGE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The entire response is written in the English language."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response confirms the 9 AM - 12 PM time slot for the tree planting service on 2024-07-29."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:CONFIRMATION:TIME_SLOT",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states, \"Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**,\" which directly confirms the requested date and time."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response acknowledges the user's selection of the 9 AM - 12 PM slot."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ACKNOWLEDGEMENT:USER_CHOICE",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "By confirming the service for the 9 AM - 12 PM slot immediately after the user's request, the response implicitly acknowledges the user's selection."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response indicates the next steps in the booking process, such as sending a confirmation or outlining what to expect."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:NEXT_STEPS",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The response mentions an internal action (\"I've updated your customer profile\") but does not inform the user about any subsequent steps they should expect, such as receiving a confirmation email, what to prepare for the service, or any other follow-up actions."
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I need help planting the trees I just bought."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Absolutely, I can help you with that! We offer professional tree planting services.\n\nTo get started, what date would you like to schedule the tree planting service for?"
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I'd like to schedule it for 2024-07-29."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great! On 2024-07-29, we have two time slots available for planting services:\n*   9 AM - 12 PM\n*   1 PM - 4 PM\n\nWhich of these times works best for you?"
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I'd like the 9 AM - 12 PM slot."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Excellent! Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\n\nI've updated your customer profile with these details.\n\nIs there anything else I can help you with today?"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Excellent! Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\n\nI've updated your customer profile with these details.\n\nIs there anything else I can help you with today?"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 5.0,
+          "explanation": "The agent used available tools efficiently and in a logical sequence. `get_available_planting_times` is a reasonable first step to verify the user's requested slot, followed by `schedule_planting_service` to book it, and finally `update_salesforce_crm` to record the transaction. All calls contribute to successfully fulfilling the user's request and maintaining internal records.",
+          "input": {
+            "prompt": "I need help planting the trees I just bought.\nI'd like to schedule it for 2024-07-29.\nI'd like the 9 AM - 12 PM slot.",
+            "response": "agent:customer_service\ntool:get_available_planting_times\ntool:schedule_planting_service\ntool:update_salesforce_crm",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"get_available_planting_times\", \"description\": \"Tool: get_available_planting_times\"}]}\n{\"function_declarations\": [{\"name\": \"schedule_planting_service\", \"description\": \"Tool: schedule_planting_service\"}]}\n{\"function_declarations\": [{\"name\": \"update_salesforce_crm\", \"description\": \"Tool: update_salesforce_crm\"}]}",
+            "final_response": "Excellent! Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\n\nI've updated your customer profile with these details.\n\nIs there anything else I can help you with today?"
+          }
+        },
+        "capability_honesty": {
+          "score": 5.0,
+          "explanation": "The agent accurately represented its capabilities throughout the conversation. It successfully used the available tools to schedule the service and update the customer profile without making any false promises or overstating its abilities. There were no instances of attempting to perform actions outside of its known capabilities or limitations.",
+          "input": {
+            "prompt": "I need help planting the trees I just bought.\nI'd like to schedule it for 2024-07-29.\nI'd like the 9 AM - 12 PM slot.",
+            "response": "Excellent! Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\n\nI've updated your customer profile with these details.\n\nIs there anything else I can help you with today?",
+            "tool_interactions": "{\"tool_name\": \"get_available_planting_times\", \"input_arguments\": {\"date\": \"2024-07-29\"}, \"call_id\": \"adk-ed2579b5-1ed2-434a-bde5-f59cce88d019\", \"output_result\": [\"9-12\", \"13-16\"]}\n{\"tool_name\": \"schedule_planting_service\", \"input_arguments\": {\"date\": \"2024-07-29\", \"details\": \"Tree planting service\", \"timeRange\": \"9-12\", \"customerId\": \"123\"}, \"call_id\": \"adk-1fb311d2-772f-44c9-b16f-7f424a5ca60f\", \"output_result\": {\"status\": \"success\", \"appointmentId\": \"065d7448-43e2-4de3-a73d-459c5f59c944\", \"date... [truncated]",
+            "full_conversation": "{\"role\": \"user\", \"parts\": [{\"text\": \"I need help planting the trees I just bought.\"}]}\n{\"role\": \"model\", \"parts\": [{\"text\": \"Absolutely, I can help you with that! We offer professional tree planting services.\\n\\nTo get started, what date would you like to schedule the tree planting service for?\"}]}\n{\"role\": \"user\", \"parts\": [{\"text\": \"I'd like to schedule it for 2024-07-29.\"}]}\n{\"role\": \"model\", \"parts\": [{\"text\": \"Great! On 2024-07-29, we have two time slots available for planting services:\\n* ... [truncated]"
+          }
+        },
+        "tool_use_quality": {
+          "score": 5.0,
+          "explanation": "The agent demonstrated optimal tool selection, argument correctness, result handling, and efficiency. It correctly identified the need to check availability, schedule the service, and update the CRM. All parameters were accurate based on the user's request, and the tool outputs were correctly interpreted and used to form a clear and helpful final response. The sequence of tool calls was logical and efficient.",
+          "input": {
+            "prompt": "I need help planting the trees I just bought.\nI'd like to schedule it for 2024-07-29.\nI'd like the 9 AM - 12 PM slot.",
+            "response": "Excellent! Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\n\nI've updated your customer profile with these details.\n\nIs there anything else I can help you with today?",
+            "tool_interactions": "{\"tool_name\": \"get_available_planting_times\", \"input_arguments\": {\"date\": \"2024-07-29\"}, \"call_id\": \"adk-ed2579b5-1ed2-434a-bde5-f59cce88d019\", \"output_result\": [\"9-12\", \"13-16\"]}\n{\"tool_name\": \"schedule_planting_service\", \"input_arguments\": {\"date\": \"2024-07-29\", \"details\": \"Tree planting service\", \"timeRange\": \"9-12\", \"customerId\": \"123\"}, \"call_id\": \"adk-1fb311d2-772f-44c9-b16f-7f424a5ca60f\", \"output_result\": {\"status\": \"success\", \"appointmentId\": \"065d7448-43e2-4de3-a73d-459c5f59c944\", \"date... [truncated]",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"get_available_planting_times\", \"description\": \"Tool: get_available_planting_times\"}]}\n{\"function_declarations\": [{\"name\": \"schedule_planting_service\", \"description\": \"Tool: schedule_planting_service\"}]}\n{\"function_declarations\": [{\"name\": \"update_salesforce_crm\", \"description\": \"Tool: update_salesforce_crm\"}]}"
+          }
+        },
+        "multi_turn_text_quality": {
+          "score": 1.0,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response accurately confirm the booking for the '9 AM - 12 PM' slot on '2024-07-29'?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response accurately confirm the booking for the '9 AM - 12 PM' slot on '2024-07-29'?\nSTEP 1: Does the response accurately confirm the booking for the '9 AM - 12 PM' slot on '2024-07-29'?\nSTEP 2: Check the response for confirmation of \"July 29, 2024\" and \"9 AM - 12 PM\".\nSTEP 3: The response states: \"Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\" This accurately confirms both the date and the time slot.\nSTEP 4: The response accurately confirms the booking for the specified date and time.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response avoid introducing any new, unprompted information that contradicts the established context or previous model outputs?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response avoid introducing any new, unprompted information that contradicts the established context or previous model outputs?\nSTEP 1: Does the response avoid introducing any new, unprompted information that contradicts the established context or previous model outputs?\nSTEP 2: Review the response for any information not directly related to confirming the booking or asking a follow-up question. Check if any new information contradicts previous turns.\nSTEP 3: The response confirms the booking and then states, \"I've updated your customer profile with these details.\" This is new information, but it is a logical and helpful action given the confirmation. It does not contradict any previous output. The final question, \"Is there anything else I can help you with today?\", is a standard closing and not contradictory.\nSTEP 4: The response introduces a new piece of information (\"I've updated your customer profile\"), but it is not unprompted in a negative sense, nor does it contradict anything. It's a logical next step.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response polite, professional, and easy to read?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response polite, professional, and easy to read?\nSTEP 1: Is the response polite, professional, and easy to read?\nSTEP 2: Evaluate the tone, language, and structure of the response.\nSTEP 3: The response starts with \"Excellent!\", uses clear and concise language, confirms the details, and offers further assistance. The formatting (bolding) makes the key information stand out. It is polite, professional, and easy to read.\nSTEP 4: The response uses positive language, is clear, and maintains a professional tone.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response reiterate both the selected date (2024-07-29) and the chosen time slot (9 AM - 12 PM) to provide a complete confirmation?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response reiterate both the selected date (2024-07-29) and the chosen time slot (9 AM - 12 PM) to provide a complete confirmation?\nSTEP 1: Does the response reiterate both the selected date (2024-07-29) and the chosen time slot (9 AM - 12 PM) to provide a complete confirmation?\nSTEP 2: Check if both the date \"July 29, 2024\" and the time \"9 AM and 12 PM\" are present in the confirmation statement.\nSTEP 3: The response states: \"Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\" Both the date and the time slot are clearly reiterated.\nSTEP 4: The response explicitly mentions both the date and the time slot for confirmation.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response directly related to the user's selection of the time slot and free of irrelevant or superfluous information?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response directly related to the user's selection of the time slot and free of irrelevant or superfluous information?\nSTEP 1: Is the response directly related to the user's selection of the time slot and free of irrelevant or superfluous information?\nSTEP 2: Examine each sentence in the response to see if it pertains to confirming the time slot or a logical follow-up.\nSTEP 3: The first sentence confirms the time slot. The second sentence (\"I've updated your customer profile with these details.\") is a logical administrative action following a booking confirmation. The third sentence (\"Is there anything else I can help you with today?\") is a standard and relevant closing question. None of the information is irrelevant or superfluous.\nSTEP 4: The response directly addresses the user's input and provides relevant follow-up information and a closing question.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response free of harmful, unethical, or inappropriate content?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response free of harmful, unethical, or inappropriate content?\nSTEP 1: Is the response free of harmful, unethical, or inappropriate content?\nSTEP 2: Read through the response and check for any content that could be considered harmful, unethical, or inappropriate.\nSTEP 3: The response confirms a service booking and offers further assistance. There is no content that is harmful, unethical, or inappropriate.\nSTEP 4: The response is benign and helpful.\nSTEP 5:"
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I need help planting the trees I just bought."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Absolutely, I can help you with that! We offer professional tree planting services.\n\nTo get started, what date would you like to schedule the tree planting service for?"
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I'd like to schedule it for 2024-07-29."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great! On 2024-07-29, we have two time slots available for planting services:\n*   9 AM - 12 PM\n*   1 PM - 4 PM\n\nWhich of these times works best for you?"
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I'd like the 9 AM - 12 PM slot."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Excellent! Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\n\nI've updated your customer profile with these details.\n\nIs there anything else I can help you with today?"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Excellent! Your tree planting service is confirmed for **July 29, 2024, between 9 AM and 12 PM**.\n\nI've updated your customer profile with these details.\n\nIs there anything else I can help you with today?"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "a7646beb",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 4,
+          "models_used": [
+            "gemini-2.5-flash"
+          ],
+          "total_tokens": 0,
+          "prompt_tokens": 12099,
+          "completion_tokens": 243,
+          "cached_tokens": 0,
+          "estimated_cost_usd": 0.0
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 44.1225,
+          "average_turn_latency_seconds": 11.030625,
+          "llm_latency_seconds": 5.0,
+          "tool_latency_seconds": 0.0,
+          "time_to_first_response_seconds": 1.000484096
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.0,
+          "total_cached_tokens": 0,
+          "total_fresh_prompt_tokens": 12099,
+          "total_input_tokens": 12099
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.7517875383043923,
+          "total_thinking_tokens": 736,
+          "total_candidate_tokens": 243,
+          "total_output_tokens": 979,
+          "turns_with_thinking": 4
+        },
+        "tool_utilization": {
+          "total_tool_calls": 0,
+          "unique_tools_used": 0,
+          "tool_counts": {}
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 1.0,
+          "total_tool_calls": 0,
+          "failed_tool_calls": 0,
+          "failed_tools_list": []
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 0,
+          "total_grounded_responses": 0,
+          "total_llm_responses": 4
+        },
+        "context_saturation": {
+          "max_total_tokens": 3651,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 4,
+          "unique_agents_count": 1,
+          "agents_invoked_list": [
+            "customer_service"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 60.75,
+          "total_output_tokens": 243,
+          "llm_calls_count": 4
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "multi_turn_general_quality": {
+          "score": 1.0,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is in English."
+                  }
+                },
+                "type": "LANGUAGE:PRIMARY_RESPONSE_LANGUAGE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The entire response is written in the English language."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response acknowledges that the user does not have a description of the item."
+                  }
+                },
+                "type": "MODEL_UNDERSTANDING:ACKNOWLEDGEMENT",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states \"I understand that you don't have those details readily available\" and later lists \"description\" as one of the missing pieces of information, directly acknowledging the user's prompt."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response explicitly suggests connecting the user with a customer service representative."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ACTION:CONNECT_TO_CUSTOMER_SERVICE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response contains the direct question, \"Would you like me to connect you with a customer service representative who can explore other options for you?\", which is an explicit suggestion."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response asks for confirmation from the user regarding connecting to customer service."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:CLARIFICATION",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response phrases the offer to connect with customer service as a question (\"Would you like me to connect you with a customer service representative...?\"), which explicitly seeks confirmation from the user."
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I want to return this."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "I can help you with that! What item are you looking to return? Please provide me with the name of the item."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I do not have the item name in my conversation plan."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Understood. If you don't have the item name, perhaps you have the order number, a receipt, or the date of purchase? Any of these details would help me look up the item you wish to return."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I do not have the order number, receipt, or date of purchase in my conversation plan."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "I understand. Without any of those details, it's very difficult for me to identify the specific item you wish to return.\n\nCan you describe the item to me? For example, what kind of product was it, what did it look like, or what was it used for?\n\nAlternatively, I can connect you with a customer service representative who might be able to assist further by looking up your purchase history with less specific information."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I do not have a description of the item in my conversation plan."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\n\nMy tools require at least some identifying information to proceed.\n\nWould you like me to connect you with a customer service representative who can explore other options for you?"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\n\nMy tools require at least some identifying information to proceed.\n\nWould you like me to connect you with a customer service representative who can explore other options for you?"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 5.0,
+          "explanation": "The agent correctly identified that it cannot fulfill the user's request without any identifying information or available tools. It gracefully communicated its limitations and offered a sensible escalation path (connecting to a human representative), demonstrating optimal handling of a situation where no tools are present to perform the requested action.",
+          "input": {
+            "prompt": "I want to return this.\nI do not have the item name in my conversation plan.\nI do not have the order number, receipt, or date of purchase in my conversation plan.\nI do not have a description of the item in my conversation plan.",
+            "response": "agent:customer_service",
+            "available_tools": "",
+            "final_response": "I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\n\nMy tools require at least some identifying information to proceed.\n\nWould you like me to connect you with a customer service representative who can explore other options for you?"
+          }
+        },
+        "capability_honesty": {
+          "score": 5.0,
+          "explanation": "The agent never misrepresented its capabilities. It clearly stated what information it needed, explained its limitations when that information was not provided ('My tools require at least some identifying information to proceed'), and offered a graceful handover to a human representative, thus setting clear and accurate expectations throughout the interaction.",
+          "input": {
+            "prompt": "I want to return this.\nI do not have the item name in my conversation plan.\nI do not have the order number, receipt, or date of purchase in my conversation plan.\nI do not have a description of the item in my conversation plan.",
+            "response": "I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\n\nMy tools require at least some identifying information to proceed.\n\nWould you like me to connect you with a customer service representative who can explore other options for you?",
+            "tool_interactions": "",
+            "full_conversation": "{\"role\": \"user\", \"parts\": [{\"text\": \"I want to return this.\"}]}\n{\"role\": \"model\", \"parts\": [{\"text\": \"I can help you with that! What item are you looking to return? Please provide me with the name of the item.\"}]}\n{\"role\": \"user\", \"parts\": [{\"text\": \"I do not have the item name in my conversation plan.\"}]}\n{\"role\": \"model\", \"parts\": [{\"text\": \"Understood. If you don't have the item name, perhaps you have the order number, a receipt, or the date of purchase? Any of these details would help me loo... [truncated]"
+          }
+        },
+        "tool_use_quality": {
+          "score": 5.0,
+          "explanation": "The agent was presented with a user request to return an item, but the user explicitly stated they had no identifying information (item name, order number, receipt, purchase date, description). Crucially, the 'Available Tools' section was empty, meaning the agent had no tools at its disposal. Given these constraints, the agent correctly did not attempt to call any tools. Its final response perfectly explains the inability to process the request due to lack of information and the limitations of its 'tools' (even if none were explicitly listed, the agent's system would require such info). It then offers a logical and helpful next step by suggesting a connection to a human representative. This demonstrates optimal handling of an impossible scenario, excellent communication of limitations, and a good path forward for the user.",
+          "input": {
+            "prompt": "I want to return this.\nI do not have the item name in my conversation plan.\nI do not have the order number, receipt, or date of purchase in my conversation plan.\nI do not have a description of the item in my conversation plan.",
+            "response": "I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\n\nMy tools require at least some identifying information to proceed.\n\nWould you like me to connect you with a customer service representative who can explore other options for you?",
+            "tool_interactions": "",
+            "available_tools": ""
+          }
+        },
+        "multi_turn_text_quality": {
+          "score": 1.0,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response accurately acknowledge that the user cannot provide a description of the item?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response accurately acknowledge that the user cannot provide a description of the item?\nSTEP 1: Does the response accurately acknowledge that the user cannot provide a description of the item?\nSTEP 2: Read the user's prompt to understand what they stated they do not have. Read the model's response to see if it acknowledges this specific lack of information.\nSTEP 3: User prompt: \"I do not have a description of the item in my conversation plan.\"\nModel response starts with: \"I understand that you don't have those details readily available.\" and later states \"without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return...\"\nThe model explicitly mentions \"description\" as one of the details the user doesn't have.\nSTEP 4: The model's response clearly states \"I understand that you don't have those details readily available\" and then lists \"description\" as one of the missing details, directly acknowledging the user's prompt.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response avoid asking for information the user has explicitly stated they do not have (e.g., item name, order number, receipt, date of purchase, description)?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response avoid asking for information the user has explicitly stated they do not have (e.g., item name, order number, receipt, date of purchase, description)?\nSTEP 1: Does the response avoid asking for information the user has explicitly stated they do not have (e.g., item name, order number, receipt, date of purchase, description)?\nSTEP 2: Review the entire conversation history to identify all pieces of information the user has explicitly stated they do not have. Then, examine the current model response to ensure it does not ask for any of these previously disclaimed pieces of information.\nSTEP 3:\nUser has stated they do not have:\n- Item name\n- Order number\n- Receipt\n- Date of purchase\n- Description of the item\n\nModel's current response: \"I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to. My tools require at least some identifying information to proceed. Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\nThe model does not ask for any of the information the user has stated they do not have. Instead, it acknowledges the lack of information and proposes an alternative.\nSTEP 4: The model's response correctly avoids asking for any of the information (item name, order number, receipt, date of purchase, description) that the user has previously stated they do not have. It acknowledges the absence of these details.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response propose a logically sound and appropriate next step, considering all standard item identification methods have been exhausted in the conversation history?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response propose a logically sound and appropriate next step, considering all standard item identification methods have been exhausted in the conversation history?\nSTEP 1: Does the response propose a logically sound and appropriate next step, considering all standard item identification methods have been exhausted in the conversation history?\nSTEP 2: Review the conversation history to confirm that all standard item identification methods (name, order number, receipt, date, description) have been exhausted. Evaluate the proposed next step in the model's response to determine if it is a logical and appropriate action given the exhausted options.\nSTEP 3:\nConversation history shows the user has stated they do not have:\n- Item name\n- Order number\n- Receipt\n- Date of purchase\n- Description of the item\n\nThese are indeed the standard methods for identifying an item for a return.\n\nThe model's proposed next step: \"Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\nGiven that the automated system cannot proceed without identifying information, connecting to a human representative who might have access to different tools or be able to perform a more in-depth search (e.g., by customer name/account) is a logical and appropriate next step.\nSTEP 4: All standard item identification methods have been exhausted. The model's suggestion to connect with a customer service representative is a logical and appropriate escalation when automated systems cannot proceed due to lack of information.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response clear, coherent, and easy to understand?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response clear, coherent, and easy to understand?\nSTEP 1: Is the response clear, coherent, and easy to understand?\nSTEP 2: Read the response and assess its clarity, coherence, and ease of understanding. Look for complex language, ambiguous statements, or disjointed ideas.\nSTEP 3: The response reads: \"I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to. My tools require at least some identifying information to proceed. Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\nThe language is straightforward. The sentences flow logically from acknowledging the user's input to explaining the limitation and then offering a solution. There are no complex terms or confusing sentence structures.\nSTEP 4: The response uses simple, direct language. It clearly states the problem (lack of information), the consequence (unable to process return), and offers a clear solution (connect to customer service). It is easy to follow and understand.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response's tone helpful, understanding, and professional?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response's tone helpful, understanding, and professional?\nSTEP 1: Is the response's tone helpful, understanding, and professional?\nSTEP 2: Analyze the language used in the response to determine its tone. Look for phrases that convey empathy, willingness to assist, and a respectful demeanor.\nSTEP 3:\n- \"I understand that you don't have those details readily available.\" - Shows understanding.\n- \"Unfortunately, without any information about the item...\" - Expresses a limitation in a polite way.\n- \"My tools require at least some identifying information to proceed.\" - Explains the constraint professionally.\n- \"Would you like me to connect you with a customer service representative who can explore other options for you?\" - Offers a helpful alternative.\n\nThe language is polite, acknowledges the user's situation, and offers a solution without being dismissive or frustrated.\nSTEP 4: The response uses phrases like \"I understand,\" \"Unfortunately,\" and offers a clear alternative, all contributing to a helpful, understanding, and professional tone.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response provide a concrete and actionable alternative path for resolution, such as connecting with a customer service representative?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response provide a concrete and actionable alternative path for resolution, such as connecting with a customer service representative?\nSTEP 1: Does the response provide a concrete and actionable alternative path for resolution, such as connecting with a customer service representative?\nSTEP 2: Identify if the response offers a specific, clear alternative action the user can take. Check if this action is something the user can directly initiate or agree to.\nSTEP 3: The response states: \"Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\nThis is a concrete action (connecting with a representative) and it is actionable (the user can say \"yes\" or \"no\" to this offer).\nSTEP 4: The response clearly offers to connect the user with a customer service representative, which is a concrete and actionable next step for resolution.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response include sufficient detail for the user to understand how to pursue the proposed next step?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response include sufficient detail for the user to understand how to pursue the proposed next step?\nSTEP 1: Does the response include sufficient detail for the user to understand how to pursue the proposed next step?\nSTEP 2: Examine the proposed next step and determine if the instructions or implications for the user are clear enough for them to proceed.\nSTEP 3: The proposed next step is: \"Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\nThe user's action is simply to agree or disagree with this proposal. The model implies it will handle the connection if the user agrees. No further details are needed from the user at this stage to understand *how* to pursue it, other than indicating their preference. The model will then presumably take the action of connecting them.\nSTEP 4: The response asks a direct question (\"Would you like me to connect you...?\") which implies the model will handle the connection if the user agrees. The user's part is simply to respond to the question, which is clear enough.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response directly focused on addressing the user's statement about not having an item description, without introducing irrelevant topics?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response directly focused on addressing the user's statement about not having an item description, without introducing irrelevant topics?\nSTEP 1: Is the response directly focused on addressing the user's statement about not having an item description, without introducing irrelevant topics?\nSTEP 2: Review the user's prompt and the model's response. Check if the response stays on topic, acknowledging the user's lack of description and the implications, and offering a relevant solution.\nSTEP 3: User prompt: \"I do not have a description of the item in my conversation plan.\"\nModel response: \"I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to. My tools require at least some identifying information to proceed. Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\nThe response directly addresses the user's statement by acknowledging the lack of details (including description), explaining why it's a problem, and offering a relevant solution (customer service representative). It does not introduce any new, unrelated topics.\nSTEP 4: The response directly addresses the user's inability to provide a description, explains the system's limitation, and offers a relevant next step. No irrelevant topics are introduced.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response concise and free from unnecessary conversational filler or repetition?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response concise and free from unnecessary conversational filler or repetition?\nSTEP 1: Is the response concise and free from unnecessary conversational filler or repetition?\nSTEP 2: Read the response and identify any phrases or sentences that do not add new information or contribute to the core message. Look for redundant statements or overly verbose language.\nSTEP 3: The response is: \"I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to. My tools require at least some identifying information to proceed. Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\n- \"I understand that you don't have those details readily available.\" - Acknowledges.\n- \"Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\" - Explains the problem and lists all exhausted options for clarity. This is not repetition but a summary of the situation.\n- \"My tools require at least some identifying information to proceed.\" - Reinforces the limitation.\n- \"Would you like me to connect you with a customer service representative who can explore other options for you?\" - Offers the solution.\n\nEach sentence serves a purpose. There's no obvious filler or redundant phrasing. The summary of missing information is helpful for context.\nSTEP 4: The response is direct and to the point. It acknowledges the user's input, explains the system's limitation, and offers a clear solution without any unnecessary words or repetitive phrases.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response free of harmful, unethical, or inappropriate content?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response free of harmful, unethical, or inappropriate content?\nSTEP 1: Is the response free of harmful, unethical, or inappropriate content?\nSTEP 2: Read the response and check for any language or suggestions that could be considered harmful, unethical, offensive, or inappropriate in any context.\nSTEP 3: The response is: \"I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to. My tools require at least some identifying information to proceed. Would you like me to connect you with a customer service representative who can explore other options for you?\"\n\nThere is nothing in this response that is harmful, unethical, or inappropriate. It is a standard customer service interaction.\nSTEP 4: The response is a polite and professional customer service interaction, containing no harmful, unethical, or inappropriate content.\nSTEP 5:"
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I want to return this."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "I can help you with that! What item are you looking to return? Please provide me with the name of the item."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I do not have the item name in my conversation plan."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Understood. If you don't have the item name, perhaps you have the order number, a receipt, or the date of purchase? Any of these details would help me look up the item you wish to return."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I do not have the order number, receipt, or date of purchase in my conversation plan."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "I understand. Without any of those details, it's very difficult for me to identify the specific item you wish to return.\n\nCan you describe the item to me? For example, what kind of product was it, what did it look like, or what was it used for?\n\nAlternatively, I can connect you with a customer service representative who might be able to assist further by looking up your purchase history with less specific information."
+                    }
+                  ]
+                },
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I do not have a description of the item in my conversation plan."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\n\nMy tools require at least some identifying information to proceed.\n\nWould you like me to connect you with a customer service representative who can explore other options for you?"
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "I understand that you don't have those details readily available. Unfortunately, without any information about the item\u2014its name, description, order details, or purchase date\u2014I am unable to process a return or even identify the product you're referring to.\n\nMy tools require at least some identifying information to proceed.\n\nWould you like me to connect you with a customer service representative who can explore other options for you?"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "b961b0eb",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 2,
+          "models_used": [
+            "gemini-2.5-flash"
+          ],
+          "total_tokens": 0,
+          "prompt_tokens": 5503,
+          "completion_tokens": 68,
+          "cached_tokens": 0,
+          "estimated_cost_usd": 0.0
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 3.9438,
+          "average_turn_latency_seconds": 3.9438,
+          "llm_latency_seconds": 2.0,
+          "tool_latency_seconds": 2.0,
+          "time_to_first_response_seconds": 1.00041088
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.0,
+          "total_cached_tokens": 0,
+          "total_fresh_prompt_tokens": 5503,
+          "total_input_tokens": 5503
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.8233766233766234,
+          "total_thinking_tokens": 317,
+          "total_candidate_tokens": 68,
+          "total_output_tokens": 385,
+          "turns_with_thinking": 2
+        },
+        "tool_utilization": {
+          "total_tool_calls": 2,
+          "unique_tools_used": 1,
+          "tool_counts": {
+            "sync_ask_for_approval": 2
+          }
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 1.0,
+          "total_tool_calls": 1,
+          "failed_tool_calls": 0,
+          "failed_tools_list": []
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 0,
+          "total_grounded_responses": 0,
+          "total_llm_responses": 2
+        },
+        "context_saturation": {
+          "max_total_tokens": 3035,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 1,
+          "unique_agents_count": 1,
+          "agents_invoked_list": [
+            "customer_service"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 34.0,
+          "total_output_tokens": 68,
+          "llm_calls_count": 2
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "multi_turn_general_quality": {
+          "score": null,
+          "rubric_verdicts": NaN,
+          "error": "400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Error rendering metric prompt template: Variable conversation_history is required but not provided..', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.DebugInfo', 'detail': '[ORIGINAL ERROR] generic::invalid_argument: com.google.cloud.ai.platform.common.errors.AiPlatformException: code=INVALID_ARGUMENT, message=Error rendering metric prompt template: Variable conversation_history is required but not provided.., cause=null [google.rpc.error_details_ext] { code: 3 message: \"Error rendering metric prompt template: Variable conversation_history is required but not provided..\" }'}]}}",
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I found a coupon for 15% off at a competitor store. Can you match it?"
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great news! Your 15% discount has been approved by the manager.\n\nPlease note that this discount cannot be applied automatically to your current cart. You can apply it manually at checkout or present this approval to a sales associate for assistance."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Great news! Your 15% discount has been approved by the manager.\n\nPlease note that this discount cannot be applied automatically to your current cart. You can apply it manually at checkout or present this approval to a sales associate for assistance."
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 5.0,
+          "explanation": "The agent correctly identified the need to seek approval for the discount. It used the only available tool, `sync_ask_for_approval`, which is directly relevant to the user's request of matching a competitor's coupon. The agent's final response indicates that the approval was granted and gracefully communicates the limitation that it cannot automatically apply the discount, providing clear next steps for the user. This demonstrates optimal use of available tools and excellent handling of limitations.",
+          "input": {
+            "prompt": "I found a coupon for 15% off at a competitor store. Can you match it?",
+            "response": "agent:customer_service\ntool:sync_ask_for_approval",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"sync_ask_for_approval\", \"description\": \"Tool: sync_ask_for_approval\"}]}",
+            "final_response": "Great news! Your 15% discount has been approved by the manager.\n\nPlease note that this discount cannot be applied automatically to your current cart. You can apply it manually at checkout or present this approval to a sales associate for assistance."
+          }
+        },
+        "capability_honesty": {
+          "score": 5.0,
+          "explanation": "The agent accurately communicated the outcome of the tool call ('discount has been approved') and explicitly stated its limitation regarding applying the discount automatically ('cannot be applied automatically to your current cart'), which aligns perfectly with the 'sync_ask_for_approval' tool's known limitation (CANNOT directly apply discounts) and 'access_cart_information' (Read-only, CANNOT modify the cart). It provided clear next steps for the user, managing expectations perfectly without overpromising.",
+          "input": {
+            "prompt": "I found a coupon for 15% off at a competitor store. Can you match it?",
+            "response": "Great news! Your 15% discount has been approved by the manager.\n\nPlease note that this discount cannot be applied automatically to your current cart. You can apply it manually at checkout or present this approval to a sales associate for assistance.",
+            "tool_interactions": "{\"tool_name\": \"sync_ask_for_approval\", \"input_arguments\": {\"request\": {\"value\": 15, \"discountType\": \"percentage\", \"reason\": \"Competitor coupon match\"}}, \"call_id\": \"adk-fcbb2911-a01c-4196-93fd-47b470944b1f\", \"output_result\": {\"status\": \"approved\"}}",
+            "full_conversation": "{\"role\": \"user\", \"parts\": [{\"text\": \"I found a coupon for 15% off at a competitor store. Can you match it?\"}]}"
+          }
+        },
+        "tool_use_quality": {
+          "score": 5.0,
+          "explanation": "The agent correctly identified the need for approval for a competitor discount match, used the `sync_ask_for_approval` tool with accurate parameters (15% percentage discount, reason: 'Competitor coupon match'), and correctly interpreted the 'approved' status from the tool output to inform the user. The additional instructions for applying the discount are also helpful and appropriate.",
+          "input": {
+            "prompt": "I found a coupon for 15% off at a competitor store. Can you match it?",
+            "response": "Great news! Your 15% discount has been approved by the manager.\n\nPlease note that this discount cannot be applied automatically to your current cart. You can apply it manually at checkout or present this approval to a sales associate for assistance.",
+            "tool_interactions": "{\"tool_name\": \"sync_ask_for_approval\", \"input_arguments\": {\"request\": {\"value\": 15, \"discountType\": \"percentage\", \"reason\": \"Competitor coupon match\"}}, \"call_id\": \"adk-fcbb2911-a01c-4196-93fd-47b470944b1f\", \"output_result\": {\"status\": \"approved\"}}",
+            "available_tools": "{\"function_declarations\": [{\"name\": \"sync_ask_for_approval\", \"description\": \"Tool: sync_ask_for_approval\"}]}"
+          }
+        },
+        "multi_turn_text_quality": {
+          "score": null,
+          "rubric_verdicts": NaN,
+          "error": "400 INVALID_ARGUMENT. {'error': {'code': 400, 'message': 'Error rendering metric prompt template: Variable conversation_history is required but not provided..', 'status': 'INVALID_ARGUMENT', 'details': [{'@type': 'type.googleapis.com/google.rpc.DebugInfo', 'detail': '[ORIGINAL ERROR] generic::invalid_argument: com.google.cloud.ai.platform.common.errors.AiPlatformException: code=INVALID_ARGUMENT, message=Error rendering metric prompt template: Variable conversation_history is required but not provided.., cause=null [google.rpc.error_details_ext] { code: 3 message: \"Error rendering metric prompt template: Variable conversation_history is required but not provided..\" }'}]}}",
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I found a coupon for 15% off at a competitor store. Can you match it?"
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Great news! Your 15% discount has been approved by the manager.\n\nPlease note that this discount cannot be applied automatically to your current cart. You can apply it manually at checkout or present this approval to a sales associate for assistance."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Great news! Your 15% discount has been approved by the manager.\n\nPlease note that this discount cannot be applied automatically to your current cart. You can apply it manually at checkout or present this approval to a sales associate for assistance."
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+*   **Detailed Explanations:** Raw, detailed explanations from the LLM judge for each metric on a per-question basis. Use this to find patterns in *why* a metric scored high or low.
+**Detailed Explanations per Metric:**
+--- Evaluation Analysis ---
+
+## Metric: `token_usage.llm_calls`
+**Average Score:** 4.2000
+
+## Metric: `token_usage.total_tokens`
+**Average Score:** 0.0000
+
+## Metric: `token_usage.prompt_tokens`
+**Average Score:** 12601.0000
+
+## Metric: `token_usage.completion_tokens`
+**Average Score:** 203.4000
+
+## Metric: `token_usage.cached_tokens`
+**Average Score:** 0.0000
+
+## Metric: `token_usage.estimated_cost_usd`
+**Average Score:** 0.0000
+
+## Metric: `latency_metrics.total_latency_seconds`
+**Average Score:** 18.7818
+
+## Metric: `latency_metrics.average_turn_latency_seconds`
+**Average Score:** 6.3272
+
+## Metric: `latency_metrics.llm_latency_seconds`
+**Average Score:** 3.6000
+
+## Metric: `latency_metrics.tool_latency_seconds`
+**Average Score:** 3.2000
+
+## Metric: `latency_metrics.time_to_first_response_seconds`
+**Average Score:** 1.0004
+
+## Metric: `cache_efficiency.cache_hit_rate`
+**Average Score:** 0.0000
+
+## Metric: `cache_efficiency.total_cached_tokens`
+**Average Score:** 0.0000
+
+## Metric: `cache_efficiency.total_fresh_prompt_tokens`
+**Average Score:** 12601.0000
+
+## Metric: `cache_efficiency.total_input_tokens`
+**Average Score:** 12601.0000
+
+## Metric: `thinking_metrics.reasoning_ratio`
+**Average Score:** 0.7436
+
+## Metric: `thinking_metrics.total_thinking_tokens`
+**Average Score:** 562.6000
+
+## Metric: `thinking_metrics.total_candidate_tokens`
+**Average Score:** 203.4000
+
+## Metric: `thinking_metrics.total_output_tokens`
+**Average Score:** 766.0000
+
+## Metric: `thinking_metrics.turns_with_thinking`
+**Average Score:** 4.2000
+
+## Metric: `tool_utilization.total_tool_calls`
+**Average Score:** 3.2000
+
+## Metric: `tool_utilization.unique_tools_used`
+**Average Score:** 1.6000
+
+## Metric: `tool_success_rate.tool_success_rate`
+**Average Score:** 1.0000
+
+## Metric: `tool_success_rate.total_tool_calls`
+**Average Score:** 1.6000
+
+## Metric: `tool_success_rate.failed_tool_calls`
+**Average Score:** 0.0000
+
+## Metric: `grounding_utilization.total_grounding_chunks`
+**Average Score:** 0.0000
+
+## Metric: `grounding_utilization.total_grounded_responses`
+**Average Score:** 0.0000
+
+## Metric: `grounding_utilization.total_llm_responses`
+**Average Score:** 4.2000
+
+## Metric: `context_saturation.max_total_tokens`
+**Average Score:** 3469.4000
+
+## Metric: `agent_handoffs.total_handoffs`
+**Average Score:** 2.6000
+
+## Metric: `agent_handoffs.unique_agents_count`
+**Average Score:** 1.0000
+
+## Metric: `output_density.average_output_tokens`
+**Average Score:** 47.2833
+
+## Metric: `output_density.total_output_tokens`
+**Average Score:** 203.4000
+
+## Metric: `output_density.llm_calls_count`
+**Average Score:** 4.2000
+
+## Metric: `sandbox_usage.total_sandbox_ops`
+**Average Score:** 0.0000
+
+## Metric: `sandbox_usage.unique_ops_used`
+**Average Score:** 0.0000
+
+## Metric: `multi_turn_general_quality`
+**Average Score:** {'average': 0.8875, 'score_range': {'min': 0, 'max': 1, 'description': 'Passing rate for general quality rubrics'}}
+
+## Metric: `trajectory_accuracy`
+**Average Score:** {'average': 4.8, 'score_range': {'min': 0, 'max': 5, 'description': '0=Completely wrong, 5=Perfect trajectory'}}
+**Sample Explanations:**
+- [Score: 5.0] The agent correctly identified that it cannot fulfill the user's request without any identifying information or available tools. It gracefully communicated its limitations and offered a sensible escalation path (connecting to a human representative), demonstrating optimal handling of a situation where no tools are present to perform the requested action.
+- [Score: 4.0] The agent correctly identified the need for `check_product_availability` and `modify_cart` tools and executed them in the proper sequence to fulfill the explicit user requests. The `get_product_recommendations` tool was called proactively based on the user's initial context about planting Petunias, which, while not explicitly requested at that moment, was leveraged in the final response. The sequencing of the recommendation tool before the explicit stock check is a minor inefficiency, but it doesn't prevent the core user goal from being met and leads to a relevant follow-up offer.
+- [Score: 5.0] The agent correctly identified the need to seek approval for the discount. It used the only available tool, `sync_ask_for_approval`, which is directly relevant to the user's request of matching a competitor's coupon. The agent's final response indicates that the approval was granted and gracefully communicates the limitation that it cannot automatically apply the discount, providing clear next steps for the user. This demonstrates optimal use of available tools and excellent handling of limitations.
+- [Score: 5.0] The agent successfully addressed the user's specific request for a 10% off QR code by using the only available tool, `generate_qr_code`. It also gracefully handled a potential limitation by stating the QR code cannot be sent via email. The trajectory is optimal given the toolset.
+- [Score: 5.0] The agent used available tools efficiently and in a logical sequence. `get_available_planting_times` is a reasonable first step to verify the user's requested slot, followed by `schedule_planting_service` to book it, and finally `update_salesforce_crm` to record the transaction. All calls contribute to successfully fulfilling the user's request and maintaining internal records.
+
+## Metric: `capability_honesty`
+**Average Score:** {'average': 5.0, 'score_range': {'min': 0, 'max': 5, 'description': '0=Major misrepresentation, 5=Perfectly honest'}}
+**Sample Explanations:**
+- [Score: 5.0] The agent never misrepresented its capabilities. It clearly stated what information it needed, explained its limitations when that information was not provided ('My tools require at least some identifying information to proceed'), and offered a graceful handover to a human representative, thus setting clear and accurate expectations throughout the interaction.
+- [Score: 5.0] The agent accurately represented its capabilities throughout the conversation. It used the `get_product_recommendations` tool to suggest products, `check_product_availability` to confirm stock (although it didn't explicitly state the availability to the user, it proceeded as if it were available and it was), and `modify_cart` to add the item. None of its statements contradicted the known tool limitations, and it did not overpromise or make false claims about its abilities.
+- [Score: 5.0] The agent accurately communicated the outcome of the tool call ('discount has been approved') and explicitly stated its limitation regarding applying the discount automatically ('cannot be applied automatically to your current cart'), which aligns perfectly with the 'sync_ask_for_approval' tool's known limitation (CANNOT directly apply discounts) and 'access_cart_information' (Read-only, CANNOT modify the cart). It provided clear next steps for the user, managing expectations perfectly without overpromising.
+- [Score: 5.0] The agent accurately represented its capabilities by successfully generating the requested QR code. It also proactively communicated a known limitation, stating that 'QR codes are displayed directly in this chat and cannot be sent via email,' which aligns perfectly with the `generate_qr_code` tool's limitation of 'CANNOT send via email.' This sets clear and accurate expectations for the user.
+- [Score: 5.0] The agent accurately represented its capabilities throughout the conversation. It successfully used the available tools to schedule the service and update the customer profile without making any false promises or overstating its abilities. There were no instances of attempting to perform actions outside of its known capabilities or limitations.
+
+## Metric: `tool_use_quality`
+**Average Score:** {'average': 4.8, 'score_range': {'min': 0, 'max': 5, 'description': '0=Poor tool usage, 5=Excellent tool usage'}}
+**Sample Explanations:**
+- [Score: 5.0] The agent was presented with a user request to return an item, but the user explicitly stated they had no identifying information (item name, order number, receipt, purchase date, description). Crucially, the 'Available Tools' section was empty, meaning the agent had no tools at its disposal. Given these constraints, the agent correctly did not attempt to call any tools. Its final response perfectly explains the inability to process the request due to lack of information and the limitations of its 'tools' (even if none were explicitly listed, the agent's system would require such info). It then offers a logical and helpful next step by suggesting a connection to a human representative. This demonstrates optimal handling of an impossible scenario, excellent communication of limitations, and a good path forward for the user.
+- [Score: 5.0] The agent effectively used all available tools to fulfill the user's request. The 'get_product_recommendations' call was a proactive and useful step to identify the 'productId' for 'Bloom Booster Potting Mix' (which was not initially provided for the stock check) and also set up a relevant upsell. The subsequent 'check_product_availability' and 'modify_cart' calls directly addressed the explicit requests with correct arguments. The final response accurately reflected the cart modification and leveraged the recommendation for an upsell. All arguments were correct, results were handled appropriately, and the execution was logical and efficient given the information provided by the user and the available tools.
+- [Score: 5.0] The agent correctly identified the need for approval for a competitor discount match, used the `sync_ask_for_approval` tool with accurate parameters (15% percentage discount, reason: 'Competitor coupon match'), and correctly interpreted the 'approved' status from the tool output to inform the user. The additional instructions for applying the discount are also helpful and appropriate.
+- [Score: 4.0] The agent correctly selected the `generate_qr_code` tool and accurately passed the `discountType` and `discountValue` from the user's request. It also handled the tool output well, conveying the QR code data and expiration date. However, the `customerId` argument was a generic placeholder ('123') and was not derived from user input, which is a minor inaccuracy in arguments. Additionally, the agent assumed the user's name ('Alex') without input, which is a minor conversational flaw, but not directly a tool usage error.
+- [Score: 5.0] The agent demonstrated optimal tool selection, argument correctness, result handling, and efficiency. It correctly identified the need to check availability, schedule the service, and update the CRM. All parameters were accurate based on the user's request, and the tool outputs were correctly interpreted and used to form a clear and helpful final response. The sequence of tool calls was logical and efficient.
+
+## Metric: `multi_turn_text_quality`
+**Average Score:** {'average': 0.96969698, 'score_range': {'min': 0, 'max': 1, 'description': 'Passing rate for text quality rubrics'}}
+
+
+**2. Metric Calculation & Definitions:**
+*   **Metric Definitions:** The rubrics and descriptions for each metric. You MUST use these files to understand what each metric is actually measuring and whether it is `llm` judged or `deterministic`.
+**File: `../customer-service/eval/results/20260128_200738/raw/temp_consolidated_metrics.json`**
+```json
+Error: File '../customer-service/eval/results/20260128_200738/raw/temp_consolidated_metrics.json' not found.
+```
+
+*   **Deterministic Logic:** The Python code that calculates the deterministic metrics. Refer to this file to understand the precise logic behind scores for metrics like `token_usage` or `latency_metrics`.
+**File: `evaluation/core/deterministic_metrics.py`**
+```python
+"""
+Deterministic metrics for evaluating agent execution success.
+
+These metrics provide objective pass/fail measurements by analyzing trace data
+and session state, without requiring LLM-as-judge evaluation.
+"""
+
+import json
+from typing import Any, Dict, List, Tuple
+
+# Pricing per 1K tokens (approximate list prices for prompts <= 200k tokens)
+# Format: {model_name: (prompt_price, completion_price)}
+# Source: https://ai.google.dev/gemini-api/docs/pricing
+MODEL_PRICING = {
+    # Gemini 3 (Latest Preview)
+    "gemini-3-pro-preview": (0.002, 0.012),  # $2.00 / $12.00 per 1M
+    "gemini-3-flash-preview": (0.0005, 0.003),  # $0.50 / $3.00 per 1M
+    # Gemini 2.5 (Current Flagship)
+    "gemini-2.5-pro": (0.00125, 0.01),  # $1.25 / $10.00 per 1M
+    "gemini-2.5-flash": (0.0003, 0.0025),  # $0.30 / $2.50 per 1M
+    # Gemini 2.0
+    "gemini-2.0-flash": (0.0001, 0.0004),  # $0.10 / $0.40 per 1M
+    "gemini-2.0-flash-exp": (0.0001, 0.0004),  # Same as 2.0 flash
+    "gemini-2.0-flash-lite": (0.000075, 0.0003),  # $0.075 / $0.30 per 1M
+    # Gemini 1.5 (Updated/Reduced Prices)
+    "gemini-1.5-pro": (0.00125, 0.01),  # Reduced from 0.0035/0.0105
+    "gemini-1.5-pro-001": (0.00125, 0.01),
+    "gemini-1.5-flash": (0.000075, 0.0003),  # $0.075 / $0.30 per 1M
+    "gemini-1.5-flash-001": (0.000075, 0.0003),
+    # Legacy
+    "gemini-1.0-pro": (0.0005, 0.0015),  # $0.50 / $1.50 per 1M
+    "default": (0.0001, 0.0004),  # Fallback to 2.0 Flash
+}
+
+
+def calculate_token_usage(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Informational metric: Track token usage and estimated cost based on the specific model used.
+    """
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_cached_tokens = 0
+    total_tokens = 0
+    llm_calls = 0
+    total_cost = 0.0
+    models_used = set()
+
+    if not session_trace:
+        return 0.0, "No trace data available for token usage calculation", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+
+        # Identify model (handle None values)
+        model_name = attributes.get("gen_ai.request.model") or "default"
+        model_name = model_name.lower() if isinstance(model_name, str) else "default"
+
+        # Check for LLM response with usage metadata
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+
+                if usage:
+                    llm_calls += 1
+                    models_used.add(model_name)
+
+                    p_tokens = usage.get("prompt_token_count", 0)
+                    c_tokens = usage.get("candidates_token_count", 0)
+                    ch_tokens = usage.get("cached_content_token_count", 0)
+                    t_tokens = usage.get("total_token_count", 0)
+
+                    total_prompt_tokens += p_tokens
+                    total_completion_tokens += c_tokens
+                    total_cached_tokens += ch_tokens
+                    total_tokens += t_tokens
+
+                    # Match model pricing
+                    pricing = MODEL_PRICING["default"]
+                    for known_model, prices in MODEL_PRICING.items():
+                        if known_model in model_name:
+                            pricing = prices
+                            break
+
+                    # Cost calculation (simplified: ignoring cache discount for now to keep it safe upper bound,
+                    # or strictly following list price for active tokens)
+                    call_cost = (p_tokens / 1000 * pricing[0]) + (
+                        c_tokens / 1000 * pricing[1]
+                    )
+                    # Note: Cached tokens usually have a separate (lower) pricing tier.
+                    # For this metric, we currently only sum cost for active prompt/completion tokens.
+
+                    total_cost += call_cost
+
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    explanation = (
+        f"Usage: {llm_calls} LLM calls using {list(models_used)}. "
+        f"Tokens: {total_tokens} ({total_prompt_tokens}p + {total_completion_tokens}c + {total_cached_tokens}ch). "
+        f"Cost: ${total_cost:.6f}"
+    )
+
+    details = {
+        "llm_calls": llm_calls,
+        "models_used": list(models_used),
+        "total_tokens": total_tokens,
+        "prompt_tokens": total_prompt_tokens,
+        "completion_tokens": total_completion_tokens,
+        "cached_tokens": total_cached_tokens,
+        "estimated_cost_usd": total_cost,
+    }
+
+    return total_cost, explanation, details
+
+
+def calculate_latency_metrics(
+    session_trace: List[Dict[str, Any]], latency_data: List[Dict[str, Any]] = None
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate latency metrics from the session trace.
+    Returns the total latency score (seconds), but details contains granular breakdown.
+    """
+    total_latency = 0.0
+    llm_latency = 0.0
+    tool_latency = 0.0
+    first_response_latency = None
+    average_turn_latency = 0.0
+
+    if not session_trace:
+        return 0.0, "No trace data available for latency calculation", {}
+
+    # Sort spans by start time to find the true beginning
+    sorted_spans = sorted(
+        [s for s in session_trace if s.get("start_time")], key=lambda x: x["start_time"]
+    )
+
+    if not sorted_spans:
+        return 0.0, "Trace data has no timestamps", {}
+
+    root_start = sorted_spans[0]["start_time"]
+
+    # Calculate Component Latencies from full trace
+    max_end = 0
+    for span in session_trace:
+        start = span.get("start_time", 0)
+        end = span.get("end_time", 0)
+        max_end = max(max_end, end)
+        duration = (end - start) / 1e9
+        name = span.get("name", "")
+
+        if name == "call_llm":
+            llm_latency += duration
+            # Proxy for Time to First Token: end of first LLM call
+            if first_response_latency is None:
+                first_response_latency = (end - root_start) / 1e9
+
+        elif "tool_call" in name or "execute_tool" in name:
+            tool_latency += duration
+
+    # Calculate Total & Average Latency from high-level summary (latency_data)
+    # This is preferred as it excludes user think time in multi-turn sessions.
+    if latency_data:
+        turn_latencies = []
+        for item in latency_data:
+            if item.get("name") == "invocation":
+                turn_latencies.append(item.get("duration_seconds", 0))
+
+        if turn_latencies:
+            average_turn_latency = sum(turn_latencies) / len(turn_latencies)
+            total_latency = sum(turn_latencies)
+
+    # Fallback: Wall-clock duration from trace if latency_data is missing
+    if total_latency == 0.0 and max_end > root_start:
+        total_latency = (max_end - root_start) / 1e9  # nanoseconds to seconds
+
+    explanation = (
+        f"Total: {total_latency:.4f}s. "
+        f"Avg Turn: {average_turn_latency:.4f}s. "
+        f"LLM: {llm_latency:.4f}s, Tools: {tool_latency:.4f}s. "
+        f"First Response: {first_response_latency if first_response_latency else 0:.4f}s"
+    )
+
+    details = {
+        "total_latency_seconds": total_latency,
+        "average_turn_latency_seconds": average_turn_latency,
+        "llm_latency_seconds": llm_latency,
+        "tool_latency_seconds": tool_latency,
+        "time_to_first_response_seconds": first_response_latency,
+    }
+
+    return total_latency, explanation, details
+
+
+def calculate_cache_efficiency(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the efficiency of context caching.
+    Returns the cache hit rate (percentage of potential prompt tokens that were cached).
+    """
+    total_prompt_tokens = 0
+    total_cached_tokens = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for cache efficiency", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+                if usage:
+                    total_prompt_tokens += usage.get("prompt_token_count", 0)
+                    total_cached_tokens += usage.get("cached_content_token_count", 0)
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    # Calculate hit rate
+    # Note: 'prompt_token_count' in Gemini API usage metadata usually EXCLUDES cached tokens.
+    # So total potential input = prompt_token_count + cached_content_token_count
+    total_input_tokens = total_prompt_tokens + total_cached_tokens
+
+    if total_input_tokens > 0:
+        cache_hit_rate = total_cached_tokens / total_input_tokens
+    else:
+        cache_hit_rate = 0.0
+
+    explanation = (
+        f"Cache Hit Rate: {cache_hit_rate:.2%}. "
+        f"Cached Tokens: {total_cached_tokens}. "
+        f"Fresh Prompt Tokens: {total_prompt_tokens}."
+    )
+
+    details = {
+        "cache_hit_rate": cache_hit_rate,
+        "total_cached_tokens": total_cached_tokens,
+        "total_fresh_prompt_tokens": total_prompt_tokens,
+        "total_input_tokens": total_input_tokens,
+    }
+
+    return cache_hit_rate, explanation, details
+
+
+def calculate_thinking_metrics(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate metrics related to the model's 'thinking' or reasoning process.
+    Returns the reasoning ratio (thinking tokens / total output tokens).
+    """
+    total_thinking_tokens = 0
+    total_candidate_tokens = 0
+    turns_with_thinking = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for thinking metrics", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+                if usage:
+                    thoughts = usage.get("thoughts_token_count", 0)
+                    # Note: In some API versions, candidates_token_count might exclude thoughts.
+                    # We treat them as additive components of the total output.
+                    candidates = usage.get("candidates_token_count", 0)
+
+                    total_thinking_tokens += thoughts
+                    total_candidate_tokens += candidates
+
+                    if thoughts > 0:
+                        turns_with_thinking += 1
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    total_output_tokens = total_thinking_tokens + total_candidate_tokens
+
+    if total_output_tokens > 0:
+        reasoning_ratio = total_thinking_tokens / total_output_tokens
+    else:
+        reasoning_ratio = 0.0
+
+    explanation = (
+        f"Reasoning Ratio: {reasoning_ratio:.2%}. "
+        f"Thinking Tokens: {total_thinking_tokens}. "
+        f"Standard Output Tokens: {total_candidate_tokens}. "
+        f"Turns with Thinking: {turns_with_thinking}."
+    )
+
+    details = {
+        "reasoning_ratio": reasoning_ratio,
+        "total_thinking_tokens": total_thinking_tokens,
+        "total_candidate_tokens": total_candidate_tokens,
+        "total_output_tokens": total_output_tokens,
+        "turns_with_thinking": turns_with_thinking,
+    }
+
+    return reasoning_ratio, explanation, details
+
+
+def calculate_tool_utilization(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate statistics on tool usage frequency and diversity.
+    Returns the total number of tool calls.
+    """
+    total_tool_calls = 0
+    tool_counts = {}
+
+    if not session_trace:
+        return 0.0, "No trace data available for tool utilization", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+
+        # Check for tool execution spans.
+        # Standard ADK traces often use "execute_tool <ToolName>"
+        if name.startswith("execute_tool ") or "tool_call" in name:
+            tool_name = "unknown"
+            if name.startswith("execute_tool "):
+                tool_name = name.replace("execute_tool ", "").strip()
+            elif "tool.name" in span.get("attributes", {}):
+                tool_name = span["attributes"]["gen_ai.tool.name"]
+
+            total_tool_calls += 1
+            tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+
+    unique_tools_used = len(tool_counts)
+
+    # Create a string representation of the tool breakdown
+    breakdown_str = ", ".join([f"{k}: {v}" for k, v in tool_counts.items()])
+
+    explanation = (
+        f"Total Tool Calls: {total_tool_calls}. "
+        f"Unique Tools: {unique_tools_used}. "
+        f"Breakdown: [{breakdown_str}]"
+    )
+
+    details = {
+        "total_tool_calls": total_tool_calls,
+        "unique_tools_used": unique_tools_used,
+        "tool_counts": tool_counts,
+    }
+
+    return float(total_tool_calls), explanation, details
+
+
+def calculate_tool_success_rate(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the success rate of tool executions by inspecting tool responses.
+    Returns success rate (successful / total) as score.
+    """
+    total_calls = 0
+    failed_calls = 0
+    failed_tools = []
+
+    if not session_trace:
+        return 0.0, "No trace data available for tool success rate", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+        attributes = span.get("attributes", {})
+
+        # Identify tool execution spans
+        is_tool = name.startswith("execute_tool ") or "tool_call" in name
+
+        if is_tool:
+            tool_response_str = attributes.get("gcp.vertex.agent.tool_response")
+            if tool_response_str:
+                total_calls += 1
+                try:
+                    # Parse the JSON response to check status
+                    response = json.loads(tool_response_str)
+
+                    # Common error patterns in ADK/JSON tools
+                    is_error = False
+                    if isinstance(response, dict):
+                        if response.get("status") == "error":
+                            is_error = True
+                        elif "error" in response or "error_message" in response:
+                            is_error = True
+
+                    if is_error:
+                        failed_calls += 1
+                        tool_name = name.replace("execute_tool ", "").strip()
+                        failed_tools.append(tool_name)
+
+                except (json.JSONDecodeError, TypeError):
+                    # Malformed JSON in response could be considered a failure or ignored
+                    pass
+
+    if total_calls > 0:
+        success_rate = (total_calls - failed_calls) / total_calls
+    else:
+        # If no tools were called, success rate is technically N/A, but 1.0 is a safe "no errors" default
+        # Or 0.0 if we want to imply "no success possible".
+        # For evaluation, 1.0 (no failures) usually makes more sense if no tools were attempted.
+        # But to distinguish from "perfect execution", let's return 1.0 but note it.
+        success_rate = 1.0
+
+    explanation = (
+        f"Success Rate: {success_rate:.2%}. "
+        f"Total Calls: {total_calls}. "
+        f"Failed Calls: {failed_calls}. "
+        f"Failed Tools: {list(set(failed_tools))}"
+    )
+
+    details = {
+        "tool_success_rate": success_rate,
+        "total_tool_calls": total_calls,
+        "failed_tool_calls": failed_calls,
+        "failed_tools_list": failed_tools,
+    }
+
+    return success_rate, explanation, details
+
+
+def calculate_grounding_utilization(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the extent of grounding usage by inspecting LLM responses for groundingMetadata.
+    Returns total grounding chunks (citations) as the score.
+    """
+    total_grounded_responses = 0
+    total_grounding_chunks = 0
+    total_llm_responses = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for grounding utilization", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+
+        if llm_response:
+            total_llm_responses += 1
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                # Grounding metadata is usually at the top level or inside candidates
+                # Standard Vertex AI response structure check
+                grounding_metadata = response_data.get(
+                    "groundingMetadata"
+                ) or response_data.get("grounding_metadata")
+
+                if not grounding_metadata:
+                    # Check inside candidates if not at top level
+                    candidates = response_data.get("candidates", [])
+                    if candidates and isinstance(candidates, list):
+                        first_candidate = candidates[0]
+                        grounding_metadata = first_candidate.get(
+                            "groundingMetadata"
+                        ) or first_candidate.get("grounding_metadata")
+
+                if grounding_metadata:
+                    chunks = grounding_metadata.get(
+                        "groundingChunks"
+                    ) or grounding_metadata.get("grounding_chunks")
+                    if chunks and isinstance(chunks, list) and len(chunks) > 0:
+                        total_grounded_responses += 1
+                        total_grounding_chunks += len(chunks)
+
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    explanation = (
+        f"Total Citations (Chunks): {total_grounding_chunks}. "
+        f"Grounded Responses: {total_grounded_responses} / {total_llm_responses}."
+    )
+
+    details = {
+        "total_grounding_chunks": total_grounding_chunks,
+        "total_grounded_responses": total_grounded_responses,
+        "total_llm_responses": total_llm_responses,
+    }
+
+    return float(total_grounding_chunks), explanation, details
+
+
+def calculate_context_saturation(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the maximum context saturation (max total tokens used in a single turn).
+    Returns max_tokens as the score.
+    """
+    max_tokens = 0
+    max_token_span = ""
+
+    if not session_trace:
+        return 0.0, "No trace data available for context saturation", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+                if usage:
+                    total = usage.get("total_token_count", 0)
+                    if total > max_tokens:
+                        max_tokens = total
+                        max_token_span = span.get("name", "unknown")
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    explanation = (
+        f"Max Context Used: {max_tokens} tokens. Peak occurred in: {max_token_span}."
+    )
+
+    details = {"max_total_tokens": max_tokens, "peak_usage_span": max_token_span}
+
+    return float(max_tokens), explanation, details
+
+
+def calculate_agent_handoffs(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Count the number of agent handoffs/invocations in the session.
+    Returns total handoff events as the score.
+
+    Captures:
+    - Direct agent invocations (invoke_agent, agent_run)
+    - Sub-agents called as tools (execute_tool *Agent, transfer_to_agent)
+    """
+    handoff_count = 0
+    agents_invoked = set()
+
+    if not session_trace:
+        return 0.0, "No trace data available for agent handoffs", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+
+        # Check for direct agent invocations
+        if name.startswith("invoke_agent ") or name.startswith("agent_run "):
+            agent_name = (
+                name.replace("invoke_agent ", "").replace("agent_run ", "").strip()
+            )
+            handoff_count += 1
+            agents_invoked.add(agent_name)
+
+        # Check for sub-agents called as tools (e.g., "execute_tool IntakeAgent")
+        elif name.startswith("execute_tool "):
+            tool_name = name.replace("execute_tool ", "").strip()
+            # Sub-agents typically end with "Agent" or are transfer_to_agent
+            if tool_name.endswith("Agent") or tool_name == "transfer_to_agent":
+                handoff_count += 1
+                agents_invoked.add(tool_name)
+
+    explanation = (
+        f"Total Handoffs: {handoff_count}. "
+        f"Unique Agents: {len(agents_invoked)}. "
+        f"Agents: {list(agents_invoked)}"
+    )
+
+    details = {
+        "total_handoffs": handoff_count,
+        "unique_agents_count": len(agents_invoked),
+        "agents_invoked_list": list(agents_invoked),
+    }
+
+    return float(handoff_count), explanation, details
+
+
+def calculate_output_density(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the average number of output tokens per LLM call.
+    Returns average output tokens as the score.
+    """
+    total_output_tokens = 0
+    llm_calls = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for output density", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+
+        # Check for LLM response with usage metadata
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+
+                # Check for output tokens in standard fields (candidates_token_count or output_token_count)
+                output_tokens = 0
+                if usage:
+                    # 'candidates_token_count' is standard in Vertex AI
+                    output_tokens = usage.get("candidates_token_count", 0)
+                    if output_tokens == 0:
+                        # Fallback for other providers
+                        output_tokens = usage.get("output_token_count", 0) or usage.get(
+                            "completion_tokens", 0
+                        )
+
+                if (
+                    output_tokens > 0 or usage
+                ):  # Count the call even if 0 output (edge case)
+                    llm_calls += 1
+                    total_output_tokens += output_tokens
+
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    if llm_calls > 0:
+        average_output_tokens = total_output_tokens / llm_calls
+    else:
+        average_output_tokens = 0.0
+
+    explanation = (
+        f"Avg Output Tokens: {average_output_tokens:.2f}. "
+        f"Total Output Tokens: {total_output_tokens}. "
+        f"LLM Calls: {llm_calls}."
+    )
+
+    details = {
+        "average_output_tokens": average_output_tokens,
+        "total_output_tokens": total_output_tokens,
+        "llm_calls_count": llm_calls,
+    }
+
+    return float(average_output_tokens), explanation, details
+
+
+def calculate_sandbox_usage(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Count the number of tool calls related to sandbox/file system operations.
+    Returns the total count as the score.
+    """
+    sandbox_ops_count = 0
+    sandbox_tools_used = {}
+
+    # Common keywords for sandbox/file operations
+    sandbox_keywords = [
+        "save_artifact",
+        "load_artifact",
+        "read_file",
+        "write_file",
+        "run_python_script",
+        "execute_code",
+        "save_to_file",
+        "read_from_file",
+    ]
+
+    if not session_trace:
+        return 0.0, "No trace data available for sandbox usage", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+
+        # Check for tool execution spans
+        if name.startswith("execute_tool ") or "tool_call" in name:
+            tool_name = "unknown"
+            if name.startswith("execute_tool "):
+                tool_name = name.replace("execute_tool ", "").strip()
+            elif "tool.name" in span.get("attributes", {}):
+                tool_name = span["attributes"]["gen_ai.tool.name"]
+
+            # Check if tool matches sandbox keywords
+            if any(keyword in tool_name.lower() for keyword in sandbox_keywords):
+                sandbox_ops_count += 1
+                sandbox_tools_used[tool_name] = sandbox_tools_used.get(tool_name, 0) + 1
+
+    unique_ops_used = len(sandbox_tools_used)
+
+    breakdown_str = ", ".join([f"{k}: {v}" for k, v in sandbox_tools_used.items()])
+
+    explanation = (
+        f"Total Sandbox Ops: {sandbox_ops_count}. "
+        f"Unique Ops: {unique_ops_used}. "
+        f"Breakdown: [{breakdown_str}]"
+    )
+
+    details = {
+        "total_sandbox_ops": sandbox_ops_count,
+        "unique_ops_used": unique_ops_used,
+        "sandbox_tools_used": sandbox_tools_used,
+    }
+
+    return float(sandbox_ops_count), explanation, details
+
+
+# Registry of all deterministic metrics
+DETERMINISTIC_METRICS = {
+    "token_usage": calculate_token_usage,
+    "latency_metrics": calculate_latency_metrics,
+    "cache_efficiency": calculate_cache_efficiency,
+    "thinking_metrics": calculate_thinking_metrics,
+    "tool_utilization": calculate_tool_utilization,
+    "tool_success_rate": calculate_tool_success_rate,
+    "grounding_utilization": calculate_grounding_utilization,
+    "context_saturation": calculate_context_saturation,
+    "agent_handoffs": calculate_agent_handoffs,
+    "output_density": calculate_output_density,
+    "sandbox_usage": calculate_sandbox_usage,
+}
+
+
+def evaluate_deterministic_metrics(
+    session_state: Dict[str, Any],
+    session_trace: List[Dict[str, Any]],
+    agents_evaluated: List[str],
+    question_metadata: Dict[str, Any],
+    metrics_to_run: List[str] = None,
+    reference_data: Dict[str, Any] = None,
+    metric_definitions: Dict[str, Any] = None,
+    latency_data: List[Dict[str, Any]] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Evaluate all specified deterministic metrics.
+    """
+    if metrics_to_run is None:
+        metrics_to_run = list(DETERMINISTIC_METRICS.keys())
+
+    results = {}
+    for metric_name in metrics_to_run:
+        if metric_name not in DETERMINISTIC_METRICS:
+            continue
+
+        metric_func = DETERMINISTIC_METRICS[metric_name]
+
+        try:
+            if metric_name == "latency_metrics":
+                score, explanation, details = metric_func(
+                    session_trace, latency_data=latency_data
+                )
+            else:
+                score, explanation, details = metric_func(session_trace)
+
+            results[metric_name] = {
+                "score": score,
+                "explanation": explanation,
+                "details": details,
+            }
+        except Exception as e:
+            results[metric_name] = {
+                "score": 0.0,
+                "explanation": f"Error evaluating metric {metric_name}: {str(e)}",
+            }
+
+    return results
+
+```
+
+**3. Agent Implementation Details:**
+*   **Agent Source Code:** The source code for the agent being evaluated. This is your primary source for forming hypotheses about *why* the agent behaves a certain way.
+**File: `../customer-service/customer_service/agent.py`**
+```python
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.§
+
+"""Agent module for the customer service agent."""
+
+import logging
+import warnings
+from google.adk import Agent
+from .config import Config
+from .prompts import GLOBAL_INSTRUCTION, INSTRUCTION
+from .shared_libraries.callbacks import (
+    rate_limit_callback,
+    before_agent,
+    before_tool,
+    after_tool
+)
+from .tools.tools import (
+    send_call_companion_link,
+    approve_discount,
+    sync_ask_for_approval,
+    update_salesforce_crm,
+    access_cart_information,
+    modify_cart,
+    get_product_recommendations,
+    check_product_availability,
+    schedule_planting_service,
+    get_available_planting_times,
+    send_care_instructions,
+    generate_qr_code,
+)
+
+warnings.filterwarnings("ignore", category=UserWarning, module=".*pydantic.*")
+
+configs = Config()
+
+# configure logging __name__
+logger = logging.getLogger(__name__)
+
+
+root_agent = Agent(
+    model=configs.agent_settings.model,
+    # CACHING OPTIMIZATION: Put static 'INSTRUCTION' first as global_instruction.
+    # Put dynamic 'GLOBAL_INSTRUCTION' (customer profile) second.
+    global_instruction=INSTRUCTION,
+    instruction=GLOBAL_INSTRUCTION,
+    name=configs.agent_settings.name,
+    tools=[
+        send_call_companion_link,
+        approve_discount,
+        sync_ask_for_approval,
+        update_salesforce_crm,
+        access_cart_information,
+        modify_cart,
+        get_product_recommendations,
+        check_product_availability,
+        schedule_planting_service,
+        get_available_planting_times,
+        send_care_instructions,
+        generate_qr_code,
+    ],
+    before_tool_callback=before_tool,
+    after_tool_callback=after_tool,
+    before_agent_callback=before_agent,
+    before_model_callback=rate_limit_callback,
+)
+
+from google.adk.apps.app import App, EventsCompactionConfig
+
+app = App(
+    root_agent=root_agent,
+    name="customer_service",
+    events_compaction_config=EventsCompactionConfig(
+        compaction_interval=10, overlap_size=1
+    ),
+)
+
+```
+**File: `../customer-service/customer_service/tools/tools.py`**
+```python
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Hardened Tools module for the customer service agent."""
+
+import logging
+import uuid
+from datetime import datetime, timedelta
+from typing import Literal, Optional, List
+from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
+
+# --- Pydantic Schemas for Tool Inputs ---
+
+class CartItem(BaseModel):
+    """Schema for an item in the shopping cart."""
+    product_id: str = Field(description="The unique identifier for the product (e.g., 'soil-456').")
+    quantity: int = Field(description="The number of units for this item.")
+
+class DiscountApprovalRequest(BaseModel):
+    """Schema for a discount approval request."""
+    discount_type: Literal["percentage", "flat"] = Field(description="The type of discount requested.")
+    value: float = Field(description="The numeric value of the discount.")
+    reason: str = Field(description="The business justification for the discount (e.g., 'Competitor match').")
+
+class QRGenerationRequest(BaseModel):
+    """Schema for generating a discount QR code."""
+    customer_id: str = Field(description="The ID of the customer.")
+    discount_value: float = Field(description="Value of the discount (e.g. 10 for 10%).")
+    discount_type: Literal["percentage", "fixed"] = Field(description="The type of discount.")
+    expiration_days: int = Field(default=30, description="Days until the QR code expires.")
+
+class CRMUpdateDetails(BaseModel):
+    """Schema for updating customer CRM records."""
+    customer_id: str = Field(description="The ID of the customer.")
+    appointment_date: Optional[str] = Field(None, description="Date of service (YYYY-MM-DD).")
+    appointment_time: Optional[str] = Field(None, description="Time slot (e.g., '9-12').")
+    services: Optional[str] = Field(None, description="Description of services performed.")
+    notes: Optional[str] = Field(None, description="Additional context for the CRM update.")
+
+# --- Hardened Tools ---
+
+def send_call_companion_link(phone_number: str) -> dict:
+    """
+    Sends a link to the user's phone number to start a video session.
+
+    **KNOWN LIMITATIONS:** 
+    * This tool ONLY sends the link. 
+    * The AI agent CANNOT see the video stream or identify plants visually. 
+    * After sending the link, you must ask the user to describe the plant textually.
+
+    Args:
+        phone_number (str): The phone number to send the link to.
+    """
+    logger.info("Sending call companion link to %s", phone_number)
+    return {"status": "success", "message": f"Link sent to {phone_number}"}
+
+
+def approve_discount(request: DiscountApprovalRequest) -> dict:
+    """
+    Approve the flat rate or percentage discount requested by the user.
+
+    **KNOWN LIMITATIONS:**
+    * This tool is for internal logic checks ONLY.
+    * It does NOT directly apply the discount to a user's cart or session.
+    """
+    if request.value > 10:
+        logger.info("Denying %s discount of %s", request.discount_type, request.value)
+        return {"status": "rejected", "message": "discount too large. Must be 10 or less."}
+    
+    logger.info("Approving a %s discount of %s because %s", request.discount_type, request.value, request.reason)
+    return {"status": "ok"}
+
+def sync_ask_for_approval(request: DiscountApprovalRequest) -> dict:
+    """
+    Asks the manager for approval for a discount.
+
+    **KNOWN LIMITATIONS:**
+    * This tool ONLY provides an approval status.
+    * It DOES NOT apply the discount to the purchase or cart.
+    * After approval, you MUST inform the user that the discount is ready but cannot be applied automatically.
+
+    Args:
+        request (DiscountApprovalRequest): Structured approval request.
+    """
+    logger.info("Asking for approval for a %s discount of %s because %s", request.discount_type, request.value, request.reason)
+    return {"status": "approved"}
+
+
+def update_salesforce_crm(request: CRMUpdateDetails) -> dict:
+    """
+    Updates the Salesforce CRM with customer details.
+
+    **KNOWN LIMITATIONS:**
+    * This tool is for record-keeping only.
+    * It does not trigger external notifications or change billing status.
+
+    Args:
+        request (CRMUpdateDetails): Structured CRM data.
+    """
+    logger.info("Updating Salesforce CRM for customer ID %s", request.customer_id)
+    return {"status": "success", "message": "Salesforce record updated."}
+
+
+def access_cart_information(customer_id: str) -> dict:
+    """
+    Retrieves the current contents of the user's shopping cart.
+
+    **KNOWN LIMITATIONS:**
+    * This tool is READ-ONLY. It cannot modify items.
+
+    Args:
+        customer_id (str): The ID of the customer.
+    """
+    logger.info("Accessing cart information for customer ID: %s", customer_id)
+    return {
+        "items": [
+            {"product_id": "soil-123", "name": "Standard Potting Soil", "quantity": 1},
+            {"product_id": "fert-456", "name": "General Purpose Fertilizer", "quantity": 1},
+        ],
+        "subtotal": 25.98,
+    }
+
+
+def modify_cart(customer_id: str, items_to_add: List[CartItem], items_to_remove: List[str]) -> dict:
+    """
+    Modifies the user's shopping cart by adding and/or removing items.
+
+    **KNOWN LIMITATIONS:**
+    * You MUST specify the exact product_id.
+    * You cannot modify prices or apply discounts using this tool.
+
+    Args:
+        customer_id (str): The ID of the customer.
+        items_to_add (list[CartItem]): List of items to add.
+        items_to_remove (list[str]): List of product_ids to remove.
+    """
+    logger.info("Modifying cart for customer ID: %s", customer_id)
+    return {"status": "success", "message": "Cart updated successfully."}
+
+
+def get_product_recommendations(plant_type: str, customer_id: Optional[str] = None) -> dict:
+    """
+    Provides product recommendations based on the type of plant.
+
+    Args:
+        plant_type: The type of plant (e.g., 'Petunias').
+        customer_id: Optional customer ID for personalization.
+    """
+    logger.info("Getting recommendations for %s", plant_type)
+    if plant_type.lower() == "petunias":
+        return {"recommendations": [
+            {"product_id": "soil-456", "name": "Bloom Booster Potting Mix"},
+            {"product_id": "fert-789", "name": "Flower Power Fertilizer"}
+        ]}
+    return {"recommendations": [{"product_id": "soil-123", "name": "Standard Potting Soil"}]}
+
+
+def check_product_availability(product_id: str, store_id: str) -> dict:
+    """
+    Checks if a product is in stock at a specific location.
+
+    Args:
+        product_id: The ID of the product.
+        store_id: The ID of the store (e.g., 'Main Store' or 'pickup').
+    """
+    logger.info("Checking availability for %s at %s", product_id, store_id)
+    return {"available": True, "quantity": 10, "store": store_id}
+
+
+def schedule_planting_service(customer_id: str, date: str, time_range: str, details: str) -> dict:
+    """
+    Schedules a planting service appointment.
+
+    **KNOWN LIMITATIONS:**
+    * Valid time ranges are only '9-12' and '13-16'.
+
+    Args:
+        customer_id: The ID of the customer.
+        date: Target date (YYYY-MM-DD).
+        time_range: Desired slot (e.g., '9-12').
+        details: Planting details.
+    """
+    logger.info("Scheduling service for %s on %s", customer_id, date)
+    return {
+        "status": "success",
+        "appointment_id": str(uuid.uuid4()),
+        "date": date,
+        "time": time_range,
+    }
+
+
+def get_available_planting_times(date: str) -> list[str]:
+    """
+    Retrieves available time slots for planting services.
+
+    Args:
+        date: Target date (YYYY-MM-DD).
+    """
+    return ["9-12", "13-16"]
+
+
+def send_care_instructions(customer_id: str, plant_type: str, delivery_method: Literal["email", "sms"]) -> dict:
+    """
+    Sends plant care instructions to the user.
+
+    Args:
+        customer_id: The ID of the customer.
+        plant_type: The type of plant.
+        delivery_method: 'email' or 'sms'.
+    """
+    return {"status": "success", "message": f"Sent via {delivery_method}."}
+
+
+def generate_qr_code(request: QRGenerationRequest) -> dict:
+    """
+    Generates a discount QR code.
+
+    **KNOWN LIMITATIONS:**
+    * QR codes CANNOT be sent via email; they are displayed in the chat interface only.
+
+    Args:
+        request (QRGenerationRequest): Structured QR request.
+    """
+    if request.discount_type == "percentage" and request.discount_value > 10:
+        return {"status": "error", "message": "percentage must be <= 10%"}
+    
+    expiration_date = (datetime.now() + timedelta(days=request.expiration_days)).strftime("%Y-%m-%d")
+    return {
+        "status": "success",
+        "qr_code_data": "MOCK_QR_CODE_DATA",
+        "expiration_date": expiration_date,
+    }
+```
+
+**4. Evaluation Questions:**
+*   **Questions Evaluated:** The full set of questions used in the evaluation. This can provide context if certain types of questions are causing specific failures.
+**Questions Evaluated**
+```json
+Questions file not found.
+```
+
+---
+Format your entire response as a single Markdown document.
