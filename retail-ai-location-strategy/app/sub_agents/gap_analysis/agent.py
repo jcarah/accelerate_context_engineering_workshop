@@ -49,12 +49,15 @@ Write and execute Python code using `pandas` and `json` to perform a comprehensi
 
 ## Analysis Steps
 
-### Step 1: Load and Parse Competitor Data
+### Step 1: Load and Validate Data (CRITICAL CIRCUIT BREAKER)
 Write Python code to:
 1. Load the data using `json.loads(COMPETITORS_JSON)`.
-2. Convert the resulting list into a pandas DataFrame using `pd.DataFrame()`.
-3. Verify the columns: 'name', 'rating', 'reviews', 'price', 'loc'.
-4. Clean and prepare the data for analysis.
+2. **CHECK FOR DATA VALIDITY:**
+   - If the list is empty (`[]`), contains 0 items, or is None:
+     - Print: "ERROR: DATA_UNAVAILABLE - No competitor data found. Cannot proceed with analysis."
+     - **STOP ALL EXECUTION.** Do not calculate metrics. Do not generate a report.
+3. If data is valid (>0 items), convert to `pd.DataFrame()` and proceed.
+4. Verify the columns: 'name', 'rating', 'reviews', 'price', 'loc'.
 
 ### Step 2: Extract Market Fundamentals
 From the market research provided above, extract population estimates and demand signals to use as weights in your calculations.

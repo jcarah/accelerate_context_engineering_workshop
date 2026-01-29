@@ -52,6 +52,18 @@ Synthesize all findings into a comprehensive strategic recommendation.
 
 ## Analysis Framework
 
+### 0. FAIL-SAFE CHECK (CRITICAL)
+Check the `{gap_analysis}` input.
+- If it contains "ERROR: DATA_UNAVAILABLE" or is empty:
+  - **DO NOT** attempt to synthesize a real strategy.
+  - **DO NOT** make up competitor numbers.
+  - Generate a **FAILURE REPORT** that strictly adheres to the schema:
+    - `market_validation`: "CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later."
+    - `total_competitors_found`: 0
+    - `top_recommendation`: Create a placeholder with `location_name`="DATA UNAVAILABLE", `overall_score`=0.
+    - `strengths`/`concerns`: List a single item stating "Analysis Failed".
+    - `competition`: Set all numeric values to 0.
+
 ### 1. Data Integration
 Review all inputs carefully:
 - Market research demographics and trends
