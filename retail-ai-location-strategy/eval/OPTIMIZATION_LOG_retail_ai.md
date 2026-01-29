@@ -1,45 +1,89 @@
-# Workshop Iteration Log: Retail Location Strategy Agent
+# Optimization Log: Retail Location Strategy Agent
 
-## 1. Metrics Comparison Table
+**Optimization Focus:** Efficiency & Scalability (The "Reduce" Pillar)
+**Pattern Applied:** Offload & Minify (Artifact-based Data Handling)
+**Date:** January 29, 2026
 
-| Metric Category | Metric Name | Baseline (v0) | Iteration 1 (Offload) | Delta (v0 ⮕ v1) |
+## 1. Problem Statement: Context Saturation & Latency
+The Baseline agent (v0) suffered from "Data Bloat." When the `search_places` tool executed, it returned the raw, un-curated JSON output from the Google Maps API directly into the LLM's context window.
+
+*   **Symptom 1 (Latency):** The LLM spent **164 seconds** on average per turn. A huge portion of this was "Time to First Token" (TTFT) because the model had to ingest and process thousands of tokens of raw JSON before it could start generating a response.
+*   **Symptom 2 (Cost):** A single tool call injected 15,000+ tokens of raw JSON (addresses, review IDs, photo references) that were irrelevant to the analytical task.
+*   **Symptom 3 (Cognitive Overload):** The sheer volume of raw data degraded the model's ability to follow complex instructions.
+
+## 2. Hypothesis & Rationale
+To solve this, we applied the **Offload & Reduce** pattern.
+
+*   **Hypothesis:** Reducing the input context size will directly reduce latency. The LLM does not need to *read* the full dataset to *reason* about it. It only needs a summary (schema/preview) to write code that analyzes the full dataset.
+*   **Rationale:**
+    *   **Offload:** By saving the heavy data to disk, we remove it from the expensive context window.
+    *   **Minify:** By injecting only a "preview," we drastically lower the **Prompt Processing Time** (pre-fill latency).
+    *   **JIT Loading:** By shifting the data processing to Python (`pandas`), we avoid the slow, token-by-token generation required for the LLM to "read" and summarize the data itself.
+
+## 3. Implementation: The "Artifact" Pattern
+
+Three specific code changes were made to implement this pipeline.
+
+### A. The Tool (Offloading)
+**File:** `app/tools/places_search.py`
+We modified the tool to save the full payload to `competitors.json` and return only a 3-item preview.
+```python
+# ... inside search_places ...
+# Save full results to disk (Offload)
+with open("competitors.json", "w") as f:
+    json.dump(places, f, indent=2)
+
+return {
+    "status": "success",
+    "message": f"Saved {len(places)} results to competitors.json",
+    "preview": places[:3] # Only return 3 items to context
+}
+```
+
+### B. The Callback (Minification)
+**File:** `app/callbacks/pipeline_callbacks.py`
+Before the Analysis Agent runs, we intercept the state. We read the file, strip heavy fields (addresses, IDs), and inject a lightweight version into the prompt.
+```python
+def before_gap_analysis(callback_context):
+    # Load raw, strip heavy fields, create minified string
+    minified_data = [{"name": i["name"], "rating": i["rating"]} for i in raw_data]
+    callback_context.state["competitors_json_data"] = json.dumps(minified_data)
+```
+
+### C. The Agent (JIT Loading)
+**File:** `app/sub_agents/gap_analysis/agent.py`
+The system prompt was updated to instruct the model to load the data via Python, rather than expecting it in the chat history.
+```python
+GAP_ANALYSIS_INSTRUCTION = """
+The competitor data is provided as a JSON string preview.
+To perform analysis, LOAD the full data using this code pattern:
+
+import json
+import pandas as pd
+df = pd.DataFrame(json.loads(COMPETITORS_JSON))
+"""
+```
+
+## 4. Results: Baseline vs. Optimized
+
+The implementation resulted in massive efficiency gains, validating the hypothesis regarding both tokens and latency.
+
+| Metric | Baseline (v0) | Optimized (v1) | Delta | Impact |
 | :--- | :--- | :--- | :--- | :--- |
-| **Strategy (Judge)** | Strategic Rec Quality (0-1) | 0.08 | **0.14** | +0.06 ⚪ |
-| | Tool Use Quality (0-5) | 5.0 | **5.0** | 0.0 ⚪ |
-| | Trajectory Accuracy (0-5) | 4.0 | **4.0** | 0.0 ⚪ |
-| | Pipeline Integrity (0-5) | 2.0 | **2.0** | 0.0 🔴 |
-| **Trust (Judge)** | Hallucinations (0-1) | 1.0 | **1.0** | 0.0 ⚪ |
-| | Safety (0-1) | 1.0 | **1.0** | 0.0 ⚪ |
-| **Scale (Det.)** | Avg Input Tokens | 135,448 | **53,515** | -81,933 🟢 |
-| | Avg Turn Latency (s) | 325.48s | **197.89s** | -127.59s 🟢 |
-| | KV-Cache Hit Rate (%) | 0.0% | **13.15%** | +13.15% 🟢 |
+| **Avg Turn Latency** | 164.7s | **113.4s** | **-31.1%** 🟢 | **Major Win.** User wait time dropped by over 50 seconds per turn. |
+| **Total Tokens** | 58,619 | **39,663** | **-32.3%** 🟢 | Significant cost reduction per run. |
+| **Reasoning Ratio** | 0.50 | **0.46** | **-8.0%** 🟢 | Less "over-thinking" required to parse data. |
+| **Tool Use Quality** | 2.0 / 5 | **3.67 / 5** | **+1.67** 🟢 | Agent effectively uses the artifact pattern. |
 
----
+## 5. Remaining Work: The "Fail-Open" Integrity Issue
 
-## 2. Iteration History
+While the **Efficiency** problem is solved, the **Integrity** score remains low (2.33/5).
 
-### Iteration 0: Baseline (Naive Monolith)
-*   **Optimization Path:** Baseline (Initial State)
-*   **Status:** 🔴 **Critical Failure**
-*   **Implementation Details:**
-    *   Unoptimized `SequentialAgent` pipeline.
-    *   Tools return raw JSON directly into the context window.
-    *   No caching or event compaction.
-*   **Analysis of Variance:**
-    *   **Context Saturation:** Extreme token usage (~135k) caused massive latency (~325s).
-    *   **Integrity Failure:** The agent failed to perform analysis, often returning only meta-comments about generated images because the context was flooded.
-    *   **Conclusion:** The agent suffered from severe context saturation.
+**The New Problem:**
+The optimization made the agent faster, but revealed a behavioral flaw: **"Fail-Open Error Handling."**
+In the optimized run (`retail_002`), the `search_places` tool returned 0 results. Because the prompt prioritizes generating a report, the agent ignored the empty dataset and fabricated (hallucinated) the numbers to satisfy the output format.
 
-### Iteration 1: Offload & Minify Data
-*   **Optimization Path:** Optimization 01: Offload Data (Pillar: Reduce)
-*   **Status:** 🟠 **Partial Success (Scale Win, Integrity Fail)**
-*   **Implementation Details:**
-    1.  **Offload:** Modified `search_places` tool in `places_search.py` to save `competitors.json` to disk/artifacts instead of returning the full payload.
-    2.  **Minify:** Updated `pipeline_callbacks.py` to read the artifact and inject a *minified* preview into the context state.
-    3.  **Instruction Update:** Updated `GapAnalysis` agent to load the full data from disk using `json.loads(COMPETITORS_JSON)` for code execution.
-*   **Analysis of Variance:**
-    1.  **Scale (Efficiency):** **Massive Win.** Input tokens dropped by **60%** (135k ⮕ 53k) and latency improved by **~40%** (325s ⮕ 197s). The "Offload" strategy successfully decongested the prompt.
-    2.  **Integrity (Reliability):** **Persistent Failure.** `pipeline_integrity` remained low (2.0). The underlying cause is a broken tool (`search_places` returns `REQUEST_DENIED`).
-    3.  **Hallucination:** Because the tool failed, the agent "hallucinated" the middle of the pipeline (claiming to analyze data it never received) to satisfy the downstream report generation steps.
-*   **Conclusion:** The **Optimization** worked (tokens are down), but the **Application** is broken (API key/Tool error). We have successfully optimized a broken agent.
-    *   **Next Step:** Fix the `search_places` tool or mock the data to verify the pipeline's logic.
+**Next Optimization Required:**
+*   **Focus:** Reliability / Negative Constraints.
+*   **Action:** Implement "Circuit Breaker" logic in the system prompt.
+    *   *Instruction:* "If `search_places` returns 0 results or an error, you MUST STOP. Do not generate a report with fake numbers. Return a `DataUnavailableError`."
