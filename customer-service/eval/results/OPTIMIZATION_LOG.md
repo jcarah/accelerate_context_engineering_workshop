@@ -65,11 +65,12 @@
 
 **Optimization Path:** Tool Schema Hardening (Pillar: Reduce)
 
-**Implementation Details:**
+**Implementation Details (The "Poka-Yoke" Wins):**
 
-1. **Schema Hardening:** Refactored `tools.py` with Pydantic models for strict argument validation
-2. **Boundary Grounding:** Added `**KNOWN LIMITATIONS**` docstrings to tool definitions
-3. **Negative Constraints:** Explicit statements in docstrings about what tools CANNOT do
+1.  **Pydantic Schemas:** Introduced strict input models (e.g., `DiscountApprovalRequest`, `QRGenerationRequest`) to wrap tool arguments. This prevents the LLM from inventing random JSON structures or passing arguments in the wrong order.
+2.  **Literals (Enums):** Forced specific, restricted values for categorical fields using `Literal`. For example, `discount_type` is now typed as `Literal["percentage", "flat"]`, stopping the model from sending ambiguous variations like "percent" or "%".
+3.  **Runtime Validation:** Added explicit logic within the tools (e.g., `approve_discount`) to check business constraints. Tools now return meaningful error messages to the model instead of crashing silently, allowing the agent to self-correct.
+4.  **Boundary Grounding (Known Limitations):** Added specific `**KNOWN LIMITATIONS**` sections to tool docstrings. This acts as "In-Context Documentation," explicitly telling the model what it *cannot* do, which significantly improved `capability_honesty`.
 
 **Key Changes Made:**
 
