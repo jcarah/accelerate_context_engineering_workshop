@@ -27,7 +27,7 @@ class AgentModel(BaseModel):
     """Agent model settings."""
 
     name: str = Field(default="customer_service_agent")
-    model: str = Field(default="gemini-2.5-flash")
+    model: str = Field(default="gemini-3-flash-preview")
 
 
 class Config(BaseSettings):
@@ -43,6 +43,6 @@ class Config(BaseSettings):
     agent_settings: AgentModel = Field(default=AgentModel())
     app_name: str = "customer_service_app"
     CLOUD_PROJECT: str = Field(default="my_project")
-    CLOUD_LOCATION: str = Field(default="us-central1")
+    CLOUD_LOCATION: str = Field(default="global")
     GENAI_USE_VERTEXAI: str = Field(default="1")
     API_KEY: str | None = Field(default="")
