@@ -1,0 +1,2501 @@
+
+You are an expert AI evaluation analyst. Your task is to produce a deep technical diagnosis of an AI agent's performance for technical stakeholders.
+
+**Tone:** objective, analytical, and professional
+**Report Length:** comprehensive
+
+
+
+**CRITICAL INSTRUCTIONS:**
+1.  **Focus on Diagnosis, Not Recommendations:** Your primary goal is to explain *why* the metrics are what they are. Do not provide a future-looking action plan unless the Strategic Framework above explicitly guides it.
+2.  **Synthesize, Don't Summarize:** Do not simply repeat the scores. Your value is in synthesizing insights by connecting the metric scores, the metric definitions, the source code, and the raw explanations.
+3.  **Reference Your Sources:** When you make a claim or analyze a metric, you MUST reference the specific source file (e.g., `metric_definitions.json`, `deterministic_metrics.py`, `agent.py`).
+4.  **Analyze Calculation Methods:** For each metric you discuss, you MUST explain how its calculation method (deterministic vs. LLM-judged) influences its interpretation.
+5.  **Cite Quantitative and Qualitative Evidence:** You MUST quote specific examples from the conversation logs (user inputs, tool calls, or agent responses) AND cite the corresponding metric scores to justify your findings. Don't just say "the agent failed"; say "The agent's score of 1.2 on `tool_usage_accuracy` is justified by question `q_billing_01`, where it failed to call `lookup_invoice` despite the user explicitly asking for it."
+
+---
+
+**Context for Your Analysis**
+
+You are provided with the following context files to perform your diagnosis. Use them to connect the agent's behavior (the metrics) to its underlying implementation (the code).
+
+**1. Overall Performance Data:**
+*   **Evaluation Summary:** High-level average scores for all metrics. Use this to identify the most significant areas of success and failure.
+**Evaluation Summary**
+```json
+{
+  "experiment_id": "eval-20260129_045539",
+  "run_type": "baseline",
+  "test_description": "Automated evaluation",
+  "interaction_datetime": "2026-01-29T04:55:39.377349",
+  "overall_summary": {
+    "deterministic_metrics": {
+      "token_usage.llm_calls": 5.666666666666667,
+      "token_usage.total_tokens": 30269.333333333332,
+      "token_usage.prompt_tokens": 15064.333333333334,
+      "token_usage.completion_tokens": 3884.3333333333335,
+      "token_usage.cached_tokens": 2244.3333333333335,
+      "token_usage.estimated_cost_usd": 0.057673749999999996,
+      "latency_metrics.total_latency_seconds": 81.64726666666667,
+      "latency_metrics.average_turn_latency_seconds": 81.64726666666667,
+      "latency_metrics.llm_latency_seconds": 156.64152908966668,
+      "latency_metrics.tool_latency_seconds": 1.7792302483333333,
+      "latency_metrics.time_to_first_response_seconds": 5.860184724333333,
+      "cache_efficiency.cache_hit_rate": 0.08742831335399814,
+      "cache_efficiency.total_cached_tokens": 2244.3333333333335,
+      "cache_efficiency.total_fresh_prompt_tokens": 15064.333333333334,
+      "cache_efficiency.total_input_tokens": 17308.666666666668,
+      "thinking_metrics.reasoning_ratio": 0.4215806056765605,
+      "thinking_metrics.total_thinking_tokens": 3317.3333333333335,
+      "thinking_metrics.total_candidate_tokens": 3884.3333333333335,
+      "thinking_metrics.total_output_tokens": 7201.666666666667,
+      "thinking_metrics.turns_with_thinking": 5.666666666666667,
+      "tool_utilization.total_tool_calls": 2.0,
+      "tool_utilization.unique_tools_used": 2.0,
+      "tool_success_rate.tool_success_rate": 0.7777777777777777,
+      "tool_success_rate.total_tool_calls": 2.0,
+      "tool_success_rate.failed_tool_calls": 0.6666666666666666,
+      "grounding_utilization.total_grounding_chunks": 15.666666666666666,
+      "grounding_utilization.total_grounded_responses": 0.6666666666666666,
+      "grounding_utilization.total_llm_responses": 7.666666666666667,
+      "context_saturation.max_total_tokens": 11131.333333333334,
+      "agent_handoffs.total_handoffs": 6.333333333333333,
+      "agent_handoffs.unique_agents_count": 5.666666666666667,
+      "output_density.average_output_tokens": 508.5833333333333,
+      "output_density.total_output_tokens": 3884.3333333333335,
+      "output_density.llm_calls_count": 5.666666666666667,
+      "sandbox_usage.total_sandbox_ops": 0.0,
+      "sandbox_usage.unique_ops_used": 0.0
+    },
+    "llm_based_metrics": {
+      "tool_use_quality": {
+        "average": 4.0,
+        "score_range": {
+          "min": 0,
+          "max": 5,
+          "description": "0=Poor tool usage, 5=Excellent tool usage"
+        }
+      },
+      "trajectory_accuracy": {
+        "average": 5.0,
+        "score_range": {
+          "min": 0,
+          "max": 5,
+          "description": "0=Completely wrong, 5=Perfect trajectory"
+        }
+      },
+      "general_quality": {
+        "average": 0.5176767666666667,
+        "score_range": {
+          "min": 0,
+          "max": 1,
+          "description": "Passing rate for general quality rubrics"
+        }
+      },
+      "pipeline_integrity": {
+        "average": 4.0,
+        "score_range": {
+          "min": 0,
+          "max": 5,
+          "description": "0=Major integrity issues, 5=Perfect integrity"
+        }
+      },
+      "text_quality": {
+        "average": 0.7532051466666667,
+        "score_range": {
+          "min": 0,
+          "max": 1,
+          "description": "Passing rate for text quality rubrics"
+        }
+      }
+    }
+  },
+  "per_question_summary": [
+    {
+      "question_id": "retail_001_full_pipeline",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 8,
+          "models_used": [
+            "gemini-2.5-pro"
+          ],
+          "total_tokens": 46693,
+          "prompt_tokens": 21946,
+          "completion_tokens": 6400,
+          "cached_tokens": 3176,
+          "estimated_cost_usd": 0.0914325
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 125.8743,
+          "average_turn_latency_seconds": 125.8743,
+          "llm_latency_seconds": 243.63291338200003,
+          "tool_latency_seconds": 2.4613626020000003,
+          "time_to_first_response_seconds": 7.517727452
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.12642305548921265,
+          "total_cached_tokens": 3176,
+          "total_fresh_prompt_tokens": 21946,
+          "total_input_tokens": 25122
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.45918539800574615,
+          "total_thinking_tokens": 5434,
+          "total_candidate_tokens": 6400,
+          "total_output_tokens": 11834,
+          "turns_with_thinking": 8
+        },
+        "tool_utilization": {
+          "total_tool_calls": 3,
+          "unique_tools_used": 3,
+          "tool_counts": {
+            "IntakeAgent": 1,
+            "transfer_to_agent": 1,
+            "search_places": 1
+          }
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 0.6666666666666666,
+          "total_tool_calls": 3,
+          "failed_tool_calls": 1,
+          "failed_tools_list": [
+            "search_places"
+          ]
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 20,
+          "total_grounded_responses": 1,
+          "total_llm_responses": 11
+        },
+        "context_saturation": {
+          "max_total_tokens": 17226,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 9,
+          "unique_agents_count": 8,
+          "agents_invoked_list": [
+            "IntakeAgent",
+            "LocationStrategyPipeline",
+            "CompetitorMappingAgent",
+            "MarketResearchAgent",
+            "GapAnalysisAgent",
+            "StrategyAdvisorAgent",
+            "retail_location_strategy",
+            "transfer_to_agent"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 800.0,
+          "total_output_tokens": 6400,
+          "llm_calls_count": 8
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "tool_use_quality": {
+          "score": 4.0,
+          "explanation": "The agent correctly identified the user's intent and selected the appropriate `search_places` tool for competitor mapping. Arguments for all tool calls were accurate. The agent demonstrated excellent error handling by explicitly identifying the `search_places` API error, explaining its implications (inability to collect competitor data, halt quantitative analysis), and providing a comprehensive, transparent report of the failure with concrete next steps. The final response also included qualitative market insights, suggesting some level of market research was still performed. The only minor gap is the explicit absence of a `google_search` tool call, which is listed as an expected tool for market research, despite qualitative market data appearing in the final report. However, given the critical API error that occurred, the agent's performance in managing and reporting that failure was highly effective.",
+          "input": {
+            "prompt": "I want to open a coffee shop. Analyze Capitol Hill in Seattle for me.",
+            "response": "{\"target_location\": \"Capitol Hill, Seattle\", \"business_type\": \"coffee shop\", \"analysis_date\": \"2026-01-29\", \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\", \"total_competitors_found\": 0, \"zones_analyzed\": 0, \"top_recommendation\": {\"location_name\": \"DATA UNAVAILABLE\", \"area\": \"Capitol Hill, Seattle\", \"overall_score\": 0, \"opportunity_type\": \"Analysis Failed\", \"strengths\": [{\"factor\": \"Data Acquisition Failure... [truncated]",
+            "tool_interactions": "{\"tool_name\": \"IntakeAgent\", \"input_arguments\": {\"request\": \"I want to open a coffee shop in Capitol Hill, Seattle.\"}, \"call_id\": \"adk-96ba2fb6-aa18-45b8-88ef-016c2258cf5a\", \"output_result\": {\"target_location\": \"Capitol Hill, Seattle\", \"business_type\": \"coffee shop\"}}\n{\"tool_name\": \"transfer_to_agent\", \"input_arguments\": {\"agent_name\": \"LocationStrategyPipeline\"}, \"call_id\": \"adk-7bd9f591-74b5-4f42-886a-df332edf49ac\", \"output_result\": {\"result\": null}}\n{\"tool_name\": \"search_places\", \"input_argum... [truncated]",
+            "available_tools": ""
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 5.0,
+          "explanation": "The agent followed the expected pipeline stages logically. It correctly invoked MarketResearchAgent, CompetitorMappingAgent (which used its only available tool, `search_places`), GapAnalysisAgent, and StrategyAdvisorAgent. The `search_places` tool failed, and the agent gracefully handled this critical error by clearly communicating the data unavailability, explaining its impact on the analysis, and outlining next steps. This demonstrates optimal error handling and adherence to the pipeline structure given the constraints and tool limitations.",
+          "input": {
+            "prompt": "I want to open a coffee shop. Analyze Capitol Hill in Seattle for me.",
+            "response": "agent:retail_location_strategy\nsub-agent:IntakeAgent\nagent:IntakeAgent\nsub-agent:transfer_to_agent\nagent:LocationStrategyPipeline\nagent:MarketResearchAgent\nagent:CompetitorMappingAgent\ntool:search_places\nagent:GapAnalysisAgent\nagent:StrategyAdvisorAgent",
+            "available_tools": "",
+            "final_response": "{\"target_location\": \"Capitol Hill, Seattle\", \"business_type\": \"coffee shop\", \"analysis_date\": \"2026-01-29\", \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\", \"total_competitors_found\": 0, \"zones_analyzed\": 0, \"top_recommendation\": {\"location_name\": \"DATA UNAVAILABLE\", \"area\": \"Capitol Hill, Seattle\", \"overall_score\": 0, \"opportunity_type\": \"Analysis Failed\", \"strengths\": [{\"factor\": \"Data Acquisition Failure... [truncated]"
+          }
+        },
+        "general_quality": {
+          "score": 0.6666667,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is in English."
+                  }
+                },
+                "type": "LANGUAGE:PRIMARY_RESPONSE_LANGUAGE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The entire response is written in the English language."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Analyzes Capitol Hill in Seattle as requested."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS_SUBJECT",
+                "importance": "HIGH"
+              },
+              "reasoning": "The response explicitly states that the analysis failed due to unavailable competitor data, thus a complete analysis of Capitol Hill was not provided."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The analysis is specifically geared towards opening a coffee shop."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS_PURPOSE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly states \"business_type\": \"coffee shop\" and the qualitative information provided is relevant to this type of business."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Includes an analysis of the demographic profile of Capitol Hill, relevant to potential coffee shop customers."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:DEMOGRAPHICS",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response identifies \"population_density\": \"High\", \"income_level\": \"High\", and \"best_customer_segment\": \"Young Professionals (25-44)\", which are all relevant demographic factors for a coffee shop."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Identifies and discusses existing coffee shops and competitors in Capitol Hill."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:COMPETITION",
+                "importance": "HIGH"
+              },
+              "reasoning": "The response explicitly states that the analysis failed due to unavailable competitor data and therefore could not identify or discuss existing competitors."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Identifies potential market opportunities, gaps, or niches for a new coffee shop in Capitol Hill."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:MARKET_OPPORTUNITY",
+                "importance": "HIGH"
+              },
+              "reasoning": "The response explicitly states that due to the lack of competitive landscape data, it was impossible to identify a viable niche or location."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Assesses location suitability factors such as foot traffic, visibility, and desirable areas within Capitol Hill for a coffee shop."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:LOCATION_SUITABILITY",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response assesses \"foot_traffic_pattern\" as \"High, especially in the Pike-Pine corridor,\" which is a key location suitability factor."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Describes the local culture, atmosphere, and general vibe of Capitol Hill as it pertains to a coffee shop's potential fit."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:CULTURAL_FIT",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The response provides demographic and foot traffic data but lacks a direct description of the local culture, atmosphere, or general vibe of Capitol Hill."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Discusses relevant economic factors or the business environment in Capitol Hill (e.g., rental costs, consumer spending habits)."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:BUSINESS_ENVIRONMENT",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly mentions \"income_level\": \"High\" and \"rental_cost_tier\": \"High\", which are relevant economic factors."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Considers accessibility and transportation options for customers in Capitol Hill."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:ACCESSIBILITY",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response states \"infrastructure_access\": \"Excellent, including Link Light Rail access,\" directly addressing transportation options."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Identifies potential challenges, risks, or downsides associated with opening a coffee shop in Capitol Hill."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:ANALYSIS:RISKS",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response highlights the \"CRITICAL FAILURE\" of data collection, the risk of an \"Incomplete Analysis,\" and the inherent risk of entering a \"highly competitive\" market without proper data."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The analysis is well-structured, logical, and easy to understand."
+                  }
+                },
+                "type": "FORMAT_REQUIREMENT:ORGANIZATION",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response is presented in a clear JSON format with logical sections and explanations, making it easy to understand despite the critical error it reports."
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I want to open a coffee shop. Analyze Capitol Hill in Seattle for me."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Hello! I can certainly help you with that. Analyzing Capitol Hill in Seattle for a new coffee shop sounds like a great idea.\n\nFirst, I need to process your request."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "{\n    \"target_location\": \"Capitol Hill, Seattle\",\n    \"business_type\": \"coffee shop\",\n    \"analysis_date\": \"2026-01-29\",\n    \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\",\n    \"total_competitors_found\": 0,\n    \"zones_analyzed\": 0,\n    \"top_recommendation\": {\n        \"location_name\": \"DATA UNAVAILABLE\",\n        \"area\": \"Capitol Hill, Seattle\",\n        \"overall_score\": 0,\n        \"opportunity_type\": \"Analysis Failed\",\n        \"strengths\": [\n            {\n                \"factor\": \"Data Acquisition Failure\",\n                \"description\": \"The competitor mapping tool failed to retrieve essential data, preventing a quantitative analysis.\",\n                \"evidence_from_analysis\": \"The Gap Analysis Agent reported 'ERROR: DATA_UNAVAILABLE'.\"\n            }\n        ],\n        \"concerns\": [\n            {\n                \"risk\": \"Incomplete Analysis\",\n                \"description\": \"Strategic recommendations cannot be made without quantitative competitor data. Any decision would be based on incomplete information.\",\n                \"mitigation_strategy\": \"Resolve the data source issue (e.g., API access, service availability) and re-run the entire analysis pipeline.\"\n            }\n        ],\n        \"competition\": {\n            \"total_competitors\": 0,\n            \"density_per_km2\": 0.0,\n            \"chain_dominance_pct\": 0.0,\n            \"avg_competitor_rating\": 0.0,\n            \"high_performers_count\": 0\n        },\n        \"market\": {\n            \"population_density\": \"High\",\n            \"income_level\": \"High\",\n            \"infrastructure_access\": \"Excellent, including Link Light Rail access.\",\n            \"foot_traffic_pattern\": \"High, especially in the Pike-Pine corridor, with significant day, evening, and weekend activity.\",\n            \"rental_cost_tier\": \"High\"\n        },\n        \"best_customer_segment\": \"Young Professionals (25-44)\",\n        \"estimated_foot_traffic\": \"High, rebounding to near pre-pandemic levels.\",\n        \"next_steps\": [\n            \"Remediate the data source API failure.\",\n            \"Re-run the CompetitorMappingAgent to collect essential data.\",\n            \"Execute the full quantitative Gap Analysis.\",\n            \"Proceed with strategy formulation only after successful data acquisition and analysis.\"\n        ]\n    },\n    \"alternative_locations\": [],\n    \"key_insights\": [\n        \"CRITICAL FAILURE: The analysis pipeline was halted due to an inability to collect competitor data.\",\n        \"Qualitative market research indicates Capitol Hill is a high-potential market with strong demographics and high income, but this cannot be validated quantitatively.\",\n        \"The market is known to be highly competitive; proceeding without competitor data would be exceptionally risky.\",\n        \"The immediate and only priority is to resolve the data acquisition error before any further strategic planning.\",\n        \"While demographics are favorable, the lack of competitive landscape data makes it impossible to identify a viable niche or location.\"\n    ],\n    \"methodology_summary\": \"The analysis process involved market research, competitor mapping, and quantitative gap analysis. A critical failure occurred during the competitor mapping phase (API error), preventing the quantitative gap analysis from running. This report is a failure notification, not a strategic recommendation.\"\n}"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "pipeline_integrity": {
+          "score": 2.0,
+          "explanation": "The agent accurately reported the critical failure in competitor mapping and the inability to perform gap analysis due to an API error, aligning with the `search_places` tool's output. However, it presented detailed qualitative market research data (e.g., population density, income level, foot traffic, best customer segment) without making a `google_search` tool call, which is designated for live market research. This constitutes significant claims without corresponding tool execution regarding market insights.",
+          "input": {
+            "prompt": "I want to open a coffee shop. Analyze Capitol Hill in Seattle for me.",
+            "response": "{\"target_location\": \"Capitol Hill, Seattle\", \"business_type\": \"coffee shop\", \"analysis_date\": \"2026-01-29\", \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\", \"total_competitors_found\": 0, \"zones_analyzed\": 0, \"top_recommendation\": {\"location_name\": \"DATA UNAVAILABLE\", \"area\": \"Capitol Hill, Seattle\", \"overall_score\": 0, \"opportunity_type\": \"Analysis Failed\", \"strengths\": [{\"factor\": \"Data Acquisition Failure... [truncated]",
+            "tool_interactions": "{\"tool_name\": \"IntakeAgent\", \"input_arguments\": {\"request\": \"I want to open a coffee shop in Capitol Hill, Seattle.\"}, \"call_id\": \"adk-96ba2fb6-aa18-45b8-88ef-016c2258cf5a\", \"output_result\": {\"target_location\": \"Capitol Hill, Seattle\", \"business_type\": \"coffee shop\"}}\n{\"tool_name\": \"transfer_to_agent\", \"input_arguments\": {\"agent_name\": \"LocationStrategyPipeline\"}, \"call_id\": \"adk-7bd9f591-74b5-4f42-886a-df332edf49ac\", \"output_result\": {\"result\": null}}\n{\"tool_name\": \"search_places\", \"input_argum... [truncated]",
+            "full_conversation": ""
+          }
+        },
+        "text_quality": {
+          "score": 0.7692308,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response present factually accurate information about Capitol Hill, Seattle?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response present factually accurate information about Capitol Hill, Seattle?\nSTEP 1: Does the response present factually accurate information about Capitol Hill, Seattle?\nSTEP 2:\n1. Identify all factual claims made about Capitol Hill, Seattle, in the response.\n2. Verify the accuracy of each claim using external knowledge.\n3. Determine if all presented information is factually accurate.\nSTEP 3:\nThe response states:\n- \"population_density\": \"High\" - Capitol Hill is a densely populated urban neighborhood. This is accurate.\n- \"income_level\": \"High\" - Capitol Hill is known for its relatively high income levels. This is accurate.\n- \"infrastructure_access\": \"Excellent, including Link Light Rail access.\" - Capitol Hill has excellent public transit, including a Link Light Rail station. This is accurate.\n- \"foot_traffic_pattern\": \"High, especially in the Pike-Pine corridor, with significant day, evening, and weekend activity.\" - The Pike-Pine corridor is a major commercial and entertainment hub in Capitol Hill with high foot traffic. This is accurate.\n- \"rental_cost_tier\": \"High\" - Seattle, and particularly Capitol Hill, is known for high rental costs. This is accurate.\n- \"best_customer_segment\": \"Young Professionals (25-44)\" - Capitol Hill has a significant population of young professionals. This is accurate.\n- \"estimated_foot_traffic\": \"High, rebounding to near pre-pandemic levels.\" - This is a reasonable general statement about urban areas post-pandemic, and Capitol Hill is a vibrant area. This is likely accurate.\n\nAll factual claims about Capitol Hill appear to be accurate.\nSTEP 4: The question asks if the response presents factually accurate information about Capitol Hill, Seattle. Based on the verification of the claims made, all information presented about Capitol Hill is accurate.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Are any specific data points or statistics mentioned about Capitol Hill, Seattle, accurate?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Are any specific data points or statistics mentioned about Capitol Hill, Seattle, accurate?\nSTEP 1: Are any specific data points or statistics mentioned about Capitol Hill, Seattle, accurate?\nSTEP 2:\n1. Scan the response for any specific numerical data points or statistics related to Capitol Hill, Seattle.\n2. If found, verify their accuracy.\n3. Determine if any of these specific data points are accurate.\nSTEP 3: The response mentions:\n- \"total_competitors_found\": 0\n- \"zones_analyzed\": 0\n- \"overall_score\": 0\n- \"total_competitors\": 0\n- \"density_per_km2\": 0.0\n- \"chain_dominance_pct\": 0.0\n- \"avg_competitor_rating\": 0.0\n- \"high_performers_count\": 0\n- \"best_customer_segment\": \"Young Professionals (25-44)\" (This is a demographic range, not a specific statistic about Capitol Hill itself, but rather a characteristic of its population).\n\nAll the numerical data points (0 or 0.0) are explicitly stated as being due to \"DATA UNAVAILABLE\" or \"Analysis Failed\" because of a \"CRITICAL ERROR\" in data acquisition. Therefore, these are not presented as actual statistics *about* Capitol Hill, but rather as placeholders or indicators of a failed data retrieval process. The model explicitly states \"The competitor mapping tool failed to retrieve essential data, preventing a quantitative analysis.\" and \"Strategic recommendations cannot be made without quantitative competitor data.\"\n\nThe \"Young Professionals (25-44)\" is a demographic segment, not a specific data point or statistic *about* Capitol Hill in the numerical sense. While the *description* of Capitol Hill's demographics (high population density, high income, high foot traffic) is accurate, the question specifically asks for \"specific data points or statistics.\" The response *explains* why these are missing, rather than providing them.\nSTEP 4: The response explicitly states that quantitative data is unavailable due to an error. Therefore, it does not provide any *accurate* specific data points or statistics about Capitol Hill, Seattle, because it couldn't retrieve them. The numbers like '0' are indicators of failure, not actual statistics.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Are any claims made about the characteristics or environment of Capitol Hill, Seattle, objectively verifiable and correct?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Are any claims made about the characteristics or environment of Capitol Hill, Seattle, objectively verifiable and correct?\nSTEP 1: Are any claims made about the characteristics or environment of Capitol Hill, Seattle, objectively verifiable and correct?\nSTEP 2:\n1. Identify all claims made about the characteristics or environment of Capitol Hill, Seattle.\n2. For each claim, determine if it can be objectively verified.\n3. For each verifiable claim, determine if it is correct.\n4. Conclude if any such claims are both verifiable and correct.\nSTEP 3: The response makes the following claims about Capitol Hill's characteristics/environment:\n- \"population_density\": \"High\" - Objectively verifiable (census data, urban planning reports). Correct.\n- \"income_level\": \"High\" - Objectively verifiable (census data, economic reports). Correct.\n- \"infrastructure_access\": \"Excellent, including Link Light Rail access.\" - Objectively verifiable (public transit maps, city planning documents). Correct.\n- \"foot_traffic_pattern\": \"High, especially in the Pike-Pine corridor, with significant day, evening, and weekend activity.\" - Objectively verifiable (urban studies, local business reports, observation). Correct.\n- \"rental_cost_tier\": \"High\" - Objectively verifiable (real estate market data). Correct.\n- \"best_customer_segment\": \"Young Professionals (25-44)\" - Objectively verifiable (demographic studies, market research). Correct.\n- \"estimated_foot_traffic\": \"High, rebounding to near pre-pandemic levels.\" - Objectively verifiable (transportation data, business activity reports). Correct.\n\nAll these claims are objectively verifiable and, based on general knowledge of Capitol Hill, Seattle, they are correct.\nSTEP 4: The question asks if claims about Capitol Hill's characteristics are objectively verifiable and correct. The response provides several such claims (population density, income level, infrastructure, foot traffic, rental costs, customer segment) which are all verifiable and accurate.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response structured logically with clear sections or paragraphs?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response structured logically with clear sections or paragraphs?\nSTEP 1: Is the response structured logically with clear sections or paragraphs?\nSTEP 2:\n1. Examine the overall structure of the response.\n2. Look for clear divisions, headings, or logical flow that indicate sections or paragraphs.\n3. Evaluate if the information is presented in a coherent and organized manner.\nSTEP 3: The response is presented in JSON format. While JSON has a hierarchical structure with keys and values, it does not use traditional paragraphs or sections in the way a human-written text would. It has clear keys like `target_location`, `business_type`, `market_validation`, `top_recommendation`, `key_insights`, and `methodology_summary`, which act as logical sections. Within `top_recommendation`, there are further sub-sections like `strengths`, `concerns`, `competition`, `market`, `next_steps`. This structure is logical for a machine-generated report.\nSTEP 4: The question asks if the response is structured logically with clear sections or paragraphs. Although it's in JSON, the JSON keys serve as clear, logical sections, and the hierarchical nature of JSON provides a structured organization.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response use appropriate formatting (e.g., headings, bullet points) to enhance readability?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response use appropriate formatting (e.g., headings, bullet points) to enhance readability?\nSTEP 1: Does the response use appropriate formatting (e.g., headings, bullet points) to enhance readability?\nSTEP 2:\n1. Identify if the response uses formatting elements like headings or bullet points.\n2. Evaluate if these elements, or the overall presentation, enhance readability.\nSTEP 3: The response is in JSON format. JSON uses keys as implicit \"headings\" for data fields and arrays for lists (which function similarly to bullet points in terms of organizing multiple items). For example, `key_insights` is an array of strings, and `next_steps` is also an array of strings. While not traditional \"headings\" or \"bullet points\" in a prose document, the JSON structure itself provides a clear, machine-readable, and organized format that enhances readability for someone expecting a structured data output.\nSTEP 4: The question asks about appropriate formatting like headings and bullet points to enhance readability. The JSON structure, with its keys acting as implicit headings and arrays as lists, serves this purpose effectively for a structured data output.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the analysis cover key aspects relevant to opening a coffee shop in Capitol Hill, such as demographics, competition, or location factors?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the analysis cover key aspects relevant to opening a coffee shop in Capitol Hill, such as demographics, competition, or location factors?\nSTEP 1: Does the analysis cover key aspects relevant to opening a coffee shop in Capitol Hill, such as demographics, competition, or location factors?\nSTEP 2:\n1. List key aspects relevant to opening a coffee shop (e.g., demographics, competition, foot traffic, rental costs, opportunities, challenges).\n2. Check if the response addresses each of these aspects.\n3. Determine if the analysis covers these key aspects.\nSTEP 3: The response attempts to cover the following key aspects:\n- **Demographics**: Yes, it mentions \"population_density\": \"High\", \"income_level\": \"High\", and \"best_customer_segment\": \"Young Professionals (25-44)\".\n- **Competition**: It *attempts* to cover this but explicitly states \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" and \"total_competitors_found\": 0. It acknowledges the importance of competition (\"The market is known to be highly competitive; proceeding without competitor data would be exceptionally risky.\") but fails to provide the actual analysis.\n- **Location factors**: Yes, it covers \"infrastructure_access\": \"Excellent, including Link Light Rail access.\", \"foot_traffic_pattern\": \"High, especially in the Pike-Pine corridor...\", and \"rental_cost_tier\": \"High\".\n- **Opportunities/Challenges**: It identifies \"Data Acquisition Failure\" as a challenge and \"Incomplete Analysis\" as a risk. It also qualitatively notes Capitol Hill as a \"high-potential market with strong demographics and high income.\"\n\nWhile the competition data is missing, the *structure* of the analysis *attempts* to cover these aspects, and it explicitly highlights the *lack* of competition data as a critical issue. It provides qualitative insights for other factors.\nSTEP 4: The question asks if the analysis *covers* key aspects. While the quantitative data for competition is missing, the response explicitly identifies competition as a key aspect and explains why it couldn't be analyzed. It does cover demographics and location factors qualitatively. Therefore, it addresses the *existence* of these aspects, even if it can't fully analyze one of them.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response provide enough detail for a prospective coffee shop owner to gain insights about Capitol Hill, Seattle?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Does the response provide enough detail for a prospective coffee shop owner to gain insights about Capitol Hill, Seattle?\nSTEP 1: Does the response provide enough detail for a prospective coffee shop owner to gain insights about Capitol Hill, Seattle?\nSTEP 2:\n1. Review the information provided about Capitol Hill.\n2. Assess if this information is sufficiently detailed to offer meaningful insights for a business decision.\n3. Consider the impact of the \"CRITICAL ERROR\" on the level of detail and insight.\nSTEP 3: The response provides qualitative details about Capitol Hill:\n- High population density\n- High income level\n- Excellent infrastructure, including Link Light Rail\n- High foot traffic, especially in Pike-Pine, day/evening/weekend\n- High rental costs\n- Best customer segment: Young Professionals (25-44)\n- High estimated foot traffic, rebounding to pre-pandemic levels.\n\nIt also states: \"Qualitative market research indicates Capitol Hill is a high-potential market with strong demographics and high income...\"\n\nHowever, it critically states: \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" and \"Strategic recommendations cannot be made without quantitative competitor data. Any decision would be based on incomplete information.\" and \"The market is known to be highly competitive; proceeding without competitor data would be exceptionally risky.\"\n\nWhile the qualitative details are good, the *lack* of competitor data is a major gap. A prospective coffee shop owner needs to understand the competitive landscape to make an informed decision. Without this, the insights are severely limited and incomplete for a full business analysis. The response itself highlights this deficiency.\nSTEP 4: The question asks if there's *enough* detail for *insights*. While some qualitative details are provided, the critical missing piece (competitor data) means that the overall picture is incomplete and, as the response states, \"Strategic recommendations cannot be made.\" Therefore, it does not provide *enough* detail for comprehensive insights.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response identify potential opportunities or challenges for a coffee shop in Capitol Hill, Seattle?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response identify potential opportunities or challenges for a coffee shop in Capitol Hill, Seattle?\nSTEP 1: Does the response identify potential opportunities or challenges for a coffee shop in Capitol Hill, Seattle?\nSTEP 2:\n1. Scan the response for explicit mentions of \"opportunities\" or \"challenges,\" or descriptions that clearly imply them.\n2. List these identified points.\n3. Determine if the response identifies potential opportunities or challenges.\nSTEP 3: The response identifies:\n**Opportunities (implied/qualitative):**\n- \"Qualitative market research indicates Capitol Hill is a high-potential market with strong demographics and high income\" (implies opportunity due to strong market).\n- \"High population_density\", \"High income_level\", \"Excellent infrastructure_access\", \"High foot_traffic_pattern\", \"Young Professionals (25-44)\" as \"best_customer_segment\" all point to a favorable market environment, which is an opportunity.\n\n**Challenges/Risks:**\n- \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" (Major challenge for the analysis itself, and by extension, for understanding the market).\n- \"Incomplete Analysis\" (risk).\n- \"Strategic recommendations cannot be made without quantitative competitor data. Any decision would be based on incomplete information.\" (Challenge/risk).\n- \"The market is known to be highly competitive; proceeding without competitor data would be exceptionally risky.\" (Explicitly states a challenge/risk).\n- \"rental_cost_tier\": \"High\" (A significant challenge for any business).\n- \"lack of competitive landscape data makes it impossible to identify a viable niche or location.\" (Challenge).\n\nThe response clearly identifies both potential opportunities (strong market, demographics, foot traffic) and significant challenges/risks (high competition, high rental costs, and critically, the lack of competitor data preventing a full analysis).\nSTEP 4: The question asks if the response identifies potential opportunities or challenges. The response clearly outlines several of both, even if some are qualitative or relate to the analysis failure itself.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is all information provided directly relevant to an analysis of Capitol Hill, Seattle, for a coffee shop?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is all information provided directly relevant to an analysis of Capitol Hill, Seattle, for a coffee shop?\nSTEP 1: Is all information provided directly relevant to an analysis of Capitol Hill, Seattle, for a coffee shop?\nSTEP 2:\n1. Review each piece of information in the response.\n2. Determine if it pertains specifically to Capitol Hill, Seattle, and the context of opening a coffee shop.\n3. Exclude information that is meta-commentary about the analysis process itself, unless it directly impacts the analysis of Capitol Hill for a coffee shop.\nSTEP 3:\n- `target_location`: \"Capitol Hill, Seattle\" - Relevant.\n- `business_type`: \"coffee shop\" - Relevant.\n- `analysis_date`: \"2026-01-29\" - Relevant for context.\n- `market_validation`: \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\" - This is about the *failure* of the analysis, not directly about Capitol Hill itself, but it's crucial context for understanding the *analysis* of Capitol Hill. It explains why certain data is missing.\n- `total_competitors_found`, `zones_analyzed`: 0 - These are results of the failed analysis, not direct facts about Capitol Hill, but relevant to the *analysis* of Capitol Hill.\n- `top_recommendation` block:\n    - `location_name`: \"DATA UNAVAILABLE\" - Meta-information about the analysis.\n    - `area`: \"Capitol Hill, Seattle\" - Relevant.\n    - `overall_score`: 0 - Meta-information about the analysis.\n    - `opportunity_type`: \"Analysis Failed\" - Meta-information about the analysis.\n    - `strengths`: \"Data Acquisition Failure\", \"description\", \"evidence_from_analysis\" - All meta-information about the analysis failure.\n    - `concerns`: \"Incomplete Analysis\", \"description\", \"mitigation_strategy\" - All meta-information about the analysis failure.\n    - `competition` block (all 0s): These are results of the failed analysis, not direct facts about Capitol Hill, but relevant to the *analysis* of Capitol Hill.\n    - `market` block (population density, income level, infrastructure, foot traffic, rental cost): All directly relevant to Capitol Hill for a coffee shop.\n    - `best_customer_segment`: \"Young Professionals (25-44)\" - Directly relevant.\n    - `estimated_foot_traffic`: \"High, rebounding to near pre-pandemic levels.\" - Directly relevant.\n    - `next_steps`: These are steps to fix the analysis, not direct information about Capitol Hill.\n- `alternative_locations`: [] - Relevant (or lack thereof).\n- `key_insights`: Many of these are about the *failure* of the analysis (\"CRITICAL FAILURE\", \"The analysis pipeline was halted...\", \"The immediate and only priority is to resolve the data acquisition error...\"). However, they also contain insights about Capitol Hill in the context of the failure (\"Qualitative market research indicates Capitol Hill is a high-potential market...\", \"The market is known to be highly competitive...\", \"While demographics are favorable, the lack of competitive landscape data makes it impossible...\"). These are relevant because they explain the limitations of the analysis *of Capitol Hill*.\n- `methodology_summary`: Explains *how* the analysis was done and *why* it failed. This is meta-information about the analysis process, not direct information about Capitol Hill itself.\n\nWhile a significant portion of the response details the *failure* of the analysis rather than Capitol Hill itself, this meta-information is crucial for understanding the *analysis of Capitol Hill* that was requested. It explains *why* certain expected information about Capitol Hill (like competitor data) is missing. Therefore, it is indirectly relevant to the user's request for an analysis, as it explains the limitations of the provided analysis. If the user asked for *just* facts about Capitol Hill, then the failure messages would be irrelevant. But they asked for an *analysis*, and an analysis of its limitations is part of a complete analysis.\nSTEP 4: The question asks if *all* information is *directly* relevant. While much of the response is about the failure of the analysis, this failure directly impacts the analysis of Capitol Hill for a coffee shop. It explains why certain crucial data points are missing, which is a critical part of the \"analysis\" of the situation. Therefore, it is all relevant, even if some parts are meta-commentary on the analysis process itself.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response concise and free from extraneous or repetitive information?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Is the response concise and free from extraneous or repetitive information?\nSTEP 1: Is the response concise and free from extraneous or repetitive information?\nSTEP 2:\n1. Review the response for any information that is not essential to the core message.\n2. Look for phrases, sentences, or data points that repeat the same idea unnecessarily.\n3. Evaluate if the response could be shorter without losing critical information.\nSTEP 3:\nThe response is in JSON format, which by its nature can be verbose due to key-value pairs. However, within this structure:\n- The core message is that the analysis failed due to missing competitor data, but some qualitative market data for Capitol Hill is available.\n- Repetition:\n    - \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" appears in `market_validation`.\n    - \"DATA UNAVAILABLE\" appears in `location_name`.\n    - \"Analysis Failed\" appears in `opportunity_type`.\n    - \"Data Acquisition Failure\" appears in `strengths`.\n    - \"The competitor mapping tool failed to retrieve essential data, preventing a quantitative analysis.\" appears in `strengths`.\n    - \"ERROR: DATA_UNAVAILABLE\" appears in `evidence_from_analysis`.\n    - \"Incomplete Analysis\" appears in `concerns`.\n    - \"Strategic recommendations cannot be made without quantitative competitor data.\" appears in `concerns`.\n    - \"total_competitors_found\": 0, \"total_competitors\": 0, \"density_per_km2\": 0.0, etc., all convey the same lack of data.\n    - \"CRITICAL FAILURE: The analysis pipeline was halted due to an inability to collect competitor data.\" appears in `key_insights`.\n    - \"proceeding without competitor data would be exceptionally risky.\" appears in `key_insights`.\n    - \"The immediate and only priority is to resolve the data acquisition error...\" appears in `key_insights`.\n    - \"lack of competitive landscape data makes it impossible to identify a viable niche or location.\" appears in `key_insights`.\n    - \"A critical failure occurred during the competitor mapping phase (API error), preventing the quantitative gap analysis from running. This report is a failure notification, not a strategic recommendation.\" appears in `methodology_summary`.\n\nThere is a significant amount of repetition regarding the failure of data acquisition and the resulting lack of competitor data. While the message is critical, it is stated in many different ways across various fields, making the response less concise than it could be. For example, the `strengths` and `concerns` sections primarily reiterate the failure. The `key_insights` also heavily repeat this.\nSTEP 4: The question asks if the response is concise and free from extraneous or repetitive information. While the information about the failure is crucial, it is repeated multiple times across different JSON fields, making the response less concise and containing repetitive information about the data acquisition failure.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response provide an analysis of Capitol Hill in Seattle as requested?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response provide an analysis of Capitol Hill in Seattle as requested?\nSTEP 1: Does the response provide an analysis of Capitol Hill in Seattle as requested?\nSTEP 2:\n1. Recall the user's request: \"Analyze Capitol Hill in Seattle for me.\"\n2. Review the response to see if it performs an analysis of the location.\n3. Consider the impact of the \"CRITICAL ERROR\" on whether a full analysis was provided.\nSTEP 3: The response provides some qualitative analysis of Capitol Hill's market characteristics (high population density, high income, excellent infrastructure, high foot traffic, high rental costs, young professionals as a customer segment). It also identifies Capitol Hill as a \"high-potential market.\"\n\nHowever, it explicitly states: \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" and \"Strategic recommendations cannot be made without quantitative competitor data. Any decision would be based on incomplete information.\" and \"This report is a failure notification, not a strategic recommendation.\"\n\nWhile it provides *some* analysis (qualitative market data), it explicitly states that the *full* analysis, particularly the crucial competitive analysis, failed. Therefore, it provides an *incomplete* analysis, and explicitly states it's a \"failure notification\" rather than a full strategic recommendation. The user asked for an analysis, and they received an analysis that was critically flawed and incomplete.\nSTEP 4: The question asks if the response provides *an* analysis. It provides a partial, qualitative analysis of some aspects of Capitol Hill, but explicitly states that the critical quantitative analysis failed. Therefore, it provides *an* analysis, but it's an incomplete one, and the response clearly communicates this limitation. Given the prompt was \"Analyze Capitol Hill\", providing a partial analysis and explaining why it's partial still constitutes providing *an* analysis.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the analysis explicitly focused on the context of opening a coffee shop?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the analysis explicitly focused on the context of opening a coffee shop?\nSTEP 1: Is the analysis explicitly focused on the context of opening a coffee shop?\nSTEP 2:\n1. Check if the response mentions \"coffee shop\" or related terms.\n2. Evaluate if the provided analysis points (demographics, foot traffic, competition, rental costs) are relevant to a coffee shop business.\n3. Determine if the overall framing of the analysis is for a coffee shop.\nSTEP 3:\n- The `business_type` field is explicitly set to \"coffee shop\".\n- The analysis points like \"population_density\", \"income_level\", \"infrastructure_access\", \"foot_traffic_pattern\", \"rental_cost_tier\", \"best_customer_segment\" (Young Professionals), and \"estimated_foot_traffic\" are all highly relevant factors for opening a retail business like a coffee shop.\n- The discussion of \"competition\" is also directly relevant to a coffee shop.\n- The \"key_insights\" and \"methodology_summary\" discuss the analysis in the context of strategic planning, which would be for a business like a coffee shop.\n\nThe entire structure and content are framed around the user's stated intent to open a coffee shop.\nSTEP 4: The question asks if the analysis is explicitly focused on the context of opening a coffee shop. The response clearly states \"business_type\": \"coffee shop\" and all the analytical points are highly relevant to this specific business type.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response free of harmful, unethical, or inappropriate content?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response free of harmful, unethical, or inappropriate content?\nSTEP 1: Is the response free of harmful, unethical, or inappropriate content?\nSTEP 2:\n1. Read through the entire response.\n2. Look for any language, suggestions, or implications that could be considered harmful, unethical, or inappropriate.\n3. Determine if any such content is present.\nSTEP 3: The response is a structured JSON output detailing a failed market analysis. It contains no language, suggestions, or implications that could be considered harmful, unethical, or inappropriate. It is a neutral, technical report.\nSTEP 4: The question asks if the response is free of harmful, unethical, or inappropriate content. The response is a technical report and contains no such content.\nSTEP 5:"
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I want to open a coffee shop. Analyze Capitol Hill in Seattle for me."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Hello! I can certainly help you with that. Analyzing Capitol Hill in Seattle for a new coffee shop sounds like a great idea.\n\nFirst, I need to process your request."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "{\n    \"target_location\": \"Capitol Hill, Seattle\",\n    \"business_type\": \"coffee shop\",\n    \"analysis_date\": \"2026-01-29\",\n    \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\",\n    \"total_competitors_found\": 0,\n    \"zones_analyzed\": 0,\n    \"top_recommendation\": {\n        \"location_name\": \"DATA UNAVAILABLE\",\n        \"area\": \"Capitol Hill, Seattle\",\n        \"overall_score\": 0,\n        \"opportunity_type\": \"Analysis Failed\",\n        \"strengths\": [\n            {\n                \"factor\": \"Data Acquisition Failure\",\n                \"description\": \"The competitor mapping tool failed to retrieve essential data, preventing a quantitative analysis.\",\n                \"evidence_from_analysis\": \"The Gap Analysis Agent reported 'ERROR: DATA_UNAVAILABLE'.\"\n            }\n        ],\n        \"concerns\": [\n            {\n                \"risk\": \"Incomplete Analysis\",\n                \"description\": \"Strategic recommendations cannot be made without quantitative competitor data. Any decision would be based on incomplete information.\",\n                \"mitigation_strategy\": \"Resolve the data source issue (e.g., API access, service availability) and re-run the entire analysis pipeline.\"\n            }\n        ],\n        \"competition\": {\n            \"total_competitors\": 0,\n            \"density_per_km2\": 0.0,\n            \"chain_dominance_pct\": 0.0,\n            \"avg_competitor_rating\": 0.0,\n            \"high_performers_count\": 0\n        },\n        \"market\": {\n            \"population_density\": \"High\",\n            \"income_level\": \"High\",\n            \"infrastructure_access\": \"Excellent, including Link Light Rail access.\",\n            \"foot_traffic_pattern\": \"High, especially in the Pike-Pine corridor, with significant day, evening, and weekend activity.\",\n            \"rental_cost_tier\": \"High\"\n        },\n        \"best_customer_segment\": \"Young Professionals (25-44)\",\n        \"estimated_foot_traffic\": \"High, rebounding to near pre-pandemic levels.\",\n        \"next_steps\": [\n            \"Remediate the data source API failure.\",\n            \"Re-run the CompetitorMappingAgent to collect essential data.\",\n            \"Execute the full quantitative Gap Analysis.\",\n            \"Proceed with strategy formulation only after successful data acquisition and analysis.\"\n        ]\n    },\n    \"alternative_locations\": [],\n    \"key_insights\": [\n        \"CRITICAL FAILURE: The analysis pipeline was halted due to an inability to collect competitor data.\",\n        \"Qualitative market research indicates Capitol Hill is a high-potential market with strong demographics and high income, but this cannot be validated quantitatively.\",\n        \"The market is known to be highly competitive; proceeding without competitor data would be exceptionally risky.\",\n        \"The immediate and only priority is to resolve the data acquisition error before any further strategic planning.\",\n        \"While demographics are favorable, the lack of competitive landscape data makes it impossible to identify a viable niche or location.\"\n    ],\n    \"methodology_summary\": \"The analysis process involved market research, competitor mapping, and quantitative gap analysis. A critical failure occurred during the competitor mapping phase (API error), preventing the quantitative gap analysis from running. This report is a failure notification, not a strategic recommendation.\"\n}"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "description": "Complete request - should trigger full pipeline without clarifying questions",
+      "expected_behavior": "full_pipeline"
+    },
+    {
+      "question_id": "retail_002_full_pipeline",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 8,
+          "models_used": [
+            "gemini-2.5-pro"
+          ],
+          "total_tokens": 43372,
+          "prompt_tokens": 22624,
+          "completion_tokens": 5174,
+          "cached_tokens": 3557,
+          "estimated_cost_usd": 0.08002
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 116.5145,
+          "average_turn_latency_seconds": 116.5145,
+          "llm_latency_seconds": 223.812304739,
+          "tool_latency_seconds": 2.876328143,
+          "time_to_first_response_seconds": 7.510238424
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.13586188457278178,
+          "total_cached_tokens": 3557,
+          "total_fresh_prompt_tokens": 22624,
+          "total_input_tokens": 26181
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.4638897523572687,
+          "total_thinking_tokens": 4477,
+          "total_candidate_tokens": 5174,
+          "total_output_tokens": 9651,
+          "turns_with_thinking": 8
+        },
+        "tool_utilization": {
+          "total_tool_calls": 3,
+          "unique_tools_used": 3,
+          "tool_counts": {
+            "IntakeAgent": 1,
+            "transfer_to_agent": 1,
+            "search_places": 1
+          }
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 0.6666666666666666,
+          "total_tool_calls": 3,
+          "failed_tool_calls": 1,
+          "failed_tools_list": [
+            "search_places"
+          ]
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 27,
+          "total_grounded_responses": 1,
+          "total_llm_responses": 11
+        },
+        "context_saturation": {
+          "max_total_tokens": 15425,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 9,
+          "unique_agents_count": 8,
+          "agents_invoked_list": [
+            "IntakeAgent",
+            "LocationStrategyPipeline",
+            "CompetitorMappingAgent",
+            "MarketResearchAgent",
+            "GapAnalysisAgent",
+            "StrategyAdvisorAgent",
+            "retail_location_strategy",
+            "transfer_to_agent"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 646.75,
+          "total_output_tokens": 5174,
+          "llm_calls_count": 8
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "tool_use_quality": {
+          "score": 4.0,
+          "explanation": "The agent correctly identified the request, used `IntakeAgent` and `transfer_to_agent` appropriately, and made a correct attempt to use `search_places` for competitor mapping with relevant arguments. Although `search_places` failed due to an external API error, the agent's result handling was excellent, transparently communicating the critical data unavailability and its implications, preventing a misleading report. The only minor gap was the omission of `google_search` for general market research, which might have provided some context despite the competitor data failure. Overall, the agent displayed good tool selection and exceptional error handling.",
+          "input": {
+            "prompt": "Analyze Indiranagar in Bangalore for opening a bakery. I need a full location strategy report.",
+            "response": "{\"target_location\": \"Indiranagar, Bangalore\", \"business_type\": \"bakery\", \"analysis_date\": \"2026-01-29\", \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\", \"total_competitors_found\": 0, \"zones_analyzed\": 0, \"top_recommendation\": {\"location_name\": \"DATA UNAVAILABLE\", \"area\": \"Indiranagar, Bangalore\", \"overall_score\": 0, \"opportunity_type\": \"Analysis Incomplete\", \"strengths\": [{\"factor\": \"Analysis Failed\", \"desc... [truncated]",
+            "tool_interactions": "{\"tool_name\": \"IntakeAgent\", \"input_arguments\": {\"request\": \"Analyze Indiranagar in Bangalore for opening a bakery.\"}, \"call_id\": \"adk-af09c4bb-2731-4c50-bbc9-bd2cbf3b992e\", \"output_result\": {\"target_location\": \"Indiranagar, Bangalore\", \"business_type\": \"bakery\"}}\n{\"tool_name\": \"transfer_to_agent\", \"input_arguments\": {\"agent_name\": \"LocationStrategyPipeline\"}, \"call_id\": \"adk-5d4e5fd0-5f4b-4596-8554-f3de9309189c\", \"output_result\": {\"result\": null}}\n{\"tool_name\": \"search_places\", \"input_arguments... [truncated]",
+            "available_tools": ""
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 5.0,
+          "explanation": "The agent followed the expected pipeline perfectly given its available tools. It invoked all relevant agents in the correct sequence (Intake, Market Research, Competitor Mapping, Gap Analysis, Strategy Advisor). It correctly used the 'search_places' tool for competitor mapping. The subsequent 'CRITICAL ERROR: DATA UNAVAILABLE' was a result of the tool's execution (or lack of data), not a failure of the agent's trajectory or logic. The agent gracefully handled this limitation by providing a comprehensive error report and next steps, demonstrating optimal behavior under constrained circumstances. It cannot be penalized for missing tools (google_search, code execution, report generation) that were not available to it.",
+          "input": {
+            "prompt": "Analyze Indiranagar in Bangalore for opening a bakery. I need a full location strategy report.",
+            "response": "agent:retail_location_strategy\nsub-agent:IntakeAgent\nagent:IntakeAgent\nsub-agent:transfer_to_agent\nagent:LocationStrategyPipeline\nagent:MarketResearchAgent\nagent:CompetitorMappingAgent\ntool:search_places\nagent:GapAnalysisAgent\nagent:StrategyAdvisorAgent",
+            "available_tools": "",
+            "final_response": "{\"target_location\": \"Indiranagar, Bangalore\", \"business_type\": \"bakery\", \"analysis_date\": \"2026-01-29\", \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\", \"total_competitors_found\": 0, \"zones_analyzed\": 0, \"top_recommendation\": {\"location_name\": \"DATA UNAVAILABLE\", \"area\": \"Indiranagar, Bangalore\", \"overall_score\": 0, \"opportunity_type\": \"Analysis Incomplete\", \"strengths\": [{\"factor\": \"Analysis Failed\", \"desc... [truncated]"
+          }
+        },
+        "general_quality": {
+          "score": 0.25,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is in English."
+                  }
+                },
+                "type": "LANGUAGE:PRIMARY_RESPONSE_LANGUAGE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The entire response is written in the English language."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is structured as a full location strategy report."
+                  }
+                },
+                "type": "FORMAT_REQUIREMENT:REPORT",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response is presented in a structured JSON format with clear fields and sub-fields that mimic the sections of a formal report, such as target location, business type, analysis date, market validation, recommendations, insights, and methodology summary."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report analyzes the demographic profile of Indiranagar, Bangalore, relevant to a bakery business (e.g., age groups, income levels, target audience)."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:MARKET_ANALYSIS:DEMOGRAPHICS",
+                "importance": "HIGH"
+              },
+              "reasoning": "The report explicitly states that demographic data such as \"population_density\" and \"income_level\" are \"N/A\" and the \"best_customer_segment\" is \"Undetermined\". While it qualitatively mentions \"affluent demographics\" in the key insights, it immediately follows this by stating it \"cannot be validated or navigated without quantitative data,\" indicating a lack of actual analysis."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report assesses the existing competition from other bakeries, cafes, and food establishments in Indiranagar."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:COMPETITIVE_ANALYSIS",
+                "importance": "HIGH"
+              },
+              "reasoning": "The report explicitly states \"CRITICAL ERROR: Analysis failed due to unavailable competitor data\" and reports \"total_competitors_found\": 0. It also mentions that the competitor mapping step failed, preventing any assessment of existing competition."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report evaluates key location factors within Indiranagar, such as foot traffic, visibility, and accessibility for potential bakery sites."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:LOCATION_FACTORS",
+                "importance": "HIGH"
+              },
+              "reasoning": "The report explicitly states \"N/A\" for \"foot_traffic_pattern\" and \"infrastructure_access\" and \"Undetermined\" for \"estimated_foot_traffic\". There is no evaluation of visibility. The report indicates a failure to collect and analyze this data."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report considers commercial real estate aspects, including typical rental costs and property availability in Indiranagar."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:REAL_ESTATE_ANALYSIS",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The report explicitly states \"rental_cost_tier\": \"N/A\" and does not provide any information or analysis regarding property availability."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report discusses local consumer preferences and food trends in Indiranagar relevant to bakery products."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:CONSUMER_PREFERENCES",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The report only briefly mentions \"foodie culture\" as part of unvalidated qualitative research in the \"key_insights\" section, immediately stating that it \"cannot be validated or navigated without quantitative data.\" It does not provide a detailed discussion or analysis of consumer preferences or food trends."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report provides specific strategic recommendations for optimal locations or micro-markets within Indiranagar for opening a bakery."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:STRATEGIC_RECOMMENDATIONS:LOCATION",
+                "importance": "HIGH"
+              },
+              "reasoning": "The report explicitly states \"location_name\": \"DATA UNAVAILABLE\" and \"opportunity_type\": \"Analysis Incomplete\" in its top recommendation. Furthermore, it advises to \"Halt market entry decision immediately. Do not proceed with site selection or investment,\" indicating a complete absence of specific strategic recommendations for optimal locations."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report suggests suitable bakery concepts or niches based on the analysis of Indiranagar's market."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:STRATEGIC_RECOMMENDATIONS:CONCEPT",
+                "importance": "HIGH"
+              },
+              "reasoning": "The report explicitly states that the analysis failed due to unavailable data, and the \"best_customer_segment\" is \"Undetermined.\" Consequently, it does not offer any suggestions for suitable bakery concepts or niches."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report justifies its strategic recommendations with analysis and reasoned arguments."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:JUSTIFICATION",
+                "importance": "HIGH"
+              },
+              "reasoning": "The report does not provide any strategic recommendations for opening a bakery. Its primary \"recommendation\" is to halt the market entry decision due to critical data unavailability, which is justified by the failure of the analysis rather than by strategic insights for a bakery."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report is comprehensive, covering a broad range of aspects necessary for a location strategy."
+                  }
+                },
+                "type": "GENERAL_QUALITY:COMPREHENSIVENESS",
+                "importance": "HIGH"
+              },
+              "reasoning": "While the report's structure includes placeholders for various aspects of a location strategy (demographics, competition, real estate, etc.), the actual content for most of these aspects is marked as \"N/A\" or \"Undetermined\" due to a critical data collection failure. Therefore, it fails to provide comprehensive information or analysis."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The report maintains a professional and objective tone."
+                  }
+                },
+                "type": "GENERAL_QUALITY:TONE",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The report uses clear, direct, and factual language to communicate the analysis failure and its implications, such as \"CRITICAL ERROR\" and \"unacceptable level of business risk,\" without resorting to emotional or subjective phrasing. The overall presentation is consistent with a professional business document."
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Analyze Indiranagar in Bangalore for opening a bakery. I need a full location strategy report."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Hello! I can certainly help you with a full location strategy report for opening a bakery in Indiranagar, Bangalore.\n\nFirst, I need to process your request."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "{\n    \"target_location\": \"Indiranagar, Bangalore\",\n    \"business_type\": \"bakery\",\n    \"analysis_date\": \"2026-01-29\",\n    \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\",\n    \"total_competitors_found\": 0,\n    \"zones_analyzed\": 0,\n    \"top_recommendation\": {\n        \"location_name\": \"DATA UNAVAILABLE\",\n        \"area\": \"Indiranagar, Bangalore\",\n        \"overall_score\": 0,\n        \"opportunity_type\": \"Analysis Incomplete\",\n        \"strengths\": [\n            {\n                \"factor\": \"Analysis Failed\",\n                \"description\": \"Quantitative analysis could not be performed due to a lack of competitor data.\",\n                \"evidence_from_analysis\": \"GapAnalysisAgent reported ERROR: DATA_UNAVAILABLE.\"\n            }\n        ],\n        \"concerns\": [\n            {\n                \"risk\": \"Data Unavailability\",\n                \"description\": \"The inability to collect competitor data prevents any meaningful strategic analysis, making any investment decision at this stage extremely high-risk.\",\n                \"mitigation_strategy\": \"Re-run the analysis pipeline to attempt data collection again. If the error persists, manual data collection is required before proceeding.\"\n            }\n        ],\n        \"competition\": {\n            \"total_competitors\": 0,\n            \"density_per_km2\": 0.0,\n            \"chain_dominance_pct\": 0.0,\n            \"avg_competitor_rating\": 0.0,\n            \"high_performers_count\": 0\n        },\n        \"market\": {\n            \"population_density\": \"N/A\",\n            \"income_level\": \"N/A\",\n            \"infrastructure_access\": \"N/A\",\n            \"foot_traffic_pattern\": \"N/A\",\n            \"rental_cost_tier\": \"N/A\"\n        },\n        \"best_customer_segment\": \"Undetermined\",\n        \"estimated_foot_traffic\": \"Undetermined\",\n        \"next_steps\": [\n            \"Halt market entry decision immediately. Do not proceed with site selection or investment.\",\n            \"Re-initiate the competitor data collection process to acquire a valid dataset.\",\n            \"Postpone all quantitative modeling and strategic planning until a complete and accurate dataset is available and has been analyzed.\"\n        ]\n    },\n    \"alternative_locations\": [],\n    \"key_insights\": [\n        \"The primary finding is a critical failure in the data collection pipeline, rendering a data-driven strategic recommendation impossible.\",\n        \"Proceeding with a market entry decision without rectifying the data gap constitutes an unacceptable level of business risk.\",\n        \"While qualitative research indicates a potentially strong market (affluent demographics, foodie culture), it also highlights extreme saturation, which cannot be validated or navigated without quantitative data.\",\n        \"The failure highlights the dependency of a sound location strategy on accurate, real-time competitor intelligence.\"\n    ],\n    \"methodology_summary\": \"The analysis involved a multi-stage process including market research, competitor mapping, and quantitative gap analysis. The process was halted during the quantitative analysis phase due to a critical failure in the preceding competitor mapping step (CompetitorMappingAgent), which returned no data ('ERROR: DATA_UNAVAILABLE'). This report is consequently a failure summary, as no valid strategic recommendations can be made.\"\n}"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "pipeline_integrity": {
+          "score": 5.0,
+          "explanation": "The agent's final response perfectly reflects the tool execution. It accurately reports the critical failure of the `search_places` tool, which led to unavailable competitor data, and consequently, the inability to perform gap analysis. There is no hallucination; all 'N/A' or '0' values and error messages directly correspond to the failed tool calls and unexecuted pipeline stages. The report correctly identifies itself as a 'failure summary'.",
+          "input": {
+            "prompt": "Analyze Indiranagar in Bangalore for opening a bakery. I need a full location strategy report.",
+            "response": "{\"target_location\": \"Indiranagar, Bangalore\", \"business_type\": \"bakery\", \"analysis_date\": \"2026-01-29\", \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\", \"total_competitors_found\": 0, \"zones_analyzed\": 0, \"top_recommendation\": {\"location_name\": \"DATA UNAVAILABLE\", \"area\": \"Indiranagar, Bangalore\", \"overall_score\": 0, \"opportunity_type\": \"Analysis Incomplete\", \"strengths\": [{\"factor\": \"Analysis Failed\", \"desc... [truncated]",
+            "tool_interactions": "{\"tool_name\": \"IntakeAgent\", \"input_arguments\": {\"request\": \"Analyze Indiranagar in Bangalore for opening a bakery.\"}, \"call_id\": \"adk-af09c4bb-2731-4c50-bbc9-bd2cbf3b992e\", \"output_result\": {\"target_location\": \"Indiranagar, Bangalore\", \"business_type\": \"bakery\"}}\n{\"tool_name\": \"transfer_to_agent\", \"input_arguments\": {\"agent_name\": \"LocationStrategyPipeline\"}, \"call_id\": \"adk-5d4e5fd0-5f4b-4596-8554-f3de9309189c\", \"output_result\": {\"result\": null}}\n{\"tool_name\": \"search_places\", \"input_arguments... [truncated]",
+            "full_conversation": ""
+          }
+        },
+        "text_quality": {
+          "score": 0.61538464,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response provide factually accurate information about Indiranagar, Bangalore, relevant to market conditions for a bakery?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Does the response provide factually accurate information about Indiranagar, Bangalore, relevant to market conditions for a bakery?\nSTEP 1: Does the response provide factually accurate information about Indiranagar, Bangalore, relevant to market conditions for a bakery?\nSTEP 2: Check if the response contains any specific factual information about Indiranagar, Bangalore, related to market conditions for a bakery.\nSTEP 3: The response explicitly states \"DATA UNAVAILABLE\" for most market factors like population density, income level, infrastructure access, foot traffic pattern, and rental cost tier. It also states \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" The only mention of market conditions is \"While qualitative research indicates a potentially strong market (affluent demographics, foodie culture), it also highlights extreme saturation, which cannot be validated or navigated without quantitative data.\" This is a general statement and not specific factual information about Indiranagar's market conditions.\nSTEP 4: The response indicates a failure to gather data, thus it does not provide factually accurate information about Indiranagar's market conditions.\nSTEP 5: The response does not provide factually accurate information about Indiranagar, Bangalore, relevant to market conditions for a bakery because it explicitly states that data is unavailable or analysis failed.\nQuestion: Does the response provide factually accurate information about Indiranagar, Bangalore, relevant to market conditions for a bakery?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Are the analyses, insights, and strategic recommendations within the report logically sound and based on verifiable information?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Are the analyses, insights, and strategic recommendations within the report logically sound and based on verifiable information?\nSTEP 1: Are the analyses, insights, and strategic recommendations within the report logically sound and based on verifiable information?\nSTEP 2:\n1. Identify the analyses, insights, and strategic recommendations in the response.\n2. Determine if these are logically sound.\n3. Determine if they are based on verifiable information.\nSTEP 3:\n1. **Analyses:** The core \"analysis\" is that the analysis failed due to unavailable competitor data.\n2. **Insights:** Key insights include: \"critical failure in the data collection pipeline,\" \"unacceptable level of business risk\" without rectifying the data gap, \"qualitative research indicates a potentially strong market... but also highlights extreme saturation,\" and \"dependency of a sound location strategy on accurate, real-time competitor intelligence.\"\n3. **Strategic Recommendations:** \"Halt market entry decision immediately,\" \"Re-initiate the competitor data collection process,\" \"Postpone all quantitative modeling and strategic planning.\"\n\n**Logical Soundness:**\n- The conclusion that the analysis failed due to unavailable data is logically sound given the stated error.\n- The insights about the risks of proceeding without data and the need for accurate intelligence are logically sound business principles.\n- The strategic recommendations to halt, re-initiate data collection, and postpone planning are logically sound responses to a critical data failure.\n\n**Based on Verifiable Information:**\n- The \"verifiable information\" presented in the report is the *lack* of data and the *failure* of the analysis process. The report explicitly states \"DATA UNAVAILABLE\" and \"CRITICAL ERROR.\"\n- The insights and recommendations are based on this *lack* of verifiable market data, and the logical implications of such a lack. They are not based on verifiable *market* information about Indiranagar, but rather on the verifiable *state of the analysis itself*.\n\nGiven the context, the question asks if the analyses, insights, and recommendations are logically sound *and* based on verifiable information. The \"verifiable information\" here is the internal state of the analysis (failure, data unavailable), not external market data. The report's conclusions are logically sound *given* that internal verifiable information.\nSTEP 4: The analyses, insights, and strategic recommendations are logically sound *given the premise of data unavailability*. They are based on the verifiable information that the data collection failed, rather than verifiable market data about Indiranagar. The report's purpose became a \"failure summary,\" and within that context, its conclusions are sound.\nSTEP 5: The analyses, insights, and strategic recommendations are logically sound based on the verifiable information that the data collection failed.\nQuestion: Are the analyses, insights, and strategic recommendations within the report logically sound and based on verifiable information?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response presented in the structured format of a professional report, including clear sections, headings, and subheadings?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Is the response presented in the structured format of a professional report, including clear sections, headings, and subheadings?\nSTEP 1: Is the response presented in the structured format of a professional report, including clear sections, headings, and subheadings?\nSTEP 2: Examine the response's structure to see if it uses clear sections, headings, and subheadings typical of a professional report.\nSTEP 3: The response is presented in JSON format. While JSON has a hierarchical structure with keys and values that act somewhat like headings and subheadings (e.g., \"target_location\", \"market_validation\", \"top_recommendation\", \"key_insights\", \"methodology_summary\"), it is not the conventional prose format of a professional report. A professional report typically uses narrative text with explicit headings and subheadings (e.g., \"1. Introduction\", \"2. Market Analysis\", \"2.1 Demographics\", etc.). The JSON structure is a data interchange format, not a report format in the traditional sense.\nSTEP 4: The response uses a JSON structure, which provides some organization through its keys. However, it does not use traditional prose sections, headings, and subheadings as expected in a professional report.\nSTEP 5: The response is presented in JSON format, which is a structured data format, but not the conventional prose format of a professional report with explicit headings and subheadings.\nQuestion: Is the response presented in the structured format of a professional report, including clear sections, headings, and subheadings?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response maintain a professional and analytical tone consistent with a business location strategy report?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response maintain a professional and analytical tone consistent with a business location strategy report?\nSTEP 1: Does the response maintain a professional and analytical tone consistent with a business location strategy report?\nSTEP 2: Evaluate the language, vocabulary, and overall presentation style of the response to determine if it aligns with a professional and analytical tone expected in a business report.\nSTEP 3: The language used, such as \"CRITICAL ERROR,\" \"Analysis Incomplete,\" \"Data Unavailability,\" \"unacceptable level of business risk,\" and \"critical failure in the data collection pipeline,\" is direct, objective, and uses business-appropriate terminology. Even though the report is a \"failure summary,\" it maintains a serious and analytical approach to explaining the failure and its implications. The \"mitigation_strategy\" and \"next_steps\" sections also contribute to a professional and analytical tone by outlining corrective actions.\nSTEP 4: The response uses precise, objective, and business-oriented language, even when reporting a failure. This is consistent with a professional and analytical tone.\nSTEP 5: The response maintains a professional and analytical tone consistent with a business location strategy report.\nQuestion: Does the response maintain a professional and analytical tone consistent with a business location strategy report?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response provide a comprehensive market overview of Indiranagar, including relevant demographics, foot traffic, and potential customer base for a bakery?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Does the response provide a comprehensive market overview of Indiranagar, including relevant demographics, foot traffic, and potential customer base for a bakery?\nSTEP 1: Does the response provide a comprehensive market overview of Indiranagar, including relevant demographics, foot traffic, and potential customer base for a bakery?\nSTEP 2: Check if the response contains detailed information about Indiranagar's demographics, foot traffic, and potential customer base.\nSTEP 3: The response explicitly states \"N/A\" for \"population_density\", \"income_level\", \"infrastructure_access\", \"foot_traffic_pattern\", and \"rental_cost_tier\" under the \"market\" section. It also lists \"best_customer_segment\" and \"estimated_foot_traffic\" as \"Undetermined\". The only qualitative mention is \"While qualitative research indicates a potentially strong market (affluent demographics, foodie culture)...\". This is not a comprehensive overview.\nSTEP 4: The response clearly indicates that market data is unavailable or undetermined, therefore it does not provide a comprehensive market overview.\nSTEP 5: The response does not provide a comprehensive market overview of Indiranagar, including relevant demographics, foot traffic, and potential customer base for a bakery.\nQuestion: Does the response provide a comprehensive market overview of Indiranagar, including relevant demographics, foot traffic, and potential customer base for a bakery?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response include an analysis of the competitive landscape for bakeries and related food establishments in Indiranagar?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Does the response include an analysis of the competitive landscape for bakeries and related food establishments in Indiranagar?\nSTEP 1: Does the response include an analysis of the competitive landscape for bakeries and related food establishments in Indiranagar?\nSTEP 2: Look for sections or statements in the response that specifically analyze competitors, their numbers, density, or performance.\nSTEP 3: The response explicitly states \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" It also shows \"total_competitors_found\": 0, \"zones_analyzed\": 0, and under \"competition\" all values are 0.0. The \"strengths\" section mentions \"Quantitative analysis could not be performed due to a lack of competitor data.\" The \"key_insights\" mention \"extreme saturation, which cannot be validated or navigated without quantitative data.\" This indicates a *lack* of analysis, not an analysis itself.\nSTEP 4: The response clearly states that competitor data was unavailable and therefore no competitive analysis could be performed.\nSTEP 5: The response does not include an analysis of the competitive landscape for bakeries and related food establishments in Indiranagar.\nQuestion: Does the response include an analysis of the competitive landscape for bakeries and related food establishments in Indiranagar?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response detail key factors and considerations for site selection (e.g., visibility, accessibility, rental costs) specific to a bakery in Indiranagar?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Does the response detail key factors and considerations for site selection (e.g., visibility, accessibility, rental costs) specific to a bakery in Indiranagar?\nSTEP 1: Does the response detail key factors and considerations for site selection (e.g., visibility, accessibility, rental costs) specific to a bakery in Indiranagar?\nSTEP 2: Check if the response discusses specific site selection factors like visibility, accessibility, or rental costs, and if these are tied to Indiranagar.\nSTEP 3: The \"market\" section lists \"infrastructure_access\" and \"rental_cost_tier\" as \"N/A\". \"Foot_traffic_pattern\" is also \"N/A\". There is no discussion or detailing of these factors, nor of visibility or accessibility. The \"top_recommendation\" section has \"location_name\": \"DATA UNAVAILABLE\". The \"next_steps\" explicitly state \"Halt market entry decision immediately. Do not proceed with site selection or investment.\" This indicates that site selection factors were not detailed.\nSTEP 4: The response explicitly states that data for relevant site selection factors is unavailable and advises against site selection. Therefore, it does not detail these factors.\nSTEP 5: The response does not detail key factors and considerations for site selection specific to a bakery in Indiranagar.\nQuestion: Does the response detail key factors and considerations for site selection (e.g., visibility, accessibility, rental costs) specific to a bakery in Indiranagar?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response discuss potential opportunities and challenges for establishing a bakery in Indiranagar?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response discuss potential opportunities and challenges for establishing a bakery in Indiranagar?\nSTEP 1: Does the response discuss potential opportunities and challenges for establishing a bakery in Indiranagar?\nSTEP 2: Identify any mentions of opportunities or challenges specific to Indiranagar for a bakery.\nSTEP 3:\n- **Opportunities:** The \"key_insights\" section mentions: \"While qualitative research indicates a potentially strong market (affluent demographics, foodie culture)...\". This hints at potential opportunities.\n- **Challenges:** The same insight continues \"...it also highlights extreme saturation, which cannot be validated or navigated without quantitative data.\" The entire report is a \"failure summary\" due to \"Data Unavailability,\" which is presented as a critical risk/challenge. The \"concerns\" section explicitly lists \"Data Unavailability\" as a risk, stating it \"prevents any meaningful strategic analysis, making any investment decision at this stage extremely high-risk.\"\nSo, while it doesn't provide a full discussion, it does touch upon both potential opportunities (affluent demographics, foodie culture) and significant challenges (extreme saturation, critical data unavailability).\nSTEP 4: The response briefly mentions potential opportunities (affluent demographics, foodie culture) and clearly outlines the significant challenge of data unavailability and potential market saturation.\nSTEP 5: The response discusses potential opportunities and challenges for establishing a bakery in Indiranagar.\nQuestion: Does the response discuss potential opportunities and challenges for establishing a bakery in Indiranagar?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response offer actionable strategic recommendations or identify potential suitable sub-locations within Indiranagar?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response offer actionable strategic recommendations or identify potential suitable sub-locations within Indiranagar?\nSTEP 1: Does the response offer actionable strategic recommendations or identify potential suitable sub-locations within Indiranagar?\nSTEP 2:\n1. Check for explicit strategic recommendations that are actionable.\n2. Check if any specific sub-locations within Indiranagar are identified as suitable.\nSTEP 3:\n1. **Actionable Strategic Recommendations:** The \"next_steps\" section provides clear, actionable recommendations:\n    - \"Halt market entry decision immediately. Do not proceed with site selection or investment.\"\n    - \"Re-initiate the competitor data collection process to acquire a valid dataset.\"\n    - \"Postpone all quantitative modeling and strategic planning until a complete and accurate dataset is available and has been analyzed.\"\n    These are direct instructions on what to do next.\n2. **Suitable Sub-locations:** The \"top_recommendation\" for \"location_name\" is \"DATA UNAVAILABLE\". No suitable sub-locations are identified.\nSince the question uses \"or\", and actionable strategic recommendations are provided, the condition is met.\nSTEP 4: The response provides clear, actionable strategic recommendations regarding the next steps to take given the data failure, even though it does not identify suitable sub-locations.\nSTEP 5: The response offers actionable strategic recommendations.\nQuestion: Does the response offer actionable strategic recommendations or identify potential suitable sub-locations within Indiranagar?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is all the information and analysis presented in the response directly relevant to opening a bakery in Indiranagar, Bangalore?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is all the information and analysis presented in the response directly relevant to opening a bakery in Indiranagar, Bangalore?\nSTEP 1: Is all the information and analysis presented in the response directly relevant to opening a bakery in Indiranagar, Bangalore?\nSTEP 2: Review each piece of information and analysis in the response to determine if it pertains to opening a bakery in Indiranagar.\nSTEP 3:\n- `target_location`: \"Indiranagar, Bangalore\" - Relevant.\n- `business_type`: \"bakery\" - Relevant.\n- `analysis_date`: \"2026-01-29\" - Relevant context.\n- `market_validation`: \"CRITICAL ERROR: Analysis failed due to unavailable competitor data.\" - Directly relevant to the feasibility of opening a bakery in Indiranagar.\n- `total_competitors_found`, `zones_analyzed`: 0 - Relevant, indicating a lack of data for Indiranagar.\n- `top_recommendation` (and its sub-fields like `location_name`, `area`, `overall_score`, `opportunity_type`, `strengths`, `concerns`, `competition`, `market`, `best_customer_segment`, `estimated_foot_traffic`, `next_steps`): All these fields, even when stating \"DATA UNAVAILABLE\" or \"N/A\", are directly addressing the prompt's request for a location strategy report for a bakery in Indiranagar. The *reason* for the data unavailability and the *implications* are highly relevant to the user's goal.\n- `alternative_locations`: [] - Relevant, as it indicates no alternatives were found or could be analyzed.\n- `key_insights`: All insights discuss the failure of the analysis and its implications for a market entry decision in Indiranagar, including qualitative mentions of the market. Relevant.\n- `methodology_summary`: Explains why the report is a \"failure summary\" for the Indiranagar bakery analysis. Relevant.\n\nAll information, even the negative findings (data unavailable, analysis failed), directly addresses the user's prompt about analyzing Indiranagar for a bakery.\nSTEP 4: Every part of the response, including the declarations of data unavailability and analysis failure, directly relates to the user's request for a location strategy report for a bakery in Indiranagar.\nSTEP 5: All the information and analysis presented in the response is directly relevant to opening a bakery in Indiranagar, Bangalore.\nQuestion: Is all the information and analysis presented in the response directly relevant to opening a bakery in Indiranagar, Bangalore?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response concise, avoiding unnecessary verbosity, repetition, or irrelevant information?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response concise, avoiding unnecessary verbosity, repetition, or irrelevant information?\nSTEP 1: Is the response concise, avoiding unnecessary verbosity, repetition, or irrelevant information?\nSTEP 2: Evaluate the response for wordiness, redundant statements, or content that doesn't contribute to answering the prompt.\nSTEP 3: The response is presented in JSON format, which by its nature tends to be structured and less verbose than prose. While some information is repeated (e.g., \"DATA UNAVAILABLE\" or \"Analysis Failed\" appears in multiple places), this repetition serves to clearly indicate the status across different sections of the report. Given that the report's primary message is a failure to analyze due to data unavailability, reiterating this point in relevant sections (e.g., market validation, top recommendation, strengths, concerns, key insights, methodology) is not unnecessary verbosity but rather a consistent and thorough communication of the core finding. There is no irrelevant information.\nSTEP 4: The JSON format is inherently concise. The repetition of the \"data unavailable\" message is functional for clarity across different report sections, not verbose. No irrelevant information is present.\nSTEP 5: The response is concise, avoiding unnecessary verbosity, repetition, or irrelevant information.\nQuestion: Is the response concise, avoiding unnecessary verbosity, repetition, or irrelevant information?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response free of any harmful, unethical, or inappropriate content?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response free of any harmful, unethical, or inappropriate content?\nSTEP 1: Is the response free of any harmful, unethical, or inappropriate content?\nSTEP 2: Review the content of the response for any language or information that could be considered harmful, unethical, or inappropriate.\nSTEP 3: The response is a technical report detailing a failure in data collection for a business analysis. It contains no language or concepts that are harmful, unethical, or inappropriate.\nSTEP 4: The response is a neutral, technical report.\nSTEP 5: The response is free of any harmful, unethical, or inappropriate content.\nQuestion: Is the response free of any harmful, unethical, or inappropriate content?"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response avoid generating content that promotes discrimination, hate speech, or stereotypes?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response avoid generating content that promotes discrimination, hate speech, or stereotypes?\nSTEP 1: Does the response avoid generating content that promotes discrimination, hate speech, or stereotypes?\nSTEP 2: Examine the response for any elements that could be interpreted as promoting discrimination, hate speech, or stereotypes.\nSTEP 3: The response is a technical business analysis report. It does not contain any content that promotes discrimination, hate speech, or stereotypes.\nSTEP 4: The response is a neutral, technical report.\nSTEP 5: The response avoids generating content that promotes discrimination, hate speech, or stereotypes.\nQuestion: Does the response avoid generating content that promotes discrimination, hate speech, or stereotypes?"
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "Analyze Indiranagar in Bangalore for opening a bakery. I need a full location strategy report."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Hello! I can certainly help you with a full location strategy report for opening a bakery in Indiranagar, Bangalore.\n\nFirst, I need to process your request."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "{\n    \"target_location\": \"Indiranagar, Bangalore\",\n    \"business_type\": \"bakery\",\n    \"analysis_date\": \"2026-01-29\",\n    \"market_validation\": \"CRITICAL ERROR: Analysis failed due to unavailable competitor data. Please verify the location or try again later.\",\n    \"total_competitors_found\": 0,\n    \"zones_analyzed\": 0,\n    \"top_recommendation\": {\n        \"location_name\": \"DATA UNAVAILABLE\",\n        \"area\": \"Indiranagar, Bangalore\",\n        \"overall_score\": 0,\n        \"opportunity_type\": \"Analysis Incomplete\",\n        \"strengths\": [\n            {\n                \"factor\": \"Analysis Failed\",\n                \"description\": \"Quantitative analysis could not be performed due to a lack of competitor data.\",\n                \"evidence_from_analysis\": \"GapAnalysisAgent reported ERROR: DATA_UNAVAILABLE.\"\n            }\n        ],\n        \"concerns\": [\n            {\n                \"risk\": \"Data Unavailability\",\n                \"description\": \"The inability to collect competitor data prevents any meaningful strategic analysis, making any investment decision at this stage extremely high-risk.\",\n                \"mitigation_strategy\": \"Re-run the analysis pipeline to attempt data collection again. If the error persists, manual data collection is required before proceeding.\"\n            }\n        ],\n        \"competition\": {\n            \"total_competitors\": 0,\n            \"density_per_km2\": 0.0,\n            \"chain_dominance_pct\": 0.0,\n            \"avg_competitor_rating\": 0.0,\n            \"high_performers_count\": 0\n        },\n        \"market\": {\n            \"population_density\": \"N/A\",\n            \"income_level\": \"N/A\",\n            \"infrastructure_access\": \"N/A\",\n            \"foot_traffic_pattern\": \"N/A\",\n            \"rental_cost_tier\": \"N/A\"\n        },\n        \"best_customer_segment\": \"Undetermined\",\n        \"estimated_foot_traffic\": \"Undetermined\",\n        \"next_steps\": [\n            \"Halt market entry decision immediately. Do not proceed with site selection or investment.\",\n            \"Re-initiate the competitor data collection process to acquire a valid dataset.\",\n            \"Postpone all quantitative modeling and strategic planning until a complete and accurate dataset is available and has been analyzed.\"\n        ]\n    },\n    \"alternative_locations\": [],\n    \"key_insights\": [\n        \"The primary finding is a critical failure in the data collection pipeline, rendering a data-driven strategic recommendation impossible.\",\n        \"Proceeding with a market entry decision without rectifying the data gap constitutes an unacceptable level of business risk.\",\n        \"While qualitative research indicates a potentially strong market (affluent demographics, foodie culture), it also highlights extreme saturation, which cannot be validated or navigated without quantitative data.\",\n        \"The failure highlights the dependency of a sound location strategy on accurate, real-time competitor intelligence.\"\n    ],\n    \"methodology_summary\": \"The analysis involved a multi-stage process including market research, competitor mapping, and quantitative gap analysis. The process was halted during the quantitative analysis phase due to a critical failure in the preceding competitor mapping step (CompetitorMappingAgent), which returned no data ('ERROR: DATA_UNAVAILABLE'). This report is consequently a failure summary, as no valid strategic recommendations can be made.\"\n}"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "description": "Complete request - should trigger full pipeline without clarifying questions",
+      "expected_behavior": "full_pipeline"
+    },
+    {
+      "question_id": "retail_003_clarifying",
+      "runs": 1,
+      "deterministic_metrics": {
+        "token_usage": {
+          "llm_calls": 1,
+          "models_used": [
+            "gemini-2.5-pro"
+          ],
+          "total_tokens": 743,
+          "prompt_tokens": 623,
+          "completion_tokens": 79,
+          "cached_tokens": 0,
+          "estimated_cost_usd": 0.00156875
+        },
+        "latency_metrics": {
+          "total_latency_seconds": 2.553,
+          "average_turn_latency_seconds": 2.553,
+          "llm_latency_seconds": 2.479369148,
+          "tool_latency_seconds": 0.0,
+          "time_to_first_response_seconds": 2.552588297
+        },
+        "cache_efficiency": {
+          "cache_hit_rate": 0.0,
+          "total_cached_tokens": 0,
+          "total_fresh_prompt_tokens": 623,
+          "total_input_tokens": 623
+        },
+        "thinking_metrics": {
+          "reasoning_ratio": 0.3416666666666667,
+          "total_thinking_tokens": 41,
+          "total_candidate_tokens": 79,
+          "total_output_tokens": 120,
+          "turns_with_thinking": 1
+        },
+        "tool_utilization": {
+          "total_tool_calls": 0,
+          "unique_tools_used": 0,
+          "tool_counts": {}
+        },
+        "tool_success_rate": {
+          "tool_success_rate": 1.0,
+          "total_tool_calls": 0,
+          "failed_tool_calls": 0,
+          "failed_tools_list": []
+        },
+        "grounding_utilization": {
+          "total_grounding_chunks": 0,
+          "total_grounded_responses": 0,
+          "total_llm_responses": 1
+        },
+        "context_saturation": {
+          "max_total_tokens": 743,
+          "peak_usage_span": "call_llm"
+        },
+        "agent_handoffs": {
+          "total_handoffs": 1,
+          "unique_agents_count": 1,
+          "agents_invoked_list": [
+            "retail_location_strategy"
+          ]
+        },
+        "output_density": {
+          "average_output_tokens": 79.0,
+          "total_output_tokens": 79,
+          "llm_calls_count": 1
+        },
+        "sandbox_usage": {
+          "total_sandbox_ops": 0,
+          "unique_ops_used": 0,
+          "sandbox_tools_used": {}
+        }
+      },
+      "llm_metrics": {
+        "tool_use_quality": {
+          "score": 4.0,
+          "explanation": "The agent correctly identified that the initial user request, 'I want to open a shop,' was too broad for immediate application of the analytical tools provided (e.g., google_search, search_places, execute_code), which require specific business type and location information. Therefore, the agent's decision not to call any tools at this stage was optimal and efficient. Its response effectively asks for the crucial clarifying information needed to proceed with a meaningful location analysis. While no tools were explicitly called, the agent demonstrated excellent strategic planning by setting the stage for future effective tool usage, which aligns with 'Good' performance in preparing to fulfill the request, despite the 'minor gap' of no immediate tool invocation being justified.",
+          "input": {
+            "prompt": "I want to open a shop.",
+            "response": "Hello! I can help with that. To get started, I need a little more information.\n\nFirst, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\n\nSecond, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city.",
+            "tool_interactions": "",
+            "available_tools": ""
+          }
+        },
+        "trajectory_accuracy": {
+          "score": 5.0,
+          "explanation": "The agent correctly identifies the missing crucial information (business type and location) required to proceed with any of the subsequent pipeline stages. Its response acts as an optimal 'IntakeAgent' by requesting this necessary data from the user before any tool calls can be made. This is the correct and most efficient first step in the pipeline given the vague initial user request.",
+          "input": {
+            "prompt": "I want to open a shop.",
+            "response": "agent:retail_location_strategy",
+            "available_tools": "",
+            "final_response": "Hello! I can help with that. To get started, I need a little more information.\n\nFirst, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\n\nSecond, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city."
+          }
+        },
+        "general_quality": {
+          "score": 0.6363636,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is in English."
+                  }
+                },
+                "type": "LANGUAGE:PRIMARY_RESPONSE_LANGUAGE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The entire response is written in the English language."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response provides general guidance, steps, or considerations for opening a shop."
+                  }
+                },
+                "type": "GENERAL_ADVICE:PRIMARY_PURPOSE",
+                "importance": "HIGH"
+              },
+              "verdict": true,
+              "reasoning": "The response initiates the process of providing guidance by asking for essential preliminary information (type of shop, location) which are key considerations for opening a shop."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response includes advice or considerations related to business planning or defining the shop's concept."
+                  }
+                },
+                "type": "GENERAL_ADVICE_CATEGORY:BUSINESS_PLANNING",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response asks about the \"type of shop,\" which is a direct inquiry into defining the business concept, a fundamental aspect of business planning."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response includes advice or considerations related to legal requirements, licenses, or business registration for opening a shop."
+                  }
+                },
+                "type": "GENERAL_ADVICE_CATEGORY:LEGAL_REGISTRATION",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The response does not mention legal requirements, licenses, or business registration."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response includes advice or considerations related to financial aspects such as funding, budgeting, or pricing."
+                  }
+                },
+                "type": "GENERAL_ADVICE_CATEGORY:FINANCIALS",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The response does not include any advice or considerations related to financial aspects."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response includes advice or considerations related to choosing a physical location or an online platform for the shop."
+                  }
+                },
+                "type": "GENERAL_ADVICE_CATEGORY:LOCATION_PLATFORM",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly asks about \"where\" the user is thinking of opening the shop, including details like \"neighborhood and city,\" which directly relates to choosing a physical location."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response includes advice or considerations related to operational aspects such as inventory, suppliers, or staffing."
+                  }
+                },
+                "type": "GENERAL_ADVICE_CATEGORY:OPERATIONS",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The response does not include any advice or considerations related to operational aspects."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response includes advice or considerations related to marketing, promotion, or attracting customers."
+                  }
+                },
+                "type": "GENERAL_ADVICE_CATEGORY:MARKETING_SALES",
+                "importance": "MEDIUM"
+              },
+              "reasoning": "The response does not include any advice or considerations related to marketing, promotion, or attracting customers."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response is well-structured and easy to understand (e.g., uses lists, headings, or clear sections)."
+                  }
+                },
+                "type": "FORMAT_REQUIREMENT:ORGANIZATION",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response uses numbered points (\"First,\" \"Second,\") to clearly organize its questions, making it easy to read and understand."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response maintains a helpful, informative, and encouraging tone."
+                  }
+                },
+                "type": "TONE_REQUIREMENT:HELPFUL_INFORMATIVE",
+                "importance": "MEDIUM"
+              },
+              "verdict": true,
+              "reasoning": "The response begins with an encouraging phrase (\"I can help with that\") and proceeds to ask for information in a clear, polite, and informative manner."
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "The response acknowledges the broad nature of the request and may suggest that more specific advice depends on the type of shop."
+                  }
+                },
+                "type": "CONTENT_REQUIREMENT:SCOPE_ACKNOWLEDGMENT",
+                "importance": "LOW"
+              },
+              "verdict": true,
+              "reasoning": "The response explicitly asks for the \"type of shop,\" indicating that the subsequent, more specific advice will be contingent on this information, thereby acknowledging the broadness of the initial request."
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I want to open a shop."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Hello! I can help with that. To get started, I need a little more information.\n\nFirst, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\n\nSecond, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Hello! I can help with that. To get started, I need a little more information.\n\nFirst, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\n\nSecond, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city."
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "pipeline_integrity": {
+          "score": 5.0,
+          "explanation": "The agent's response is an information-gathering stage and makes no claims of performing analysis or using tools. Since no tools were called, and the agent did not claim to have performed any analysis or used any tools, there is no discrepancy or hallucination. The agent is correctly asking for necessary information to proceed, which is a perfect initial step.",
+          "input": {
+            "prompt": "I want to open a shop.",
+            "response": "Hello! I can help with that. To get started, I need a little more information.\n\nFirst, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\n\nSecond, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city.",
+            "tool_interactions": "",
+            "full_conversation": ""
+          }
+        },
+        "text_quality": {
+          "score": 0.875,
+          "rubric_verdicts": [
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is all factual information provided in the response accurate and generally accepted knowledge regarding opening a shop?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is all factual information provided in the response accurate and generally accepted knowledge regarding opening a shop?\nSTEP 1: Is all factual information provided in the response accurate and generally accepted knowledge regarding opening a shop?\nSTEP 2:\n1. Identify all factual information presented in the response.\n2. Evaluate if this information is accurate and generally accepted knowledge regarding opening a shop.\nSTEP 3:\n1. The response states: \"First, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\" and \"Second, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city.\"\n2. These are not factual statements but rather questions asking for information. The premise of the question is about \"factual information provided\". Since no factual information is provided, the question is not applicable in the sense of evaluating accuracy of facts. However, the *implication* is that these are relevant considerations for opening a shop, which is accurate and generally accepted. The model is asking for information that is crucial for planning a shop.\nSTEP 4: The question asks about \"factual information provided\". The response does not provide facts, but asks clarifying questions. The questions themselves are based on generally accepted knowledge that type and location are key considerations for opening a shop. Therefore, the underlying premise of the questions is accurate and generally accepted.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response well-organized and easy to read, using appropriate formatting (e.g., paragraphs, headings, bullet points)?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response well-organized and easy to read, using appropriate formatting (e.g., paragraphs, headings, bullet points)?\nSTEP 1: Is the response well-organized and easy to read, using appropriate formatting (e.g., paragraphs, headings, bullet points)?\nSTEP 2:\n1. Check if the response uses paragraphs.\n2. Check if the response uses headings or bullet points.\n3. Assess if the overall organization makes it easy to read.\nSTEP 3:\n1. The response uses three distinct paragraphs.\n2. It does not use headings or bullet points, but it uses numbered \"First\" and \"Second\" to delineate the questions, which serves a similar organizational purpose.\n3. The use of paragraphs and numbered points makes the response clear, structured, and easy to follow.\nSTEP 4: The response is broken into clear paragraphs and uses numbered points to structure its questions, making it very easy to read and well-organized.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response identify and elaborate on initial key considerations for opening a shop (e.g., business plan, market research, legal structure, funding)?"
+                  }
+                },
+                "type": ""
+              },
+              "reasoning": "Does the response identify and elaborate on initial key considerations for opening a shop (e.g., business plan, market research, legal structure, funding)?\nSTEP 1: Does the response identify and elaborate on initial key considerations for opening a shop (e.g., business plan, market research, legal structure, funding)?\nSTEP 2:\n1. Identify if the response mentions any initial key considerations for opening a shop.\n2. Check if it elaborates on these considerations.\n3. Compare the mentioned considerations to the examples provided (business plan, market research, legal structure, funding).\nSTEP 3:\n1. The response identifies \"type of shop\" and \"where you are thinking of opening this shop\" as initial considerations by asking about them.\n2. It does not elaborate on these considerations beyond asking for the user's input. For example, it doesn't explain *why* the type of shop or location is important, or what factors to consider for each.\n3. The response does not mention or elaborate on \"business plan, market research, legal structure, funding\" or similar high-level business considerations. It focuses on gathering basic information from the user.\nSTEP 4: The response asks about the type and location of the shop, which are initial considerations, but it does not elaborate on them or mention other crucial initial considerations like business plans, market research, legal structure, or funding.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response focus exclusively on topics directly related to opening a shop?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response focus exclusively on topics directly related to opening a shop?\nSTEP 1: Does the response focus exclusively on topics directly related to opening a shop?\nSTEP 2:\n1. Review each sentence/paragraph in the response.\n2. Determine if the content of each sentence/paragraph is directly related to the user's stated goal of opening a shop.\nSTEP 3:\n1. \"Hello! I can help with that. To get started, I need a little more information.\" - Directly related to assisting the user with their goal.\n2. \"First, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\" - Directly related to a fundamental aspect of opening a shop.\n3. \"Second, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city.\" - Directly related to another fundamental aspect of opening a shop.\nSTEP 4: All parts of the response are focused on gathering information essential for helping the user with their stated goal of opening a shop.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the information presented in the response concise and free of unnecessary verbosity or repetition?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the information presented in the response concise and free of unnecessary verbosity or repetition?\nSTEP 1: Is the information presented in the response concise and free of unnecessary verbosity or repetition?\nSTEP 2:\n1. Read through the response, looking for any redundant phrases, overly long sentences, or repeated ideas.\n2. Assess if the language is direct and to the point.\nSTEP 3:\n1. The response is short and direct.\n2. It asks two distinct questions without repeating information or using excessive words. The examples provided for \"type of shop\" are helpful, not verbose. The request for specificity regarding location is also concise.\nSTEP 4: The response is very concise, directly asking for necessary information without any extra words or repetition.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response provide actionable initial steps or ask relevant clarifying questions to assist the user in their goal to open a shop?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response provide actionable initial steps or ask relevant clarifying questions to assist the user in their goal to open a shop?\nSTEP 1: Does the response provide actionable initial steps or ask relevant clarifying questions to assist the user in their goal to open a shop?\nSTEP 2:\n1. Check if the response offers any \"actionable initial steps\" (e.g., \"First, research your target market\").\n2. Check if the response asks \"relevant clarifying questions\" that would help move the user forward.\nSTEP 3:\n1. The response does not provide actionable initial steps in the sense of instructions for the user to *do* something independently (like \"research X\").\n2. However, it explicitly asks two relevant clarifying questions: \"what type of shop are you thinking of opening?\" and \"where are you thinking of opening this shop?\". These questions are crucial for the AI to provide further assistance and are therefore relevant to assisting the user in their goal.\nSTEP 4: The response asks relevant clarifying questions that are essential for the next steps in helping the user open a shop.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Is the response free of harmful, unethical, or inappropriate content?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Is the response free of harmful, unethical, or inappropriate content?\nSTEP 1: Is the response free of harmful, unethical, or inappropriate content?\nSTEP 2:\n1. Read the response carefully.\n2. Look for any language or suggestions that could be considered harmful, unethical, or inappropriate.\nSTEP 3: The response is a polite and helpful set of clarifying questions. There is no content that could be interpreted as harmful, unethical, or inappropriate.\nSTEP 4: The response is entirely benign and helpful.\nSTEP 5:"
+            },
+            {
+              "evaluated_rubric": {
+                "content": {
+                  "property": {
+                    "description": "Does the response promote safe and legal practices related to starting a business?"
+                  }
+                },
+                "type": ""
+              },
+              "verdict": true,
+              "reasoning": "Does the response promote safe and legal practices related to starting a business?\nSTEP 1: Does the response promote safe and legal practices related to starting a business?\nSTEP 2:\n1. Examine the content of the response for any explicit or implicit promotion of safe and legal practices.\n2. Consider if the response encourages or discourages any specific practices.\nSTEP 3: The response is very brief and focuses solely on gathering initial information (type and location of shop). It does not delve into any advice or recommendations, and therefore, it neither promotes nor discourades any specific practices, safe or otherwise. It's neutral on this front due to its limited scope.\nSTEP 4: The response is too high-level and brief to address or promote safe and legal practices. It simply asks for clarifying information.\nSTEP 5:"
+            }
+          ],
+          "input": {
+            "request": {
+              "contents": [
+                {
+                  "role": "user",
+                  "parts": [
+                    {
+                      "text": "I want to open a shop."
+                    }
+                  ]
+                },
+                {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "text": "Hello! I can help with that. To get started, I need a little more information.\n\nFirst, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\n\nSecond, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city."
+                    }
+                  ]
+                }
+              ]
+            },
+            "response": {
+              "candidates": [
+                {
+                  "content": {
+                    "role": "model",
+                    "parts": [
+                      {
+                        "text": "Hello! I can help with that. To get started, I need a little more information.\n\nFirst, what type of shop are you thinking of opening? For example, are you considering a coffee shop, a boutique, a bookstore, or something else?\n\nSecond, where are you thinking of opening this shop? Please be as specific as you can, such as a neighborhood and city."
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "description": "Vague request - should ask clarifying questions about location and business type",
+      "expected_behavior": "clarifying_questions"
+    }
+  ]
+}
+```
+
+*   **Detailed Explanations:** Raw, detailed explanations from the LLM judge for each metric on a per-question basis. Use this to find patterns in *why* a metric scored high or low.
+**Detailed Explanations per Metric:**
+--- Evaluation Analysis ---
+
+## Metric: `token_usage.llm_calls`
+**Average Score:** 5.6667
+
+## Metric: `token_usage.total_tokens`
+**Average Score:** 30269.3333
+
+## Metric: `token_usage.prompt_tokens`
+**Average Score:** 15064.3333
+
+## Metric: `token_usage.completion_tokens`
+**Average Score:** 3884.3333
+
+## Metric: `token_usage.cached_tokens`
+**Average Score:** 2244.3333
+
+## Metric: `token_usage.estimated_cost_usd`
+**Average Score:** 0.0577
+
+## Metric: `latency_metrics.total_latency_seconds`
+**Average Score:** 81.6473
+
+## Metric: `latency_metrics.average_turn_latency_seconds`
+**Average Score:** 81.6473
+
+## Metric: `latency_metrics.llm_latency_seconds`
+**Average Score:** 156.6415
+
+## Metric: `latency_metrics.tool_latency_seconds`
+**Average Score:** 1.7792
+
+## Metric: `latency_metrics.time_to_first_response_seconds`
+**Average Score:** 5.8602
+
+## Metric: `cache_efficiency.cache_hit_rate`
+**Average Score:** 0.0874
+
+## Metric: `cache_efficiency.total_cached_tokens`
+**Average Score:** 2244.3333
+
+## Metric: `cache_efficiency.total_fresh_prompt_tokens`
+**Average Score:** 15064.3333
+
+## Metric: `cache_efficiency.total_input_tokens`
+**Average Score:** 17308.6667
+
+## Metric: `thinking_metrics.reasoning_ratio`
+**Average Score:** 0.4216
+
+## Metric: `thinking_metrics.total_thinking_tokens`
+**Average Score:** 3317.3333
+
+## Metric: `thinking_metrics.total_candidate_tokens`
+**Average Score:** 3884.3333
+
+## Metric: `thinking_metrics.total_output_tokens`
+**Average Score:** 7201.6667
+
+## Metric: `thinking_metrics.turns_with_thinking`
+**Average Score:** 5.6667
+
+## Metric: `tool_utilization.total_tool_calls`
+**Average Score:** 2.0000
+
+## Metric: `tool_utilization.unique_tools_used`
+**Average Score:** 2.0000
+
+## Metric: `tool_success_rate.tool_success_rate`
+**Average Score:** 0.7778
+
+## Metric: `tool_success_rate.total_tool_calls`
+**Average Score:** 2.0000
+
+## Metric: `tool_success_rate.failed_tool_calls`
+**Average Score:** 0.6667
+
+## Metric: `grounding_utilization.total_grounding_chunks`
+**Average Score:** 15.6667
+
+## Metric: `grounding_utilization.total_grounded_responses`
+**Average Score:** 0.6667
+
+## Metric: `grounding_utilization.total_llm_responses`
+**Average Score:** 7.6667
+
+## Metric: `context_saturation.max_total_tokens`
+**Average Score:** 11131.3333
+
+## Metric: `agent_handoffs.total_handoffs`
+**Average Score:** 6.3333
+
+## Metric: `agent_handoffs.unique_agents_count`
+**Average Score:** 5.6667
+
+## Metric: `output_density.average_output_tokens`
+**Average Score:** 508.5833
+
+## Metric: `output_density.total_output_tokens`
+**Average Score:** 3884.3333
+
+## Metric: `output_density.llm_calls_count`
+**Average Score:** 5.6667
+
+## Metric: `sandbox_usage.total_sandbox_ops`
+**Average Score:** 0.0000
+
+## Metric: `sandbox_usage.unique_ops_used`
+**Average Score:** 0.0000
+
+## Metric: `tool_use_quality`
+**Average Score:** {'average': 4.0, 'score_range': {'min': 0, 'max': 5, 'description': '0=Poor tool usage, 5=Excellent tool usage'}}
+**Sample Explanations:**
+- [Score: 4.0] The agent correctly identified the user's intent and selected the appropriate `search_places` tool for competitor mapping. Arguments for all tool calls were accurate. The agent demonstrated excellent error handling by explicitly identifying the `search_places` API error, explaining its implications (inability to collect competitor data, halt quantitative analysis), and providing a comprehensive, transparent report of the failure with concrete next steps. The final response also included qualitative market insights, suggesting some level of market research was still performed. The only minor gap is the explicit absence of a `google_search` tool call, which is listed as an expected tool for market research, despite qualitative market data appearing in the final report. However, given the critical API error that occurred, the agent's performance in managing and reporting that failure was highly effective.
+- [Score: 4.0] The agent correctly identified the request, used `IntakeAgent` and `transfer_to_agent` appropriately, and made a correct attempt to use `search_places` for competitor mapping with relevant arguments. Although `search_places` failed due to an external API error, the agent's result handling was excellent, transparently communicating the critical data unavailability and its implications, preventing a misleading report. The only minor gap was the omission of `google_search` for general market research, which might have provided some context despite the competitor data failure. Overall, the agent displayed good tool selection and exceptional error handling.
+- [Score: 4.0] The agent correctly identified that the initial user request, 'I want to open a shop,' was too broad for immediate application of the analytical tools provided (e.g., google_search, search_places, execute_code), which require specific business type and location information. Therefore, the agent's decision not to call any tools at this stage was optimal and efficient. Its response effectively asks for the crucial clarifying information needed to proceed with a meaningful location analysis. While no tools were explicitly called, the agent demonstrated excellent strategic planning by setting the stage for future effective tool usage, which aligns with 'Good' performance in preparing to fulfill the request, despite the 'minor gap' of no immediate tool invocation being justified.
+
+## Metric: `trajectory_accuracy`
+**Average Score:** {'average': 5.0, 'score_range': {'min': 0, 'max': 5, 'description': '0=Completely wrong, 5=Perfect trajectory'}}
+**Sample Explanations:**
+- [Score: 5.0] The agent followed the expected pipeline stages logically. It correctly invoked MarketResearchAgent, CompetitorMappingAgent (which used its only available tool, `search_places`), GapAnalysisAgent, and StrategyAdvisorAgent. The `search_places` tool failed, and the agent gracefully handled this critical error by clearly communicating the data unavailability, explaining its impact on the analysis, and outlining next steps. This demonstrates optimal error handling and adherence to the pipeline structure given the constraints and tool limitations.
+- [Score: 5.0] The agent followed the expected pipeline perfectly given its available tools. It invoked all relevant agents in the correct sequence (Intake, Market Research, Competitor Mapping, Gap Analysis, Strategy Advisor). It correctly used the 'search_places' tool for competitor mapping. The subsequent 'CRITICAL ERROR: DATA UNAVAILABLE' was a result of the tool's execution (or lack of data), not a failure of the agent's trajectory or logic. The agent gracefully handled this limitation by providing a comprehensive error report and next steps, demonstrating optimal behavior under constrained circumstances. It cannot be penalized for missing tools (google_search, code execution, report generation) that were not available to it.
+- [Score: 5.0] The agent correctly identifies the missing crucial information (business type and location) required to proceed with any of the subsequent pipeline stages. Its response acts as an optimal 'IntakeAgent' by requesting this necessary data from the user before any tool calls can be made. This is the correct and most efficient first step in the pipeline given the vague initial user request.
+
+## Metric: `general_quality`
+**Average Score:** {'average': 0.5176767666666667, 'score_range': {'min': 0, 'max': 1, 'description': 'Passing rate for general quality rubrics'}}
+
+## Metric: `pipeline_integrity`
+**Average Score:** {'average': 4.0, 'score_range': {'min': 0, 'max': 5, 'description': '0=Major integrity issues, 5=Perfect integrity'}}
+**Sample Explanations:**
+- [Score: 2.0] The agent accurately reported the critical failure in competitor mapping and the inability to perform gap analysis due to an API error, aligning with the `search_places` tool's output. However, it presented detailed qualitative market research data (e.g., population density, income level, foot traffic, best customer segment) without making a `google_search` tool call, which is designated for live market research. This constitutes significant claims without corresponding tool execution regarding market insights.
+- [Score: 5.0] The agent's final response perfectly reflects the tool execution. It accurately reports the critical failure of the `search_places` tool, which led to unavailable competitor data, and consequently, the inability to perform gap analysis. There is no hallucination; all 'N/A' or '0' values and error messages directly correspond to the failed tool calls and unexecuted pipeline stages. The report correctly identifies itself as a 'failure summary'.
+- [Score: 5.0] The agent's response is an information-gathering stage and makes no claims of performing analysis or using tools. Since no tools were called, and the agent did not claim to have performed any analysis or used any tools, there is no discrepancy or hallucination. The agent is correctly asking for necessary information to proceed, which is a perfect initial step.
+
+## Metric: `text_quality`
+**Average Score:** {'average': 0.7532051466666667, 'score_range': {'min': 0, 'max': 1, 'description': 'Passing rate for text quality rubrics'}}
+
+
+**2. Metric Calculation & Definitions:**
+*   **Metric Definitions:** The rubrics and descriptions for each metric. You MUST use these files to understand what each metric is actually measuring and whether it is `llm` judged or `deterministic`.
+**File: `../retail-ai-location-strategy/eval/results/20260129_045414/raw/temp_consolidated_metrics.json`**
+```json
+Error: File '../retail-ai-location-strategy/eval/results/20260129_045414/raw/temp_consolidated_metrics.json' not found.
+```
+
+*   **Deterministic Logic:** The Python code that calculates the deterministic metrics. Refer to this file to understand the precise logic behind scores for metrics like `token_usage` or `latency_metrics`.
+**File: `evaluation/core/deterministic_metrics.py`**
+```python
+"""
+Deterministic metrics for evaluating agent execution success.
+
+These metrics provide objective pass/fail measurements by analyzing trace data
+and session state, without requiring LLM-as-judge evaluation.
+"""
+
+import json
+from typing import Any, Dict, List, Tuple
+
+# Pricing per 1K tokens (approximate list prices for prompts <= 200k tokens)
+# Format: {model_name: (prompt_price, completion_price)}
+# Source: https://ai.google.dev/gemini-api/docs/pricing
+MODEL_PRICING = {
+    # Gemini 3 (Latest Preview)
+    "gemini-3-pro-preview": (0.002, 0.012),  # $2.00 / $12.00 per 1M
+    "gemini-3-flash-preview": (0.0005, 0.003),  # $0.50 / $3.00 per 1M
+    # Gemini 2.5 (Current Flagship)
+    "gemini-2.5-pro": (0.00125, 0.01),  # $1.25 / $10.00 per 1M
+    "gemini-2.5-flash": (0.0003, 0.0025),  # $0.30 / $2.50 per 1M
+    # Gemini 2.0
+    "gemini-2.0-flash": (0.0001, 0.0004),  # $0.10 / $0.40 per 1M
+    "gemini-2.0-flash-exp": (0.0001, 0.0004),  # Same as 2.0 flash
+    "gemini-2.0-flash-lite": (0.000075, 0.0003),  # $0.075 / $0.30 per 1M
+    # Gemini 1.5 (Updated/Reduced Prices)
+    "gemini-1.5-pro": (0.00125, 0.01),  # Reduced from 0.0035/0.0105
+    "gemini-1.5-pro-001": (0.00125, 0.01),
+    "gemini-1.5-flash": (0.000075, 0.0003),  # $0.075 / $0.30 per 1M
+    "gemini-1.5-flash-001": (0.000075, 0.0003),
+    # Legacy
+    "gemini-1.0-pro": (0.0005, 0.0015),  # $0.50 / $1.50 per 1M
+    "default": (0.0001, 0.0004),  # Fallback to 2.0 Flash
+}
+
+
+def calculate_token_usage(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Informational metric: Track token usage and estimated cost based on the specific model used.
+    """
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_cached_tokens = 0
+    total_tokens = 0
+    llm_calls = 0
+    total_cost = 0.0
+    models_used = set()
+
+    if not session_trace:
+        return 0.0, "No trace data available for token usage calculation", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+
+        # Identify model (handle None values)
+        model_name = attributes.get("gen_ai.request.model") or "default"
+        model_name = model_name.lower() if isinstance(model_name, str) else "default"
+
+        # Check for LLM response with usage metadata
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+
+                if usage:
+                    llm_calls += 1
+                    models_used.add(model_name)
+
+                    p_tokens = usage.get("prompt_token_count", 0)
+                    c_tokens = usage.get("candidates_token_count", 0)
+                    ch_tokens = usage.get("cached_content_token_count", 0)
+                    t_tokens = usage.get("total_token_count", 0)
+
+                    total_prompt_tokens += p_tokens
+                    total_completion_tokens += c_tokens
+                    total_cached_tokens += ch_tokens
+                    total_tokens += t_tokens
+
+                    # Match model pricing
+                    pricing = MODEL_PRICING["default"]
+                    for known_model, prices in MODEL_PRICING.items():
+                        if known_model in model_name:
+                            pricing = prices
+                            break
+
+                    # Cost calculation (simplified: ignoring cache discount for now to keep it safe upper bound,
+                    # or strictly following list price for active tokens)
+                    call_cost = (p_tokens / 1000 * pricing[0]) + (
+                        c_tokens / 1000 * pricing[1]
+                    )
+                    # Note: Cached tokens usually have a separate (lower) pricing tier.
+                    # For this metric, we currently only sum cost for active prompt/completion tokens.
+
+                    total_cost += call_cost
+
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    explanation = (
+        f"Usage: {llm_calls} LLM calls using {list(models_used)}. "
+        f"Tokens: {total_tokens} ({total_prompt_tokens}p + {total_completion_tokens}c + {total_cached_tokens}ch). "
+        f"Cost: ${total_cost:.6f}"
+    )
+
+    details = {
+        "llm_calls": llm_calls,
+        "models_used": list(models_used),
+        "total_tokens": total_tokens,
+        "prompt_tokens": total_prompt_tokens,
+        "completion_tokens": total_completion_tokens,
+        "cached_tokens": total_cached_tokens,
+        "estimated_cost_usd": total_cost,
+    }
+
+    return total_cost, explanation, details
+
+
+def calculate_latency_metrics(
+    session_trace: List[Dict[str, Any]], latency_data: List[Dict[str, Any]] = None
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate latency metrics from the session trace.
+    Returns the total latency score (seconds), but details contains granular breakdown.
+    """
+    total_latency = 0.0
+    llm_latency = 0.0
+    tool_latency = 0.0
+    first_response_latency = None
+    average_turn_latency = 0.0
+
+    if not session_trace:
+        return 0.0, "No trace data available for latency calculation", {}
+
+    # Sort spans by start time to find the true beginning
+    sorted_spans = sorted(
+        [s for s in session_trace if s.get("start_time")], key=lambda x: x["start_time"]
+    )
+
+    if not sorted_spans:
+        return 0.0, "Trace data has no timestamps", {}
+
+    root_start = sorted_spans[0]["start_time"]
+
+    # Calculate Component Latencies from full trace
+    max_end = 0
+    for span in session_trace:
+        start = span.get("start_time", 0)
+        end = span.get("end_time", 0)
+        max_end = max(max_end, end)
+        duration = (end - start) / 1e9
+        name = span.get("name", "")
+
+        if name == "call_llm":
+            llm_latency += duration
+            # Proxy for Time to First Token: end of first LLM call
+            if first_response_latency is None:
+                first_response_latency = (end - root_start) / 1e9
+
+        elif "tool_call" in name or "execute_tool" in name:
+            tool_latency += duration
+
+    # Calculate Total & Average Latency from high-level summary (latency_data)
+    # This is preferred as it excludes user think time in multi-turn sessions.
+    if latency_data:
+        turn_latencies = []
+        for item in latency_data:
+            if item.get("name") == "invocation":
+                turn_latencies.append(item.get("duration_seconds", 0))
+
+        if turn_latencies:
+            average_turn_latency = sum(turn_latencies) / len(turn_latencies)
+            total_latency = sum(turn_latencies)
+
+    # Fallback: Wall-clock duration from trace if latency_data is missing
+    if total_latency == 0.0 and max_end > root_start:
+        total_latency = (max_end - root_start) / 1e9  # nanoseconds to seconds
+
+    explanation = (
+        f"Total: {total_latency:.4f}s. "
+        f"Avg Turn: {average_turn_latency:.4f}s. "
+        f"LLM: {llm_latency:.4f}s, Tools: {tool_latency:.4f}s. "
+        f"First Response: {first_response_latency if first_response_latency else 0:.4f}s"
+    )
+
+    details = {
+        "total_latency_seconds": total_latency,
+        "average_turn_latency_seconds": average_turn_latency,
+        "llm_latency_seconds": llm_latency,
+        "tool_latency_seconds": tool_latency,
+        "time_to_first_response_seconds": first_response_latency,
+    }
+
+    return total_latency, explanation, details
+
+
+def calculate_cache_efficiency(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the efficiency of context caching.
+    Returns the cache hit rate (percentage of potential prompt tokens that were cached).
+    """
+    total_prompt_tokens = 0
+    total_cached_tokens = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for cache efficiency", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+                if usage:
+                    total_prompt_tokens += usage.get("prompt_token_count", 0)
+                    total_cached_tokens += usage.get("cached_content_token_count", 0)
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    # Calculate hit rate
+    # Note: 'prompt_token_count' in Gemini API usage metadata usually EXCLUDES cached tokens.
+    # So total potential input = prompt_token_count + cached_content_token_count
+    total_input_tokens = total_prompt_tokens + total_cached_tokens
+
+    if total_input_tokens > 0:
+        cache_hit_rate = total_cached_tokens / total_input_tokens
+    else:
+        cache_hit_rate = 0.0
+
+    explanation = (
+        f"Cache Hit Rate: {cache_hit_rate:.2%}. "
+        f"Cached Tokens: {total_cached_tokens}. "
+        f"Fresh Prompt Tokens: {total_prompt_tokens}."
+    )
+
+    details = {
+        "cache_hit_rate": cache_hit_rate,
+        "total_cached_tokens": total_cached_tokens,
+        "total_fresh_prompt_tokens": total_prompt_tokens,
+        "total_input_tokens": total_input_tokens,
+    }
+
+    return cache_hit_rate, explanation, details
+
+
+def calculate_thinking_metrics(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate metrics related to the model's 'thinking' or reasoning process.
+    Returns the reasoning ratio (thinking tokens / total output tokens).
+    """
+    total_thinking_tokens = 0
+    total_candidate_tokens = 0
+    turns_with_thinking = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for thinking metrics", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+                if usage:
+                    thoughts = usage.get("thoughts_token_count", 0)
+                    # Note: In some API versions, candidates_token_count might exclude thoughts.
+                    # We treat them as additive components of the total output.
+                    candidates = usage.get("candidates_token_count", 0)
+
+                    total_thinking_tokens += thoughts
+                    total_candidate_tokens += candidates
+
+                    if thoughts > 0:
+                        turns_with_thinking += 1
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    total_output_tokens = total_thinking_tokens + total_candidate_tokens
+
+    if total_output_tokens > 0:
+        reasoning_ratio = total_thinking_tokens / total_output_tokens
+    else:
+        reasoning_ratio = 0.0
+
+    explanation = (
+        f"Reasoning Ratio: {reasoning_ratio:.2%}. "
+        f"Thinking Tokens: {total_thinking_tokens}. "
+        f"Standard Output Tokens: {total_candidate_tokens}. "
+        f"Turns with Thinking: {turns_with_thinking}."
+    )
+
+    details = {
+        "reasoning_ratio": reasoning_ratio,
+        "total_thinking_tokens": total_thinking_tokens,
+        "total_candidate_tokens": total_candidate_tokens,
+        "total_output_tokens": total_output_tokens,
+        "turns_with_thinking": turns_with_thinking,
+    }
+
+    return reasoning_ratio, explanation, details
+
+
+def calculate_tool_utilization(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate statistics on tool usage frequency and diversity.
+    Returns the total number of tool calls.
+    """
+    total_tool_calls = 0
+    tool_counts = {}
+
+    if not session_trace:
+        return 0.0, "No trace data available for tool utilization", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+
+        # Check for tool execution spans.
+        # Standard ADK traces often use "execute_tool <ToolName>"
+        if name.startswith("execute_tool ") or "tool_call" in name:
+            tool_name = "unknown"
+            if name.startswith("execute_tool "):
+                tool_name = name.replace("execute_tool ", "").strip()
+            elif "tool.name" in span.get("attributes", {}):
+                tool_name = span["attributes"]["gen_ai.tool.name"]
+
+            total_tool_calls += 1
+            tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+
+    unique_tools_used = len(tool_counts)
+
+    # Create a string representation of the tool breakdown
+    breakdown_str = ", ".join([f"{k}: {v}" for k, v in tool_counts.items()])
+
+    explanation = (
+        f"Total Tool Calls: {total_tool_calls}. "
+        f"Unique Tools: {unique_tools_used}. "
+        f"Breakdown: [{breakdown_str}]"
+    )
+
+    details = {
+        "total_tool_calls": total_tool_calls,
+        "unique_tools_used": unique_tools_used,
+        "tool_counts": tool_counts,
+    }
+
+    return float(total_tool_calls), explanation, details
+
+
+def calculate_tool_success_rate(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the success rate of tool executions by inspecting tool responses.
+    Returns success rate (successful / total) as score.
+    """
+    total_calls = 0
+    failed_calls = 0
+    failed_tools = []
+
+    if not session_trace:
+        return 0.0, "No trace data available for tool success rate", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+        attributes = span.get("attributes", {})
+
+        # Identify tool execution spans
+        is_tool = name.startswith("execute_tool ") or "tool_call" in name
+
+        if is_tool:
+            tool_response_str = attributes.get("gcp.vertex.agent.tool_response")
+            if tool_response_str:
+                total_calls += 1
+                try:
+                    # Parse the JSON response to check status
+                    response = json.loads(tool_response_str)
+
+                    # Common error patterns in ADK/JSON tools
+                    is_error = False
+                    if isinstance(response, dict):
+                        if response.get("status") == "error":
+                            is_error = True
+                        elif "error" in response or "error_message" in response:
+                            is_error = True
+
+                    if is_error:
+                        failed_calls += 1
+                        tool_name = name.replace("execute_tool ", "").strip()
+                        failed_tools.append(tool_name)
+
+                except (json.JSONDecodeError, TypeError):
+                    # Malformed JSON in response could be considered a failure or ignored
+                    pass
+
+    if total_calls > 0:
+        success_rate = (total_calls - failed_calls) / total_calls
+    else:
+        # If no tools were called, success rate is technically N/A, but 1.0 is a safe "no errors" default
+        # Or 0.0 if we want to imply "no success possible".
+        # For evaluation, 1.0 (no failures) usually makes more sense if no tools were attempted.
+        # But to distinguish from "perfect execution", let's return 1.0 but note it.
+        success_rate = 1.0
+
+    explanation = (
+        f"Success Rate: {success_rate:.2%}. "
+        f"Total Calls: {total_calls}. "
+        f"Failed Calls: {failed_calls}. "
+        f"Failed Tools: {list(set(failed_tools))}"
+    )
+
+    details = {
+        "tool_success_rate": success_rate,
+        "total_tool_calls": total_calls,
+        "failed_tool_calls": failed_calls,
+        "failed_tools_list": failed_tools,
+    }
+
+    return success_rate, explanation, details
+
+
+def calculate_grounding_utilization(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the extent of grounding usage by inspecting LLM responses for groundingMetadata.
+    Returns total grounding chunks (citations) as the score.
+    """
+    total_grounded_responses = 0
+    total_grounding_chunks = 0
+    total_llm_responses = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for grounding utilization", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+
+        if llm_response:
+            total_llm_responses += 1
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                # Grounding metadata is usually at the top level or inside candidates
+                # Standard Vertex AI response structure check
+                grounding_metadata = response_data.get(
+                    "groundingMetadata"
+                ) or response_data.get("grounding_metadata")
+
+                if not grounding_metadata:
+                    # Check inside candidates if not at top level
+                    candidates = response_data.get("candidates", [])
+                    if candidates and isinstance(candidates, list):
+                        first_candidate = candidates[0]
+                        grounding_metadata = first_candidate.get(
+                            "groundingMetadata"
+                        ) or first_candidate.get("grounding_metadata")
+
+                if grounding_metadata:
+                    chunks = grounding_metadata.get(
+                        "groundingChunks"
+                    ) or grounding_metadata.get("grounding_chunks")
+                    if chunks and isinstance(chunks, list) and len(chunks) > 0:
+                        total_grounded_responses += 1
+                        total_grounding_chunks += len(chunks)
+
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    explanation = (
+        f"Total Citations (Chunks): {total_grounding_chunks}. "
+        f"Grounded Responses: {total_grounded_responses} / {total_llm_responses}."
+    )
+
+    details = {
+        "total_grounding_chunks": total_grounding_chunks,
+        "total_grounded_responses": total_grounded_responses,
+        "total_llm_responses": total_llm_responses,
+    }
+
+    return float(total_grounding_chunks), explanation, details
+
+
+def calculate_context_saturation(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the maximum context saturation (max total tokens used in a single turn).
+    Returns max_tokens as the score.
+    """
+    max_tokens = 0
+    max_token_span = ""
+
+    if not session_trace:
+        return 0.0, "No trace data available for context saturation", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+                if usage:
+                    total = usage.get("total_token_count", 0)
+                    if total > max_tokens:
+                        max_tokens = total
+                        max_token_span = span.get("name", "unknown")
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    explanation = (
+        f"Max Context Used: {max_tokens} tokens. Peak occurred in: {max_token_span}."
+    )
+
+    details = {"max_total_tokens": max_tokens, "peak_usage_span": max_token_span}
+
+    return float(max_tokens), explanation, details
+
+
+def calculate_agent_handoffs(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Count the number of agent handoffs/invocations in the session.
+    Returns total handoff events as the score.
+
+    Captures:
+    - Direct agent invocations (invoke_agent, agent_run)
+    - Sub-agents called as tools (execute_tool *Agent, transfer_to_agent)
+    """
+    handoff_count = 0
+    agents_invoked = set()
+
+    if not session_trace:
+        return 0.0, "No trace data available for agent handoffs", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+
+        # Check for direct agent invocations
+        if name.startswith("invoke_agent ") or name.startswith("agent_run "):
+            agent_name = (
+                name.replace("invoke_agent ", "").replace("agent_run ", "").strip()
+            )
+            handoff_count += 1
+            agents_invoked.add(agent_name)
+
+        # Check for sub-agents called as tools (e.g., "execute_tool IntakeAgent")
+        elif name.startswith("execute_tool "):
+            tool_name = name.replace("execute_tool ", "").strip()
+            # Sub-agents typically end with "Agent" or are transfer_to_agent
+            if tool_name.endswith("Agent") or tool_name == "transfer_to_agent":
+                handoff_count += 1
+                agents_invoked.add(tool_name)
+
+    explanation = (
+        f"Total Handoffs: {handoff_count}. "
+        f"Unique Agents: {len(agents_invoked)}. "
+        f"Agents: {list(agents_invoked)}"
+    )
+
+    details = {
+        "total_handoffs": handoff_count,
+        "unique_agents_count": len(agents_invoked),
+        "agents_invoked_list": list(agents_invoked),
+    }
+
+    return float(handoff_count), explanation, details
+
+
+def calculate_output_density(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Calculate the average number of output tokens per LLM call.
+    Returns average output tokens as the score.
+    """
+    total_output_tokens = 0
+    llm_calls = 0
+
+    if not session_trace:
+        return 0.0, "No trace data available for output density", {}
+
+    for span in session_trace:
+        attributes = span.get("attributes", {})
+
+        # Check for LLM response with usage metadata
+        llm_response = attributes.get("gcp.vertex.agent.llm_response")
+        if llm_response:
+            try:
+                response_data = (
+                    json.loads(llm_response)
+                    if isinstance(llm_response, str)
+                    else llm_response
+                )
+                usage = response_data.get("usage_metadata", {})
+
+                # Check for output tokens in standard fields (candidates_token_count or output_token_count)
+                output_tokens = 0
+                if usage:
+                    # 'candidates_token_count' is standard in Vertex AI
+                    output_tokens = usage.get("candidates_token_count", 0)
+                    if output_tokens == 0:
+                        # Fallback for other providers
+                        output_tokens = usage.get("output_token_count", 0) or usage.get(
+                            "completion_tokens", 0
+                        )
+
+                if (
+                    output_tokens > 0 or usage
+                ):  # Count the call even if 0 output (edge case)
+                    llm_calls += 1
+                    total_output_tokens += output_tokens
+
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                continue
+
+    if llm_calls > 0:
+        average_output_tokens = total_output_tokens / llm_calls
+    else:
+        average_output_tokens = 0.0
+
+    explanation = (
+        f"Avg Output Tokens: {average_output_tokens:.2f}. "
+        f"Total Output Tokens: {total_output_tokens}. "
+        f"LLM Calls: {llm_calls}."
+    )
+
+    details = {
+        "average_output_tokens": average_output_tokens,
+        "total_output_tokens": total_output_tokens,
+        "llm_calls_count": llm_calls,
+    }
+
+    return float(average_output_tokens), explanation, details
+
+
+def calculate_sandbox_usage(
+    session_trace: List[Dict[str, Any]],
+) -> Tuple[float, str, Dict[str, Any]]:
+    """
+    Count the number of tool calls related to sandbox/file system operations.
+    Returns the total count as the score.
+    """
+    sandbox_ops_count = 0
+    sandbox_tools_used = {}
+
+    # Common keywords for sandbox/file operations
+    sandbox_keywords = [
+        "save_artifact",
+        "load_artifact",
+        "read_file",
+        "write_file",
+        "run_python_script",
+        "execute_code",
+        "save_to_file",
+        "read_from_file",
+    ]
+
+    if not session_trace:
+        return 0.0, "No trace data available for sandbox usage", {}
+
+    for span in session_trace:
+        name = span.get("name", "")
+
+        # Check for tool execution spans
+        if name.startswith("execute_tool ") or "tool_call" in name:
+            tool_name = "unknown"
+            if name.startswith("execute_tool "):
+                tool_name = name.replace("execute_tool ", "").strip()
+            elif "tool.name" in span.get("attributes", {}):
+                tool_name = span["attributes"]["gen_ai.tool.name"]
+
+            # Check if tool matches sandbox keywords
+            if any(keyword in tool_name.lower() for keyword in sandbox_keywords):
+                sandbox_ops_count += 1
+                sandbox_tools_used[tool_name] = sandbox_tools_used.get(tool_name, 0) + 1
+
+    unique_ops_used = len(sandbox_tools_used)
+
+    breakdown_str = ", ".join([f"{k}: {v}" for k, v in sandbox_tools_used.items()])
+
+    explanation = (
+        f"Total Sandbox Ops: {sandbox_ops_count}. "
+        f"Unique Ops: {unique_ops_used}. "
+        f"Breakdown: [{breakdown_str}]"
+    )
+
+    details = {
+        "total_sandbox_ops": sandbox_ops_count,
+        "unique_ops_used": unique_ops_used,
+        "sandbox_tools_used": sandbox_tools_used,
+    }
+
+    return float(sandbox_ops_count), explanation, details
+
+
+# Registry of all deterministic metrics
+DETERMINISTIC_METRICS = {
+    "token_usage": calculate_token_usage,
+    "latency_metrics": calculate_latency_metrics,
+    "cache_efficiency": calculate_cache_efficiency,
+    "thinking_metrics": calculate_thinking_metrics,
+    "tool_utilization": calculate_tool_utilization,
+    "tool_success_rate": calculate_tool_success_rate,
+    "grounding_utilization": calculate_grounding_utilization,
+    "context_saturation": calculate_context_saturation,
+    "agent_handoffs": calculate_agent_handoffs,
+    "output_density": calculate_output_density,
+    "sandbox_usage": calculate_sandbox_usage,
+}
+
+
+def evaluate_deterministic_metrics(
+    session_state: Dict[str, Any],
+    session_trace: List[Dict[str, Any]],
+    agents_evaluated: List[str],
+    question_metadata: Dict[str, Any],
+    metrics_to_run: List[str] = None,
+    reference_data: Dict[str, Any] = None,
+    metric_definitions: Dict[str, Any] = None,
+    latency_data: List[Dict[str, Any]] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Evaluate all specified deterministic metrics.
+    """
+    if metrics_to_run is None:
+        metrics_to_run = list(DETERMINISTIC_METRICS.keys())
+
+    results = {}
+    for metric_name in metrics_to_run:
+        if metric_name not in DETERMINISTIC_METRICS:
+            continue
+
+        metric_func = DETERMINISTIC_METRICS[metric_name]
+
+        try:
+            if metric_name == "latency_metrics":
+                score, explanation, details = metric_func(
+                    session_trace, latency_data=latency_data
+                )
+            else:
+                score, explanation, details = metric_func(session_trace)
+
+            results[metric_name] = {
+                "score": score,
+                "explanation": explanation,
+                "details": details,
+            }
+        except Exception as e:
+            results[metric_name] = {
+                "score": 0.0,
+                "explanation": f"Error evaluating metric {metric_name}: {str(e)}",
+            }
+
+    return results
+
+```
+
+**3. Agent Implementation Details:**
+*   **Agent Source Code:** The source code for the agent being evaluated. This is your primary source for forming hypotheses about *why* the agent behaves a certain way.
+No agent source code provided.
+
+**4. Evaluation Questions:**
+*   **Questions Evaluated:** The full set of questions used in the evaluation. This can provide context if certain types of questions are causing specific failures.
+**Questions Evaluated**
+```json
+Questions file not found.
+```
+
+---
+Format your entire response as a single Markdown document.
