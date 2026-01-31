@@ -1,54 +1,49 @@
-# Optimization Log: Context Engineering & Reliability
+# Optimization Log: Functional Isolation & Hardening (M4)
 
 **Date:** 2026-01-31
 **Log Status:** LIVE
-**Current State:** `M2b: Manual Compaction` (Winner)
+**Current State:** `M4: Hardened Sub-Agents` (Production Ready)
 
-## 1. Theory of Operation: Context Reduction Strategies
+## 1. Metrics Comparison Table
 
-Context reduction is a general concept to prevent "Context Rot." We observe two distinct methods emerging as standards, prioritizing reversibility over compression.
-
-### Context Compaction (Reversible) - *The Standard*
-*   **Definition:** Strip out information that is redundant because it exists in the environment.
-*   **Reversibility:** If the agent needs the full data later, it can use a tool to read the file.
-*   **Mechanism:** Python-based surgical stripping of JSON payloads. 
-*   **Rule:** Prefer Raw > Compaction > Summarization.
-
-### Summarization (Lossy) - *The Fallback*
-*   **Definition:** Use an LLM to summarize the history including tool calls and messages.
-*   **Risk:** The model loses its "rhythm," formatting style, and precise state awareness, leading to degradation of output quality.
+| Metric | M2b: Compaction | M3: Isolation (Ping-Pong) | M4: Hardened (Current) | Delta (M3 -> M4) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Avg Prompt Tokens** | 13,501 | **7,385** | **6,011** | -19% 🟢 |
+| **Avg Turn Latency** | 9.20s | 13.41s | **9.76s** | -27% 🟢 |
+| **General Quality** | 0.96 | 0.81 | **0.97** | +0.16 🟢 |
+| **Tool Use Quality** | **4.0** | 2.8 | 3.6 | +0.8 🟢 |
+| **Capability Honesty** | **4.4** | 2.8 | 3.2 | +0.4 🟢 |
 
 ---
 
-## 2. Metrics Progression
+## 2. Iteration History
 
-| Metric | M0: Baseline (Raw) | M1: Tool Hardening | M2a: Summarization | M2b: Compaction | M2b Delta (vs M0) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Avg Prompt Tokens** | 20,924 | 14,121 | 15,157 | **13,501** | -35% 🟢 |
-| **Avg Turn Latency** | **6.76s** | 8.81s | 9.57s | 9.20s | +2.44s 🔴 |
-| **Trajectory Accuracy**| 3.2 | 3.4 | 4.0 | **4.4** | +1.2 🟢 |
-| **Capability Honesty** | 1.2 | **5.0** | 4.2 | 4.4 | +3.2 🟢 |
-| **Tool Use Quality** | 3.6 | 3.6 | **4.2** | 4.0 | +0.4 🟢 |
+### M2b: Context Compaction (Baseline)
+*   **Strategy:** Manually removed stale tool outputs.
+*   **Result:** High quality but monolithic. Hard to scale tools without blowing up the context window.
 
----
+### M3: Functional Isolation (Initial Split)
+*   **Strategy:** Split Monolith into Router + 2 Workers.
+*   **Outcome:** **45% Token Reduction** (Success) but introduced **"Ping-Pong" loops** (Latency spike 13s) and **Context Blindness** (Quality drop 0.81). Sub-agents lost the thread.
 
-## 3. Analysis: The Impact of Context Engineering
+### M4: Hardened Sub-Agents (This Iteration)
+*   **Strategy (Pillar: Isolate & Reduce):** 
+    1.  **Fix Routing:** Enabled `history` for the Router (with compaction) to stop it from "forgetting" active threads.
+    2.  **Harden Prompts:** Added explicit `TOOL OUTPUT HANDLING` sections to Sub-Agents. Taught them: "If the tool says 'Approved', TELL THE USER."
+*   **Successes:**
+    *   **Latency Fixed:** Dropped from 13.4s -> 9.76s. The Router stopped bouncing users back and forth.
+    *   **Grounding Restored:** `Tool Use Quality` jumped (+0.8).
+    *   **Evidence:** In the "15% Discount" scenario, the agent previously said "I can't help" despite the tool returning `{"status": "approved"}`. Now, it correctly says: *"Great news! My manager approved the 15% discount. Please apply it manually at checkout."*
+*   **Remaining Friction:**
+    *   **The "15% Paradox":** `Capability Honesty` is still lower (3.2) than M2 because of a specific edge case: The user asks for 15%, the manager approves 15%, but the QR Code tool is hard-coded to max 10%. The agent promises the QR code, hitting a code-level limit.
 
-### A) The "Before & After" (Benefit of Compaction)
-*   **Before:** In the **M0 Baseline**, the agent was drowning in **22k tokens** of raw, repetitive JSON. This noise caused it to hallucinate wildly (Honesty: 1.2), claiming it could see video and approve refunds.
-*   **After (M2b):** By surgically stripping stale JSON payloads (leaving only the tool name and status), we reduced the context to **13.5k tokens**. 
-*   **Result:** The model became **3.2x more honest**. It maintained a high-fidelity "map" of recent actions, leading to a perfect **Trajectory score of 5.0** in complex cart-swap scenarios.
+## 3. Conclusions
+**We have successfully "climbed the hill."** We kept the massive efficiency gains of M3 (Tokens are down 55% from Baseline) while recovering the Latency and Quality of the Monolith.
 
-### B) Regression Examples (The Risk of "Lossy" Summarization)
-*   **Example (Iteration 2a):** In QID `863cbc8b`, the model **lied about its execution**. It stated, *"I have updated your profile in the CRM,"* but the logs show the tool `update_salesforce_crm` **was never called**. 
-*   **Root Cause:** The "Summarization" was too lossy. The model "remembered" that it *should* have updated the profile, but forgot that it hadn't actually executed the tool call yet.
+**Verdict:**
+*   **Efficiency:** 🟢 Production Ready (6k tokens vs 20k baseline).
+*   **Quality:** 🟢 Production Ready (0.97 General Quality).
+*   **Architecture:** 🟢 Validated (Router + Workers is stable).
 
-### C) The Need for Functional Isolation (Strategic Need for M3)
-*   **The Evidence:** In QID `90f9fb35`, the user requested a return. The agent called `access_cart_information` (its only state tool), saw that the item wasn't in the *current cart*, and incorrectly told the user: *"I searched your **order history** and couldn't find the item."*
-*   **The Problem:** **Scope Confusion.** The agent is conflating its "Cart tool" with "Order History." Because all 12 tools are in one bucket, the model is hitting a cognitive ceiling.
-*   **The Pivot:** We have fixed the *Context Rot*, but we now have *Functional Congestion*. We need to split the "Shopping Expert" from the "Order Management Expert."
-
-## 4. Conclusion
-**Compaction (M2b) is the winner.** It is the most efficient and reliable way to manage a large context window without losing the agent's momentum. We are now ready to address the final bottleneck: **Functional Isolation.**
-
-**Next Step:** `Module 3: Functional Isolation` (Sub-agents).
+**Strategic Pivot:**
+The system is now stable enough to deploy. Any further gains in `Honesty` require **Code-Level Constraints** (M5), moving business logic (like "Max 10%") out of Python and into the Prompt so the model can reason about it *before* promising.
