@@ -1,141 +1,54 @@
-# Optimization Log: Customer Service Agent
+# Optimization Log: Customer Service Agent - Hill Climb Journey (Gemini 3.0)
 
-**Branch:** `optimizations/01-tool-definition`
-**Optimization:** Tool Schema Hardening (Pillar: Reduce)
-**Date:** 2026-01-28
+**Project:** Cymbal Home & Garden Assistant
+**Optimization Path:** Model Swap -> Tool Hardening -> [Next: Context Compaction]
 
 ---
 
 ## 1. Metrics Comparison Table
 
-### Deterministic Metrics (Scale & Efficiency)
-
-| Metric Category | Metric Name | Baseline | Optimization 01 | Delta |
-|:----------------|:------------|:---------|:----------------|:------|
-| **Scale** | Avg Total Tokens | 16,237 | 10,547 | -5,690 🟢 |
-| | Avg Prompt Tokens | 21,902 | 13,817 | -8,085 🟢 |
-| | Avg Cached Tokens | 12,885 | 7,927 | -4,958 🟢 |
-| | Total Latency (s) | 39.34s | 39.42s | +0.08s ⚪ |
-| | Avg Turn Latency (s) | 11.04s | 12.88s | +1.85s 🔴 |
-| **Efficiency** | Cache Hit Rate | 34.72% | 34.83% | +0.11% ⚪ |
-| | Reasoning Ratio | 69.31% | 72.54% | +3.23% 🔴 |
-| | Tool Success Rate | 100.00% | 100.00% | 0.00% ⚪ |
-| | Avg Tool Calls | 3.20 | 3.60 | +0.40 ⚪ |
-
-### LLM-as-Judge Metrics (Quality)
-
-| Metric | Baseline | Optimization 01 | Delta |
-|:-------|:---------|:----------------|:------|
-| **capability_honesty** (0-5) | 2.20 | 4.20 | +2.00 🟢 |
-| **trajectory_accuracy** (0-5) | 3.60 | 4.60 | +1.00 🟢 |
-| tool_use_quality (0-5) | 5.00 | 4.80 | -0.20 🔴 |
-| multi_turn_text_quality (0-1) | 0.75 | 0.83 | +0.08 🟢 |
-| multi_turn_general_quality (0-1) | 0.88 | 0.87 | -0.01 ⚪ |
+| Metric Category | Metric Name | M0: Baseline (2.5) | M0.5: G3 Swap | M1: Hardened (G3) | Delta (M1 vs M0) |
+|:----------------|:------------|:------------------:|:-------------:|:-----------------:|:----------------:|
+| **Scale** | Avg Prompt Tokens | 20,923 | 19,053 | 14,121 | -6,802 🟢 |
+| **Latency** | Avg Turn Latency | 6.76s | 10.29s | 8.81s | +2.05s 🔴 |
+| **Trust** | `capability_honesty` | 1.2 / 5.0 | 1.4 / 5.0 | **5.0 / 5.0** | +3.8 🟢 |
+| **Quality** | `trajectory_accuracy` | 3.2 / 5.0 | 4.8 / 5.0 | 3.4 / 5.0 | +0.2 ⚪ |
+| **Reasoning** | `reasoning_ratio` | 0.71 | 0.67 | 0.75 | +0.04 ⚪ |
 
 ---
 
 ## 2. Iteration History
 
-### Baseline (M0): Naive Monolith
+### M0: Baseline (Gemini 2.5 Flash)
+*   **Observation:** Fast but prone to logical errors. Agent frequently hallucinates capabilities (Video/Email) to satisfy users.
+*   **Trajectory Fail (Score 3.2):** Failed to navigate multi-turn returns or complex cart modifications accurately.
 
-**Optimization Path:** N/A (Initial State)
+### M0.5: Model Swap (Gemini 3.0 Flash Preview)
+*   **Optimization Pillar:** Raw Model Intelligence.
+*   **Problem Identification:** The smarter model solved the planning issues but exacerbated hallucinations. It became a "High-IQ Liar," confidently claiming it could see video and send emails to be helpful.
+*   **Hypothesis:** Swapping to a smarter model solves the **Logic Gap** but requires a secondary optimization to solve the **Honesty Gap**.
 
-**Key Diagnostic Signals (from AI Analysis):**
-
-1. **Capability Honesty Failures (2.2/5.0):**
-   - Agent hallucinated capabilities that don't exist (sending emails, applying discounts without tool calls)
-   - Conflated "Approval" with "Application" - assumed state changes without executing write-operation tools
-   - Claimed video perception capabilities that don't exist
-
-2. **Tool Mechanics Perfect (5.0/5.0):**
-   - Agent correctly parses inputs into valid JSON arguments
-   - Handles complex 4-step tool chains (recommendations → cart check → availability → modify)
-   - Zero failed tool calls
-
-3. **Performance Concerns:**
-   - High latency (11.04s/turn) for real-time chat
-   - Low cache hit rate (34.7%) suggesting prompt variation or interruption
-   - 16,237 tokens avg per session
-
-**Root Cause:** Agent treats successful execution of intermediate tools as completion of entire business process, ignoring tool limitations.
+### M1: Tool Schema Hardening (Gemini 3.0 + Constrained Tools)
+*   **Optimization Pillar:** Reduce / Constrain.
+*   **Hypothesis:** Replacing loose parameters with a rigid, self-validating "contract" will prevent hallucinations by enforcing structural integrity before code execution.
+*   **Implementation Details (The Fix):**
+    *   **Restricts Input:** Used strict Pydantic types and Literals (e.g., `discount_type: Literal["percentage", "flat"]`) to kill "creative" errors and force compliance with backend logic.
+    *   **Guide Intent:** Embedded `**KNOWN LIMITATIONS**` (e.g., "AI CANNOT see video") as high-priority signals in Python docstrings so the model grasps specific field requirements instantly during its reasoning phase.
+    *   **Gatekeep Logic:** Triggered instant validation failures for policy violations (e.g., >10% discounts). This forced the agent to self-correct and explain limitations to the user rather than hallucinating success.
+*   **Analysis of Variance:**
+    *   **Trust (🟢): Success (1.4 -> 5.0).** By hardening the "Contract," the agent no longer overpromises. Evidence: In the returns scenario, the agent admitted it couldn't see the video, successfully asking for a text description instead.
+    *   **Competence (🔴): Regression (4.8 -> 3.4).** The density of constraints caused **Attention Dilution**. The model became so focused on following the "Don'ts" that it dropped multi-intent instructions (e.g., ignoring one item in a two-item stock check).
+    *   **Scale (🟢): Efficiency Gain.** Tokens dropped by ~25% as the hardened definitions were more concise and unambiguous.
 
 ---
 
-### Optimization 01: Tool Schema Hardening
+## 3. Conclusions for Workshop Delivery
 
-**Optimization Path:** Tool Schema Hardening (Pillar: Reduce)
+**The Story Arc:**
 
-**Implementation Details:**
+1.  **Baseline (2.5):** Fast but confused. It didn't know what it couldn't do.
+2.  **Model Swap (3.0):** Smarter planning, but it became a **"Confident Liar."** Intelligence alone doesn't fix trust; it just makes the hallucinations more convincing.
+3.  **Hardening (The Fix):** Applying the **Contract (Restricts/Guide/Gatekeep)** finally makes the agent trustworthy (**Honesty 5.0**). We proved that code-level constraints are required to tame high-IQ models.
+4.  **Next Challenge:** We fixed the "Lying" but triggered **"Attention Dilution."** The model is now carrying too much cognitive load from the constraints. We need **Context Compaction** to free up cognitive space.
 
-1. **Schema Hardening:** Refactored `tools.py` with Pydantic models for strict argument validation
-2. **Boundary Grounding:** Added `**KNOWN LIMITATIONS**` docstrings to tool definitions
-3. **Negative Constraints:** Explicit statements in docstrings about what tools CANNOT do
-
-**Key Changes Made:**
-
-| File | Change |
-|------|--------|
-| `customer_service/tools/tools.py` | Added Pydantic validation, explicit limitation docstrings |
-| `customer_service/prompts.py` | Added "CORE OPERATIONAL BOUNDARIES" and negative constraints |
-| `customer_service/agent.py` | Updated tool descriptions |
-| `customer_service/shared_libraries/callbacks.py` | Enhanced callback handling |
-
-**Analysis of Results:**
-
-1. **Token Efficiency Improvement:**
-   - Total tokens reduced by **35%** (16,237 → 10,547)
-   - Prompt tokens reduced by **37%** (21,902 → 13,817)
-   - Clearer tool definitions allow faster decision-making
-
-2. **Capability Honesty Improvement (2.2 → 4.2):**
-   - Agent now respects negative constraints in docstrings
-   - Example: Correctly states "I cannot email the QR code" based on `**KNOWN LIMITATIONS**` in docstring
-   - Example: Correctly tells user to "apply discount manually at checkout" instead of claiming it was applied
-
-3. **Latency Trade-off:**
-   - Turn latency increased (11.04s → 12.88s)
-   - Reasoning ratio increased (69% → 72%) - agent "over-thinking" with explicit constraints
-   - Tool execution time is not the bottleneck (3.6s) - model generation is
-
-4. **Trajectory Accuracy Issue (3.0/5.0):**
-   - Some indirect tool usage patterns due to missing primitives
-   - Example: Uses `get_product_recommendations` to lookup product_id when user provides product name
-   - Missing: `search_product_by_name` tool would improve trajectory
-
-**Mechanism Discovery:**
-> Embedding `**KNOWN LIMITATIONS**` directly into Python docstrings is highly effective. The agent successfully internalizes these warnings into response generation.
-
----
-
-## 3. Conclusions
-
-### What Worked
-
-| Improvement | Evidence |
-|-------------|----------|
-| Token reduction | -35% total tokens through clearer schemas |
-| Capability honesty | Agent respects tool limitations when documented |
-| Schema validation | 100% tool success rate maintained |
-
-### What Needs Attention
-
-| Issue | Next Step |
-|-------|-----------|
-| Increased latency | Consider reducing reasoning tokens via prompt optimization |
-| Reasoning ratio high | Agent may be over-analyzing simple requests |
-| Missing search tool | Add `search_product_by_name` to improve trajectory |
-
-### Recommended Next Optimization
-
-**Optimization 02: Context Compaction**
-- Target: Reduce reasoning ratio and latency
-- Approach: Compress conversation history, optimize prompt structure
-- Expected outcome: Lower turn latency while maintaining quality
-
----
-
-## 4. File References
-
-- **Baseline Results:** `customer-service/eval/results/baseline/`
-- **Optimization Results:** `customer-service/eval/results/optimization/`
-- **Agent Code Changes:** See `customer_service/tools/tools.py`, `prompts.py`, `agent.py`
+**Next Step:** Proceed to **Iteration 2: Context Compaction**.
