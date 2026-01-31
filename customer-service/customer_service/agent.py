@@ -21,6 +21,7 @@ from .config import Config
 from .prompts import GLOBAL_INSTRUCTION, INSTRUCTION
 from .shared_libraries.callbacks import (
     rate_limit_callback,
+    before_model_compaction,
     before_agent,
     before_tool,
     after_tool
@@ -72,15 +73,23 @@ root_agent = Agent(
     before_tool_callback=before_tool,
     after_tool_callback=after_tool,
     before_agent_callback=before_agent,
-    before_model_callback=rate_limit_callback,
+    before_model_callback=[rate_limit_callback, before_model_compaction],
 )
 
 from google.adk.apps.app import App, EventsCompactionConfig
 
+# Workshop Demo: Compare Strategies
+# Strategy A: LLM-based Summarization (Easy but Slow)
+# app = App(
+#     root_agent=root_agent,
+#     name="customer_service",
+#     events_compaction_config=EventsCompactionConfig(
+#         compaction_interval=3, overlap_size=1
+#     ),
+# )
+
+# Strategy B: Manual Compaction (Fast & Precise) -> ACTIVE
 app = App(
     root_agent=root_agent,
     name="customer_service",
-    events_compaction_config=EventsCompactionConfig(
-        compaction_interval=10, overlap_size=1
-    ),
 )

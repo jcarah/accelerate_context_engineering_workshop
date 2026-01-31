@@ -161,6 +161,39 @@ def before_tool(
 
     return None
 
+def before_model_compaction(
+    callback_context: CallbackContext, llm_request: LlmRequest
+) -> None:
+    """
+    Context Engineering: Reversible Compaction.
+    
+    Scans the conversation history in the request. If a tool output is older than 2 turns,
+    replaces its content with a lightweight placeholder to prevent "Context Rot" 
+    and token bloat.
+    """
+    # We want to protect the most recent messages (e.g., the last 3 messages)
+    # to ensure the model maintains immediate "rhythm" and context.
+    protected_count = 3
+    
+    # The request contents contain the history being sent to the model
+    contents = llm_request.contents
+    
+    if len(contents) > protected_count:
+        # Iterate through older messages
+        for content in contents[:-protected_count]:
+            for part in content.parts:
+                # If this is a Function Response (Tool Output)
+                if part.function_response:
+                    tool_name = part.function_response.name
+                    # Strip the heavy JSON but leave a trace that the tool ran
+                    part.function_response.response = {
+                        "status": "success",
+                        "note": f"Output from {tool_name} was compacted to save context. Use the tool again if raw data is needed."
+                    }
+                    logger.debug(f"Compacted stale tool output for: {tool_name}")
+
+    return
+
 def after_tool(
     tool: BaseTool, args: Dict[str, Any], tool_context: ToolContext, tool_response: Dict
 ) -> Optional[Dict]:
